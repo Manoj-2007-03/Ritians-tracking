@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Driver GPS Portal – Ritians Transport</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous"/>
+<style>
+/* ── Same design tokens as main site ── */
+:root{
+  --bg:#060A14;--bg2:#0C1220;--bg3:#121C2E;--bg4:#1A2540;
+  --accent:#FF6B35;--accent2:#4ECDC4;--accent3:#FFE66D;
+  --blue:#3B82F6;--green:#22C55E;--red:#EF4444;--yellow:#FBBF24;
+  --text:#F0F4FF;--text2:#9BAAC8;--text3:#5A6A8A;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --glow-accent:rgba(255,107,53,0.25);--glow-green:rgba(34,197,94,0.25);
+  --r:12px;--r2:20px;
+  --font-head:'Syne',sans-serif;--font-body:'DM Sans',sans-serif;--font-mono:'DM Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{
+  background:var(--bg);color:var(--text);
+  font-family:var(--font-body);font-size:14px;line-height:1.6;
+  min-height:100vh;display:flex;flex-direction:column;
+}
+
+/* Navbar */
+.nav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 5vw;background:rgba(6,10,20,0.9);
+  backdrop-filter:blur(20px);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:10;
+}
+.nav-brand{display:flex;align-items:center;gap:12px}
+.nav-logo{
+  width:38px;height:38px;border-radius:10px;
+  background:linear-gradient(135deg,var(--yellow),#F97316);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;color:#fff;box-shadow:0 0 16px rgba(251,191,36,0.3);
+}
+.nav-title{font-family:var(--font-head);font-size:16px;font-weight:700}
+.nav-sub{font-size:10px;color:var(--text3);letter-spacing:0.06em;text-transform:uppercase}
+.back-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 14px;border-radius:99px;border:1px solid var(--border2);
+  background:var(--bg3);color:var(--text2);font-family:var(--font-body);
+  font-size:12px;cursor:pointer;text-decoration:none;transition:all 0.15s;
+}
+.back-btn:hover{background:var(--bg4);color:var(--text)}
+
+/* Main content */
+.main{flex:1;display:flex;align-items:center;justify-content:center;padding:32px 5vw}
+.card{
+  width:100%;max-width:440px;
+  background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);
+  overflow:hidden;box-shadow:0 40px 80px rgba(0,0,0,0.5);
+}
+
+/* Card header */
+.card-header{
+  padding:28px 28px 20px;text-align:center;
+  background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(251,191,36,0.12),transparent);
+  border-bottom:1px solid var(--border);
+}
+.icon-ring{
+  width:64px;height:64px;border-radius:50%;margin:0 auto 16px;
+  background:linear-gradient(135deg,var(--yellow),#F97316);
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;color:#fff;
+  box-shadow:0 0 32px rgba(251,191,36,0.4);
+  transition:all 0.3s ease;
+}
+.icon-ring.active{
+  background:linear-gradient(135deg,var(--green),#16A34A);
+  box-shadow:0 0 32px var(--glow-green);
+  animation:pulse 2s infinite;
+}
+@keyframes pulse{0%,100%{box-shadow:0 0 24px rgba(34,197,94,0.4)}50%{box-shadow:0 0 48px rgba(34,197,94,0.7)}}
+.card-title{font-family:var(--font-head);font-size:20px;font-weight:700;margin-bottom:4px}
+.card-sub{font-size:12px;color:var(--text3)}
+
+/* Card body */
+.card-body{padding:24px 28px}
+.form-field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.form-field label{font-size:12px;font-weight:500;color:var(--text2)}
+.form-field select,.form-field input{
+  padding:10px 12px;background:var(--bg3);border:1px solid var(--border2);
+  border-radius:var(--r);color:var(--text);font-family:var(--font-body);
+  font-size:13px;outline:none;transition:border-color 0.15s;
+}
+.form-field select:focus,.form-field input:focus{border-color:var(--yellow)}
+
+/* Buttons */
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;padding:12px 20px;border-radius:99px;border:none;
+  font-family:var(--font-body);font-size:14px;font-weight:600;
+  cursor:pointer;transition:all 0.2s;margin-bottom:10px;
+}
+.btn-start{
+  background:linear-gradient(135deg,var(--green),#16A34A);color:#fff;
+  box-shadow:0 8px 24px rgba(34,197,94,0.3);
+}
+.btn-start:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 12px 32px rgba(34,197,94,0.45)}
+.btn-stop{
+  background:linear-gradient(135deg,var(--red),#DC2626);color:#fff;
+  box-shadow:0 8px 24px rgba(239,68,68,0.3);display:none;
+}
+.btn-stop:hover{transform:translateY(-2px)}
+.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none!important}
+
+/* Status panel */
+.status-panel{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);
+  padding:14px 16px;margin-top:4px;
+}
+.status-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;margin-bottom:6px}
+.status-row:last-child{margin-bottom:0}
+.status-label{color:var(--text3)}
+.status-val{font-family:var(--font-mono);font-size:11px;color:var(--text2)}
+.status-val.green{color:var(--green)}
+.status-val.yellow{color:var(--yellow)}
+.status-val.red{color:var(--red)}
+
+/* Accuracy / signal bar */
+.signal-bar{display:flex;gap:3px;align-items:flex-end}
+.bar{width:4px;border-radius:2px;background:var(--bg4)}
+.bar.active{background:var(--green)}
+
+/* Alert */
+.alert{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:10px 14px;border-radius:var(--r);
+  background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.2);
+  font-size:12px;color:var(--text2);margin-bottom:16px;
+}
+.alert i{color:var(--accent);margin-top:1px;flex-shrink:0}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:var(--bg2);border:1px solid var(--border2);border-radius:99px;
+  padding:10px 20px;font-size:13px;
+  display:flex;align-items:center;gap:8px;
+  box-shadow:0 16px 48px rgba(0,0,0,0.6);
+  animation:toastIn 0.25s ease;z-index:100;
+}
+.toast.hidden{display:none}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* Ping dot */
+.ping-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--text3);
+  display:inline-block;transition:background 0.3s;
+}
+.ping-dot.active{background:var(--green);animation:dotPulse 1s infinite}
+@keyframes dotPulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+footer{
+  text-align:center;padding:16px;font-size:11px;color:var(--text3);
+  border-top:1px solid var(--border);
+}
+</style>
+<!-- Mobile responsive layer -->
+<link rel="stylesheet" href="mobile.css"/>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-brand">
+    <div class="nav-logo"><i class="fas fa-id-badge"></i></div>
+    <div>
+      <div class="nav-title">Driver Portal</div>
+      <div class="nav-sub">GPS Tracking — Ritians Transport</div>
+    </div>
+  </div>
+  <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Home</a>
+  <a href="tracking.html" class="back-btn" style="background:rgba(78,205,196,0.1);border-color:rgba(78,205,196,0.3);color:var(--accent2)"><i class="fas fa-satellite-dish"></i> Live Tracking</a>
+</header>
+
+<main class="main">
+  <div class="card">
+    <div class="card-header">
+      <div class="icon-ring" id="iconRing">
+        <i class="fas fa-satellite-dish" id="iconInner"></i>
+      </div>
+      <div class="card-title">Driver GPS Portal</div>
+      <div class="card-sub">Share your live location with students on campus</div>
+    </div>
+
+    <div class="card-body">
+      <div class="alert">
+        <i class="fas fa-shield-check"></i>
+        <span>Your location is only visible while tracking is active. It auto-expires after 60 seconds of inactivity.</span>
+      </div>
+
+      <!-- Vehicle selection -->
+      <div class="form-field" id="setupPanel">
+        <label>Your Route / Vehicle ID</label>
+        <select id="vehicleSelect">
+          <option value="">— Select your route —</option>
+          <option value="R01">Bus 1 · R01 · Ennore</option>
+          <option value="R01A">Bus 2 · R01A · Tondiarpet</option>
+          <option value="R01B">Bus 3 · R01B · Kasimedu</option>
+          <option value="R02">Bus 4 · R02 · Triplicane</option>
+          <option value="R03">Bus 5 · R03 · Choolai</option>
+          <option value="R03A">Bus 6 · R03A · Collector Nagar</option>
+          <option value="R03B">Bus 7 · R03B · Water Tank</option>
+          <option value="R04">Bus 8 · R04 · East Mogappair</option>
+          <option value="R05">Bus 9 · R05 · CIT Nagar</option>
+          <option value="R05A">Bus 10 · R05A · Loyola College</option>
+          <option value="R06">Bus 11 · R06 · Chinmayanagar</option>
+          <option value="R07">Bus 12 · R07 · Santhome</option>
+          <option value="R08">Bus 13 · R08 · Kovilambakkam</option>
+          <option value="R08A">Bus 14 · R08A · Adambakkam</option>
+          <option value="R09">Bus 15 · R09 · MKB Nagar</option>
+          <option value="R09A">Bus 16 · R09A · Perambur</option>
+          <option value="R10">Bus 17 · R10 · Thachoor</option>
+          <option value="R11">Bus 18 · R11 · Chengalpattu</option>
+          <option value="R11A">Bus 19 · R11A · Guduvanchery</option>
+          <option value="R12">Bus 20 · R12 · Minjur</option>
+          <option value="R13">Bus 21 · R13 · Vyasarpadi</option>
+          <option value="R13A">Bus 22 · R13A · ICF</option>
+          <option value="R14">Bus 23 · R14 · Thiruvallur</option>
+          <option value="R14A">Bus 24 · R14A · Kakkalur</option>
+          <option value="R15">Bus 25 · R15 · Kancheepuram</option>
+          <option value="R16">Bus 27 · R16 · Neelangkarai</option>
+          <option value="R16A">Bus 28 · R16A · Guindy</option>
+          <option value="R16B">Bus 29 · R16B · Sholinganallur</option>
+          <option value="R17">Bus 30 · R17 · Valluvarkottam</option>
+          <option value="R17A">Bus 31 · R17A · Valasaravakkam</option>
+          <option value="R18">Bus 32 · R18 · Pallikaranai</option>
+          <option value="R18A">Bus 33 · R18A · Sembakkam</option>
+          <option value="R18B">Bus 34 · R18B · Kelambakkam</option>
+          <option value="R19">Bus 35 · R19 · Poombukar</option>
+          <option value="R20">Bus 37 · R20 · Vepampattu</option>
+          <option value="R21">Bus 38 · R21 · Ayyapakkam</option>
+          <option value="R22">Bus 39 · R22 · Thiruthani</option>
+          <option value="R24">Bus 42 · R24 · Arcot</option>
+          <option value="R25">Bus 43 · R25 · Kallikuppam</option>
+          <option value="R26">Bus 45 · R26 · Andarkuppam</option>
+          <option value="R27">Bus 46 · R27 · Avadi</option>
+          <option value="R27A">Bus 47 · R27A · Kollumedu</option>
+          <option value="R28">Bus 48 · R28 · Agaram</option>
+          <option value="R29">Bus 49 · R29 · Velachery</option>
+          <option value="R29A">Bus 50 · R29A · Pammal</option>
+          <option value="R29B">Bus 51 · R29B · Sivanthangal</option>
+        </select>
+      </div>
+
+      <!-- Start / Stop buttons -->
+      <button class="btn btn-start" id="btnStart" onclick="startTracking()">
+        <i class="fas fa-location-arrow"></i> Start Sharing Location
+      </button>
+      <button class="btn btn-stop" id="btnStop" onclick="stopTracking()">
+        <i class="fas fa-stop-circle"></i> Stop Sharing Location
+      </button>
+
+      <!-- Live status display -->
+      <div class="status-panel">
+        <div class="status-row">
+          <span class="status-label"><span class="ping-dot" id="pingDot"></span> Status</span>
+          <span class="status-val" id="statusText">Idle</span>
+        </div>
+        <div class="status-row">
+          <span class="status-label"><i class="fas fa-map-pin" style="font-size:10px;margin-right:4px;color:var(--text3)"></i> Latitude</span>
+          <span class="status-val" id="latVal">—</span>
+        </div>
+        <div class="status-row">
+          <span class="status-label"><i class="fas fa-map-pin" style="font-size:10px;margin-right:4px;color:var(--text3)"></i> Longitude</span>
+          <span class="status-val" id="lngVal">—</span>
+        </div>
+        <div class="status-row">
+          <span class="status-label"><i class="fas fa-gauge-high" style="font-size:10px;margin-right:4px;color:var(--text3)"></i> Speed</span>
+          <span class="status-val" id="speedVal">—</span>
+        </div>
+        <div class="status-row">
+          <span class="status-label"><i class="fas fa-clock" style="font-size:10px;margin-right:4px;color:var(--text3)"></i> Last Sent</span>
+          <span class="status-val" id="lastSent">—</span>
+        </div>
+        <div class="status-row">
+          <span class="status-label"><i class="fas fa-signal" style="font-size:10px;margin-right:4px;color:var(--text3)"></i> GPS Accuracy</span>
+          <span class="status-val" id="accVal">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>Ritians Transport · RIT Chennai · Driver GPS Portal</footer>
+
+<div class="toast hidden" id="toastEl">
+  <i class="fas fa-circle-check" style="color:var(--green)"></i>
+  <span id="toastMsg"></span>
+</div>
+
+<script>
+// ── CONFIG — Auto-detect backend URL ──────────────────────────────────────────
+const API_BASE = (() => {
+  const h = location.hostname;
+  // localhost / file:// → use port 4008
+  if (h === 'localhost' || h === '127.0.0.1' || h === '') {
+    return `http://localhost:4008`;
+  }
+  // Railway / any real domain → same origin, no port needed
+  return `${location.protocol}//${location.host}`;
+})();
+
+// ── State ──────────────────────────────────────────────────────────────────────
+let watchId = null;        // GPS watch handle
+let vehicleId = null;      // Selected route ID
+let sendInterval = null;   // Interval for POSTing to server
+let lastPosition = null;   // Cache latest GPS position
+let isTracking = false;    // UI/guard flag
+
+// ── Start Tracking ──────────────────────────────────────────────────────────
+function startTracking() {
+  vehicleId = document.getElementById('vehicleSelect').value;
+  if (!vehicleId) { showToast('Please select your route first!', 'error'); return; }
+
+  if (!navigator.geolocation) {
+    showToast('GPS not supported on this device!', 'error');
+    return;
+  }
+
+  // Request high-accuracy GPS
+  const options = { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 };
+
+  // watchPosition fires every time the device moves
+  watchId = navigator.geolocation.watchPosition(
+    onPositionUpdate,
+    onPositionError,
+    options
+  );
+
+  // Also send to server every 4 seconds (even if position hasn't changed)
+  sendInterval = setInterval(() => {
+    if (lastPosition) sendToServer(lastPosition);
+  }, 4000);
+
+  // Update UI
+  isTracking = true;
+  setActiveUI(true);
+  showToast('📡 GPS tracking started!');
+}
+
+// ── Stop Tracking ────────────────────────────────────────────────────────────
+function stopTracking() {
+  if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+  if (sendInterval) clearInterval(sendInterval);
+  watchId = null; sendInterval = null; lastPosition = null;
+  isTracking = false;
+  setActiveUI(false);
+  showToast('Tracking stopped.');
+}
+
+// ── GPS Position Update ───────────────────────────────────────────────────────
+function onPositionUpdate(position) {
+  const { latitude: lat, longitude: lng, speed, heading, accuracy } = position.coords;
+  lastPosition = { lat, lng, speed, heading };
+
+  // Update status display
+  document.getElementById('latVal').textContent = lat.toFixed(6);
+  document.getElementById('lngVal').textContent = lng.toFixed(6);
+  document.getElementById('speedVal').textContent =
+    speed ? `${(speed * 3.6).toFixed(1)} km/h` : '0 km/h';
+  document.getElementById('accVal').textContent = accuracy ? `±${accuracy.toFixed(0)}m` : '—';
+
+  // Send immediately on first fix
+  sendToServer(lastPosition);
+}
+
+// ── GPS Error Handler ─────────────────────────────────────────────────────────
+function onPositionError(err) {
+  const msgs = {
+    1: 'Location permission denied. Please allow GPS.',
+    2: 'GPS signal unavailable. Try moving outdoors.',
+    3: 'GPS timeout. Retrying…',
+  };
+  document.getElementById('statusText').textContent = msgs[err.code] || 'GPS error';
+  document.getElementById('statusText').className = 'status-val red';
+  showToast(msgs[err.code] || 'GPS error', 'error');
+}
+
+// ── POST to Backend ───────────────────────────────────────────────────────────
+async function sendToServer({ lat, lng, speed, heading }) {
+  try {
+    const res = await fetch(`${API_BASE}/update-location`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vehicleId, lat, lng, speed: speed || 0, heading: heading || 0 }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      const now = new Date().toLocaleTimeString('en-IN');
+      document.getElementById('lastSent').textContent = now;
+      document.getElementById('statusText').textContent =
+        data.status === 'Moving' ? '🚌 Moving' : '🅿️ Stopped';
+      document.getElementById('statusText').className =
+        `status-val ${data.status === 'Moving' ? 'green' : 'yellow'}`;
+    }
+  } catch (err) {
+    document.getElementById('statusText').textContent = 'Server unreachable';
+    document.getElementById('statusText').className = 'status-val red';
+  }
+}
+
+// ── UI Helpers ────────────────────────────────────────────────────────────────
+function setActiveUI(active) {
+  document.getElementById('btnStart').style.display = active ? 'none' : 'flex';
+  document.getElementById('btnStop').style.display = active ? 'flex' : 'none';
+  document.getElementById('setupPanel').style.opacity = active ? '0.5' : '1';
+  document.getElementById('setupPanel').style.pointerEvents = active ? 'none' : 'auto';
+  document.getElementById('iconRing').classList.toggle('active', active);
+  document.getElementById('iconInner').className = active ? 'fas fa-location-dot' : 'fas fa-satellite-dish';
+  document.getElementById('pingDot').classList.toggle('active', active);
+  document.getElementById('statusText').textContent = active ? 'Getting GPS fix…' : 'Idle';
+  document.getElementById('statusText').className = active ? 'status-val yellow' : 'status-val';
+}
+
+let toastTimer;
+function showToast(msg, type = 'success') {
+  const el = document.getElementById('toastEl');
+  const icon = el.querySelector('i');
+  document.getElementById('toastMsg').textContent = msg;
+  icon.style.color = type === 'error' ? 'var(--red)' : 'var(--green)';
+  icon.className = type === 'error' ? 'fas fa-circle-exclamation' : 'fas fa-circle-check';
+  el.classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.add('hidden'), 3000);
+}
+
+// Auto-stop tracking when page is closed/hidden (save battery)
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && watchId !== null) {
+    // Keep running in background — do not stop tracking.
+    // Note: some browsers may throttle timers in background; watchPosition can still update.
+  }
+});
+
+// Prevent accidental stop by navigation/closing while tracking is active
+window.addEventListener('beforeunload', (e) => {
+  if (!isTracking) return;
+  e.preventDefault();
+  e.returnValue = '';
+});
+
+// Guard the "Back to Main" link while tracking
+(function wireNavGuards(){
+  const backLink = document.querySelector('a.back-btn');
+  if (!backLink) return;
+  backLink.addEventListener('click', (e) => {
+    if (!isTracking) return;
+    e.preventDefault();
+    const ok = confirm('Location sharing is active. Stop sharing and leave this page?');
+    if (!ok) return;
+    stopTracking();
+    window.location.href = backLink.getAttribute('href') || 'index.html';
+  });
+})();
+</script>
+<!-- Mobile view-mode system -->
+<script src="mobile.js"></script>
+</body>
+</html>

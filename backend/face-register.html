@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="theme-color" content="#060A14"/>
+<title>Face Registration – Ritians Transport</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous"/>
+<link rel="stylesheet" href="mobile.css"/>
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   FACE REGISTRATION — Production CSS
+   Architecture: mobile-first, BEM-aligned, 8px grid
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── 1. DESIGN TOKENS ── */
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Brand palette */
+  --bg:       #060A14;
+  --bg2:      #0C1220;
+  --bg3:      #1A2540;
+  --bg4:      #0F1829;
+  --accent:   #4ECDC4;
+  --accent2:  #FFE66D;
+  --accent3:  rgba(78,205,196,0.12);
+  --text1:    #F0F4FF;
+  --text2:    #9BAAC8;
+  --text3:    #5A6A8A;
+  --border:   rgba(255,255,255,0.08);
+  --border2:  rgba(78,205,196,0.25);
+  --danger:   #F87171;
+  --success:  #4ADE80;
+  --warn:     #FBBF24;
+
+  /* Typography */
+  --font-head: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+
+  /* Spacing (8px grid) */
+  --sp-1: 8px;
+  --sp-2: 16px;
+  --sp-3: 24px;
+  --sp-4: 32px;
+  --sp-5: 40px;
+
+  /* Radii */
+  --r-sm:  8px;
+  --r:     12px;
+  --r-lg:  16px;
+  --r-xl:  20px;
+
+  /* Elevation */
+  --shadow-sm: 0 4px 12px rgba(0,0,0,0.3);
+  --shadow:    0 8px 32px rgba(0,0,0,0.5);
+  --shadow-lg: 0 20px 60px rgba(0,0,0,0.6);
+
+  /* Transitions */
+  --t-fast:   0.15s ease;
+  --t-base:   0.2s ease;
+  --t-smooth: 0.28s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ── 2. BASE ── */
+html, body {
+  min-height: 100%;
+  background: var(--bg);
+  font-family: var(--font-body);
+  color: var(--text1);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ── 3. NAVIGATION ── */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--sp-2);
+  height: 60px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(6,10,20,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  flex: 1;
+  min-width: 0;
+}
+
+.nav-brand-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--accent3);
+  border: 1px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.nav-brand-name {
+  font-family: var(--font-head);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.nav-back {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 99px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all var(--t-base);
+  min-height: 36px;
+  white-space: nowrap;
+}
+
+.nav-back:hover,
+.nav-back:focus-visible {
+  background: rgba(255,255,255,0.1);
+  color: var(--text1);
+  outline: none;
+}
+
+/* ── 4. PAGE LAYOUT ── */
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--sp-3) var(--sp-2) 96px; /* bottom padding for toggle btn */
+}
+
+/* ── 5. PAGE HEADER ── */
+.page-header {
+  text-align: center;
+  margin-bottom: var(--sp-4);
+}
+
+.page-header__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  margin-bottom: var(--sp-1);
+}
+
+.page-header__title {
+  font-family: var(--font-head);
+  font-size: clamp(22px, 5vw, 32px);
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--text1) 30%, var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: var(--sp-1);
+  line-height: 1.2;
+}
+
+.page-header__sub {
+  color: var(--text2);
+  font-size: clamp(13px, 2vw, 14px);
+  line-height: 1.5;
+}
+
+/* ── 6. SERVICE STATUS BANNER ── */
+.service-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: var(--r);
+  font-size: 13px;
+  margin-bottom: var(--sp-3);
+  background: rgba(251,191,36,0.08);
+  border: 1px solid rgba(251,191,36,0.2);
+  color: var(--warn);
+  transition: all var(--t-smooth);
+}
+
+.service-banner.online {
+  background: rgba(74,222,128,0.08);
+  border-color: rgba(74,222,128,0.2);
+  color: var(--success);
+}
+
+.service-banner.offline {
+  background: rgba(248,113,113,0.08);
+  border-color: rgba(248,113,113,0.2);
+  color: var(--danger);
+}
+
+.service-banner__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.service-banner__dot--pulse { animation: pulse 1.5s infinite; }
+
+/* ── 7. STEP INDICATOR ── */
+.steps {
+  display: flex;
+  gap: 0;
+  margin-bottom: var(--sp-3);
+  border-radius: var(--r);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.step {
+  flex: 1;
+  padding: 10px var(--sp-1);
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--bg3);
+  color: var(--text3);
+  border-right: 1px solid var(--border);
+  transition: all var(--t-smooth);
+}
+
+.step:last-child { border-right: none; }
+.step.active { background: var(--accent3); color: var(--accent); border-color: var(--border2); }
+.step.done   { background: rgba(74,222,128,0.08); color: var(--success); }
+
+.step__num {
+  display: block;
+  font-size: 15px;
+  margin-bottom: 2px;
+  line-height: 1;
+}
+
+/* ── 8. ALERT ── */
+.alert {
+  padding: 11px 14px;
+  border-radius: var(--r);
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: var(--sp-2);
+  display: none;
+  align-items: center;
+  gap: var(--sp-1);
+  line-height: 1.4;
+}
+
+.alert.show { display: flex; }
+.alert--error   { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.25); color: var(--danger); }
+.alert--success { background: rgba(74,222,128,0.1);  border: 1px solid rgba(74,222,128,0.25);  color: var(--success); }
+.alert--warn    { background: rgba(251,191,36,0.08);  border: 1px solid rgba(251,191,36,0.2);   color: var(--warn); }
+
+/* ── 9. MAIN GRID ── */
+/* Mobile: single column by default */
+.reg-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-2);
+}
+
+/* Tablet+: two columns */
+@media (min-width: 680px) {
+  .reg-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-3);
+  }
+}
+
+/* ── 10. CARD ── */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: var(--sp-3);
+  box-shadow: var(--shadow);
+}
+
+.card__title {
+  font-family: var(--font-head);
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-2);
+  color: var(--text1);
+}
+
+.card__title i { color: var(--accent); font-size: 13px; }
+
+/* ── 11. CAMERA MODULE ── */
+.cam-wrap {
+  position: relative;
+  border-radius: var(--r);
+  overflow: hidden;
+  background: #000;
+  aspect-ratio: 4/3;
+  border: 2px solid var(--border);
+  transition: border-color var(--t-base);
+}
+
+.cam-wrap.active { border-color: var(--accent); }
+
+#videoEl {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scaleX(-1);
+}
+
+#canvasEl { display: none; }
+
+.cam-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(6,10,20,0.85);
+  font-size: 13px;
+  color: var(--text3);
+  transition: opacity var(--t-smooth);
+}
+
+.cam-overlay i { font-size: 28px; color: var(--text3); }
+.cam-overlay.hidden { display: none; }
+
+/* Face guide oval */
+.face-guide {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 140px;
+  height: 170px;
+  border: 2px dashed rgba(78,205,196,0.5);
+  border-radius: 50%;
+  pointer-events: none;
+  display: none;
+  animation: guideGlow 2s ease-in-out infinite;
+}
+
+.cam-wrap.active .face-guide { display: block; }
+
+/* Capture flash */
+.flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  border-radius: var(--r);
+}
+
+/* ── 12. CAMERA CONTROLS ── */
+.cam-controls {
+  display: flex;
+  gap: var(--sp-1);
+  margin-top: var(--sp-1);
+}
+
+.cam-extras {
+  margin-top: var(--sp-1);
+  display: flex;
+  gap: var(--sp-1);
+}
+
+/* ── 13. CAPTURED PREVIEW ── */
+.preview-wrap {
+  border-radius: var(--r);
+  overflow: hidden;
+  background: #000;
+  aspect-ratio: 4/3;
+  border: 2px solid var(--border);
+  display: none;
+  position: relative;
+}
+
+.preview-wrap.show { display: block; }
+
+.preview-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.preview-badge {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(6,10,20,0.88);
+  border: 1px solid var(--border2);
+  border-radius: 99px;
+  padding: 5px 14px;
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── 14. BUTTONS ── */
+.btn {
+  flex: 1;
+  padding: 11px 14px;
+  border-radius: var(--r);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: all var(--t-base);
+  min-height: 44px; /* WCAG touch target */
+  text-decoration: none;
+  user-select: none;
+}
+
+.btn--primary {
+  background: var(--accent);
+  color: #060A14;
+}
+
+.btn--primary:hover,
+.btn--primary:focus-visible {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  outline: none;
+  box-shadow: 0 4px 16px rgba(78,205,196,0.3);
+}
+
+.btn--primary:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn--ghost {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: var(--text2);
+}
+
+.btn--ghost:hover,
+.btn--ghost:focus-visible {
+  background: rgba(255,255,255,0.1);
+  color: var(--text1);
+  outline: none;
+}
+
+.btn--danger {
+  background: rgba(248,113,113,0.1);
+  border: 1px solid rgba(248,113,113,0.3);
+  color: var(--danger);
+}
+
+.btn--danger:hover,
+.btn--danger:focus-visible {
+  background: rgba(248,113,113,0.18);
+  outline: none;
+}
+
+.btn--full { flex: none; width: 100%; }
+.btn--mt   { margin-top: var(--sp-1); }
+
+/* Loading state */
+.btn.loading .btn__text { display: none; }
+.btn.loading .spinner   { display: block; }
+
+/* ── 15. SPINNER ── */
+.spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(6,10,20,0.25);
+  border-top-color: #060A14;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+  display: none;
+}
+
+.btn--ghost .spinner,
+.btn--ghost.loading .spinner {
+  border-color: rgba(255,255,255,0.15);
+  border-top-color: var(--text1);
+}
+
+/* ── 16. FORM FIELDS ── */
+.field {
+  margin-bottom: var(--sp-2);
+}
+
+.field__label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text3);
+  margin-bottom: 6px;
+}
+
+.field__input {
+  width: 100%;
+  padding: 11px 13px;
+  border-radius: var(--r);
+  font-size: 14px;
+  font-family: var(--font-body);
+  background: var(--bg3);
+  border: 1.5px solid var(--border);
+  color: var(--text1);
+  outline: none;
+  transition: border-color var(--t-base), box-shadow var(--t-base);
+  min-height: 44px; /* WCAG touch target */
+  -webkit-appearance: none;
+}
+
+.field__input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(78,205,196,0.12);
+}
+
+.field__input::placeholder { color: var(--text3); }
+
+/* Prevent iOS zoom (font-size must be ≥16px on mobile) */
+@media (max-width: 768px) {
+  .field__input { font-size: 16px; }
+}
+
+/* ── 17. STUDENT INFO BOX ── */
+.info-box {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: var(--sp-2);
+  font-size: 13px;
+  display: none;
+}
+
+.info-box.show { display: block; }
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.info-row:last-child { border-bottom: none; }
+.info-row__label { color: var(--text3); font-size: 11px; }
+.info-row__val   { color: var(--text1); font-weight: 500; font-size: 13px; text-align: right; max-width: 65%; word-break: break-word; }
+
+/* ── 18. TIPS BOX ── */
+.tips-box {
+  margin-top: var(--sp-2);
+  padding: var(--sp-2);
+  background: var(--bg3);
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+}
+
+.tips-box__title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text3);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tips-box__title i { color: var(--accent2); }
+
+.tips-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tips-list li {
+  font-size: 12px;
+  color: var(--text2);
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  line-height: 1.5;
+}
+
+.tips-list li::before {
+  content: "·";
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ── 19. REGISTER ACTIONS ── */
+.reg-actions {
+  margin-top: var(--sp-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+/* ── 20. ANIMATIONS ── */
+@keyframes pulse      { 0%,100%{opacity:1} 50%{opacity:0.3} }
+@keyframes spin       { to{transform:rotate(360deg)} }
+@keyframes flashAnim  { 0%{opacity:0.8} 100%{opacity:0} }
+@keyframes guideGlow  { 0%,100%{border-color:rgba(78,205,196,0.5)} 50%{border-color:rgba(78,205,196,0.9)} }
+@keyframes slideUp    { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+.reg-grid { animation: slideUp 0.4s var(--t-smooth) both; }
+
+/* ── 21. TABLET ADJUSTMENTS ── */
+@media (min-width: 768px) {
+  .page { padding: var(--sp-4) var(--sp-3) 96px; }
+  .nav  { padding: 0 var(--sp-4); }
+}
+
+/* ── 22. MODE-MOBILE OVERRIDES (integrates with mobile.css) ── */
+.mode-mobile .reg-grid {
+  grid-template-columns: 1fr;
+  gap: var(--sp-2);
+}
+
+/* On mobile: camera first, form second for intuitive flow */
+.mode-mobile .card--form  { order: 2; }
+.mode-mobile .card--camera { order: 1; }
+
+.mode-mobile .nav-back .back-text { display: none; }
+
+/* ── 23. MODE-DESKTOP OVERRIDES ── */
+.mode-desktop .reg-grid {
+  grid-template-columns: 1fr 1fr;
+}
+
+/* ── 24. FOCUS-VISIBLE accessibility ring ── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+</style>
+</head>
+<body>
+
+<!-- ══ NAVIGATION ══════════════════════════════════════════════════ -->
+<nav class="nav" role="banner" aria-label="Main navigation">
+  <a class="nav-brand" href="index.html" aria-label="Ritians Transport home">
+    <div class="nav-brand-icon" aria-hidden="true"><i class="fas fa-bus"></i></div>
+    <div class="nav-brand-name">Ritians Transport</div>
+  </a>
+  <div class="nav-right">
+    <a class="nav-back" href="index.html" aria-label="Go back to home">
+      <i class="fas fa-arrow-left" aria-hidden="true"></i>
+      <span class="back-text">Back</span>
+    </a>
+    <!-- Hamburger injected by mobile.css JS -->
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobileDrawer">
+      <span class="hb-line"></span>
+      <span class="hb-line"></span>
+      <span class="hb-line"></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ══ MOBILE DRAWER ═══════════════════════════════════════════════ -->
+<div class="mobile-drawer" id="mobileDrawer" role="navigation" aria-label="Mobile navigation">
+  <div class="drawer-header">
+    <div class="drawer-brand">
+      <div class="drawer-brand-icon" aria-hidden="true"><i class="fas fa-bus"></i></div>
+      <div class="drawer-brand-text">Ritians Transport</div>
+    </div>
+    <button class="drawer-close-btn" id="drawerCloseBtn" aria-label="Close navigation menu">
+      <i class="fas fa-times" aria-hidden="true"></i>
+    </button>
+  </div>
+  <nav class="drawer-nav">
+    <a class="drawer-nav-item" href="index.html"><i class="fas fa-home" aria-hidden="true"></i>Home</a>
+    <a class="drawer-nav-item active" href="face-register.html"><i class="fas fa-fingerprint" aria-hidden="true"></i>Register Face</a>
+    <a class="drawer-nav-item" href="attendance-live.html"><i class="fas fa-camera" aria-hidden="true"></i>Live Attendance</a>
+    <a class="drawer-nav-item" href="attendance-dashboard.html"><i class="fas fa-chart-bar" aria-hidden="true"></i>Dashboard</a>
+  </nav>
+  <div class="drawer-footer">
+    <span class="drawer-clock" id="drawerClock" aria-live="polite"></span>
+  </div>
+</div>
+<div class="drawer-backdrop" id="drawerBackdrop" aria-hidden="true"></div>
+
+<!-- ══ MAIN PAGE ════════════════════════════════════════════════════ -->
+<main class="page" id="mainContent" role="main">
+
+  <!-- Page Header -->
+  <header class="page-header">
+    <div class="page-header__eyebrow" aria-hidden="true">
+      <i class="fas fa-fingerprint"></i> One-time setup
+    </div>
+    <h1 class="page-header__title">Face Registration</h1>
+    <p class="page-header__sub">Register your face once to enable automatic attendance marking</p>
+  </header>
+
+  <!-- Service Status -->
+  <div class="service-banner" id="serviceBanner" role="status" aria-live="polite">
+    <div class="service-banner__dot service-banner__dot--pulse" id="serviceDot" aria-hidden="true"></div>
+    <span id="serviceText">Checking face recognition service…</span>
+  </div>
+
+  <!-- Step Progress -->
+  <div class="steps" role="progressbar" aria-label="Registration steps" aria-valuemin="1" aria-valuemax="3">
+    <div class="step active" id="step1">
+      <span class="step__num" aria-hidden="true">①</span>
+      <span>Enter ID</span>
+    </div>
+    <div class="step" id="step2">
+      <span class="step__num" aria-hidden="true">②</span>
+      <span>Capture Face</span>
+    </div>
+    <div class="step" id="step3">
+      <span class="step__num" aria-hidden="true">③</span>
+      <span>Confirm</span>
+    </div>
+  </div>
+
+  <!-- Alert Banner -->
+  <div class="alert alert--error" id="alertEl" role="alert" aria-atomic="true">
+    <i class="fas fa-circle-exclamation" aria-hidden="true"></i>
+    <span id="alertMsg"></span>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="reg-grid">
+
+    <!-- ── CAMERA CARD ── -->
+    <div class="card card--camera">
+      <h2 class="card__title">
+        <i class="fas fa-camera" aria-hidden="true"></i> Camera
+      </h2>
+
+      <!-- Live camera feed -->
+      <div class="cam-wrap" id="camWrap" aria-label="Camera viewfinder">
+        <video id="videoEl" autoplay playsinline muted aria-hidden="true"></video>
+        <canvas id="canvasEl" aria-hidden="true"></canvas>
+        <div class="cam-overlay" id="camOverlay" aria-live="polite">
+          <i class="fas fa-camera-slash" aria-hidden="true"></i>
+          <span>Camera not started</span>
+        </div>
+        <div class="face-guide" id="faceGuide" aria-hidden="true"></div>
+        <div class="flash" id="flashEl" aria-hidden="true"></div>
+      </div>
+
+      <!-- Captured preview -->
+      <div class="preview-wrap" id="previewWrap" aria-live="polite">
+        <img id="previewImg" src="" alt="Captured face photo"/>
+        <div class="preview-badge" aria-hidden="true">
+          <i class="fas fa-check-circle"></i> Face Captured
+        </div>
+      </div>
+
+      <!-- Camera controls -->
+      <div class="cam-controls" role="group" aria-label="Camera controls">
+        <button class="btn btn--ghost" id="startCamBtn" onclick="startCamera()" aria-label="Start camera">
+          <span class="btn__text"><i class="fas fa-video" aria-hidden="true"></i> Start Camera</span>
+          <div class="spinner" aria-hidden="true"></div>
+        </button>
+        <button class="btn btn--primary" id="captureBtn" onclick="capturePhoto()" disabled aria-label="Capture photo">
+          <span class="btn__text"><i class="fas fa-camera" aria-hidden="true"></i> Capture</span>
+          <div class="spinner" aria-hidden="true"></div>
+        </button>
+      </div>
+
+      <!-- Retake -->
+      <div class="cam-extras">
+        <button class="btn btn--ghost btn--full" id="retakeBtn" onclick="retakePhoto()"
+          style="display:none" aria-label="Retake photo">
+          <i class="fas fa-rotate-left" aria-hidden="true"></i> Retake
+        </button>
+      </div>
+    </div>
+
+    <!-- ── FORM CARD ── -->
+    <div class="card card--form">
+      <h2 class="card__title">
+        <i class="fas fa-id-card" aria-hidden="true"></i> Student Details
+      </h2>
+
+      <!-- Step 1: Register number lookup -->
+      <div id="formStep1">
+        <div class="field">
+          <label class="field__label" for="regNoInput">Register Number</label>
+          <input
+            class="field__input"
+            type="text"
+            id="regNoInput"
+            placeholder="e.g. 2022CSIT001"
+            autocomplete="off"
+            autocapitalize="characters"
+            spellcheck="false"
+            aria-label="Enter your register number"
+            aria-describedby="regNoHint"
+            oninput="this.value=this.value.toUpperCase()"
+            onkeydown="if(event.key==='Enter')lookupStudent()"
+          />
+          <span id="regNoHint" style="display:none">Format: YYYYDEPTXXX</span>
+        </div>
+        <button class="btn btn--primary btn--full" onclick="lookupStudent()" id="lookupBtn" aria-label="Verify student record">
+          <span class="btn__text"><i class="fas fa-search" aria-hidden="true"></i> Verify Student</span>
+          <div class="spinner" aria-hidden="true"></div>
+        </button>
+      </div>
+
+      <!-- Step 2: Student info + register -->
+      <div id="formStep2" style="display:none" aria-live="polite">
+        <div class="info-box show" id="infoBox" role="region" aria-label="Student information">
+          <div class="info-row">
+            <span class="info-row__label">Name</span>
+            <span class="info-row__val" id="iName">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row__label">Reg No</span>
+            <span class="info-row__val" id="iReg">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row__label">Department</span>
+            <span class="info-row__val" id="iDept">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row__label">Year</span>
+            <span class="info-row__val" id="iYear">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row__label">Bus No</span>
+            <span class="info-row__val" id="iBus">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row__label">Route</span>
+            <span class="info-row__val" id="iRoute">—</span>
+          </div>
+        </div>
+
+        <div class="reg-actions">
+          <button class="btn btn--primary btn--full" id="registerBtn" onclick="registerFace()" disabled aria-label="Register face">
+            <span class="btn__text"><i class="fas fa-fingerprint" aria-hidden="true"></i> Register Face</span>
+            <div class="spinner" aria-hidden="true"></div>
+          </button>
+          <button class="btn btn--ghost btn--full" onclick="resetAll()" aria-label="Start over">
+            <i class="fas fa-undo" aria-hidden="true"></i> Start Over
+          </button>
+        </div>
+      </div>
+
+      <!-- Tips -->
+      <div class="tips-box" role="note" aria-label="Tips for best results">
+        <div class="tips-box__title">
+          <i class="fas fa-lightbulb" aria-hidden="true"></i> Tips for best results
+        </div>
+        <ul class="tips-list">
+          <li>Face camera directly, eyes open</li>
+          <li>Good lighting — avoid backlighting</li>
+          <li>Remove glasses if possible</li>
+          <li>Keep face inside the oval guide</li>
+          <li>Stay still during capture</li>
+        </ul>
+      </div>
+    </div>
+
+  </div><!-- /reg-grid -->
+</main>
+
+<!-- ══ VIEW MODE TOGGLE ════════════════════════════════════════════ -->
+<button class="view-toggle-btn" id="viewToggleBtn" aria-label="Switch view mode">
+  <i class="fas fa-desktop" aria-hidden="true"></i>
+  Switch to <span class="vtb-mode-label" id="vtbLabel">Desktop View</span>
+</button>
+
+<script src="auth-guard.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   face-register.js — All business logic preserved exactly.
+   ═══════════════════════════════════════════════════════════════ */
+
+// ── State ──────────────────────────────────────────────────────
+let stream       = null;
+let capturedData = null;
+let studentData  = null;
+
+// ── View Mode System (integrates with mobile.css) ──────────────
+(function initViewMode() {
+  const html = document.documentElement;
+  const btn  = document.getElementById("viewToggleBtn");
+  const lbl  = document.getElementById("vtbLabel");
+
+  // Detect initial mode: saved preference, or auto-detect by width
+  const saved = localStorage.getItem("ritians_view_mode");
+  let mode;
+  if (saved) {
+    mode = saved;
+  } else {
+    mode = window.innerWidth < 768 ? "mobile" : "desktop";
+  }
+  applyMode(mode);
+
+  btn.addEventListener("click", () => {
+    const next = html.classList.contains("mode-mobile") ? "desktop" : "mobile";
+    applyMode(next);
+    localStorage.setItem("ritians_view_mode", next);
+  });
+
+  function applyMode(m) {
+    html.classList.remove("mode-mobile", "mode-desktop");
+    html.classList.add("mode-" + m);
+    if (m === "mobile") {
+      btn.querySelector("i").className = "fas fa-desktop";
+      lbl.textContent = "Desktop View";
+    } else {
+      btn.querySelector("i").className = "fas fa-mobile-alt";
+      lbl.textContent = "Mobile View";
+    }
+  }
+})();
+
+// ── Mobile Drawer ──────────────────────────────────────────────
+(function initDrawer() {
+  const hamburger = document.getElementById("hamburgerBtn");
+  const drawer    = document.getElementById("mobileDrawer");
+  const backdrop  = document.getElementById("drawerBackdrop");
+  const closeBtn  = document.getElementById("drawerCloseBtn");
+  const clock     = document.getElementById("drawerClock");
+
+  function openDrawer() {
+    drawer.classList.add("drawer-open");
+    backdrop.classList.add("visible");
+    hamburger.classList.add("open");
+    hamburger.setAttribute("aria-expanded", "true");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeDrawer() {
+    drawer.classList.remove("drawer-open");
+    backdrop.classList.remove("visible");
+    hamburger.classList.remove("open");
+    hamburger.setAttribute("aria-expanded", "false");
+    document.body.style.overflow = "";
+  }
+
+  hamburger.addEventListener("click", openDrawer);
+  closeBtn.addEventListener("click", closeDrawer);
+  backdrop.addEventListener("click", closeDrawer);
+
+  // Escape key closes drawer
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && drawer.classList.contains("drawer-open")) closeDrawer();
+  });
+
+  // Live clock in drawer
+  function updateClock() {
+    clock.textContent = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+})();
+
+// ── Service Health Check ───────────────────────────────────────
+async function checkService() {
+  try {
+    const res  = await fetch("/attendance/service-health");
+    const data = await res.json();
+    const banner = document.getElementById("serviceBanner");
+    const dot    = document.getElementById("serviceDot");
+    const text   = document.getElementById("serviceText");
+    if (data.success) {
+      banner.className = "service-banner online";
+      dot.classList.remove("service-banner__dot--pulse");
+      text.textContent = `Face service online — ${data.service.cached_embeddings} faces loaded | Model: ${data.service.model}`;
+    } else {
+      banner.className = "service-banner offline";
+      text.textContent = "Python face service is offline. Please start it with: python face_service.py";
+    }
+  } catch (_) {
+    document.getElementById("serviceBanner").className = "service-banner offline";
+    document.getElementById("serviceText").textContent = "Cannot reach face service. Is it running on port 5001?";
+  }
+}
+checkService();
+
+// ── Camera ─────────────────────────────────────────────────────
+async function startCamera() {
+  const btn = document.getElementById("startCamBtn");
+  setLoading(btn, true);
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" }
+    });
+    const video = document.getElementById("videoEl");
+    video.srcObject = stream;
+    await video.play();
+    document.getElementById("camOverlay").classList.add("hidden");
+    document.getElementById("camWrap").classList.add("active");
+    document.getElementById("captureBtn").disabled = false;
+    btn.innerHTML = '<span class="btn__text"><i class="fas fa-video" aria-hidden="true"></i> Camera On</span>';
+    btn.disabled = true;
+  } catch (e) {
+    showAlert("Camera access denied. Please allow camera permission.", "error");
+  } finally {
+    setLoading(btn, false);
+  }
+}
+
+function capturePhoto() {
+  if (!stream) return showAlert("Please start camera first.", "error");
+  const video  = document.getElementById("videoEl");
+  const canvas = document.getElementById("canvasEl");
+  canvas.width  = video.videoWidth  || 640;
+  canvas.height = video.videoHeight || 480;
+  const ctx = canvas.getContext("2d");
+  ctx.translate(canvas.width, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  capturedData = canvas.toDataURL("image/jpeg", 0.92);
+
+  // Flash animation
+  const flash = document.getElementById("flashEl");
+  flash.style.animation = "none";
+  setTimeout(() => { flash.style.animation = "flashAnim 0.4s ease-out"; }, 10);
+
+  document.getElementById("previewImg").src = capturedData;
+  document.getElementById("camWrap").style.display    = "none";
+  document.getElementById("previewWrap").classList.add("show");
+  document.getElementById("retakeBtn").style.display  = "flex";
+  document.getElementById("captureBtn").disabled      = true;
+
+  if (studentData) {
+    document.getElementById("registerBtn").disabled = false;
+    setStep(2);
+  }
+}
+
+function retakePhoto() {
+  capturedData = null;
+  document.getElementById("previewWrap").classList.remove("show");
+  document.getElementById("camWrap").style.display   = "block";
+  document.getElementById("retakeBtn").style.display = "none";
+  document.getElementById("captureBtn").disabled     = false;
+  document.getElementById("registerBtn").disabled    = true;
+}
+
+function stopCamera() {
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+    stream = null;
+  }
+}
+
+// ── Student Lookup ─────────────────────────────────────────────
+async function lookupStudent() {
+  const regNo = document.getElementById("regNoInput").value.trim().toUpperCase();
+  if (!regNo) return showAlert("Please enter your Register Number.", "error");
+  hideAlert();
+  const btn = document.getElementById("lookupBtn");
+  setLoading(btn, true);
+  try {
+    const res  = await fetch(`/attendance/face-status/${regNo}`);
+    const data = await res.json();
+    if (!data.success) return showAlert(data.message || "Student not found.", "error");
+    const s = data.student;
+    if (s.face_registered) {
+      return showAlert(`Face already registered for ${s.name}. Contact admin to re-register.`, "warn");
+    }
+    studentData = s;
+    document.getElementById("iName").textContent  = s.name       || "—";
+    document.getElementById("iReg").textContent   = s.regNo      || "—";
+    document.getElementById("iDept").textContent  = s.department || "—";
+    document.getElementById("iYear").textContent  = s.year       || "—";
+    document.getElementById("iBus").textContent   = s.busNo      || "—";
+    document.getElementById("iRoute").textContent = s.route      || "—";
+    document.getElementById("formStep1").style.display = "none";
+    document.getElementById("formStep2").style.display = "block";
+    if (capturedData) {
+      document.getElementById("registerBtn").disabled = false;
+      setStep(2);
+    } else {
+      setStep(1);
+    }
+  } catch (e) {
+    showAlert("Network error. Please try again.", "error");
+  } finally {
+    setLoading(btn, false);
+  }
+}
+
+// ── Register Face ──────────────────────────────────────────────
+async function registerFace() {
+  if (!capturedData) return showAlert("Please capture your face first.", "error");
+  if (!studentData)  return showAlert("Please verify your Register Number first.", "error");
+  hideAlert();
+  const btn = document.getElementById("registerBtn");
+  setLoading(btn, true);
+  setStep(3);
+  try {
+    const res  = await fetch("/attendance/register-face", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ regNo: studentData.regNo, image: capturedData }),
+    });
+    const data = await res.json();
+    if (!data.success) {
+      setStep(2);
+      return showAlert(data.message || "Registration failed. Please try again.", "error");
+    }
+    showAlert(`✅ Face registered successfully for ${studentData.name}! You can now use the attendance system.`, "success");
+    stopCamera();
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-check-circle" aria-hidden="true"></i> Registered!';
+    document.getElementById("step3").classList.add("done");
+  } catch (e) {
+    setStep(2);
+    showAlert("Network error. Please try again.", "error");
+  } finally {
+    setLoading(btn, false);
+  }
+}
+
+// ── Utils ──────────────────────────────────────────────────────
+function setStep(n) {
+  [1, 2, 3].forEach(i => {
+    const el = document.getElementById(`step${i}`);
+    el.classList.remove("active", "done");
+    if (i < n)      el.classList.add("done");
+    else if (i === n) el.classList.add("active");
+  });
+}
+
+function showAlert(msg, type = "error") {
+  const el    = document.getElementById("alertEl");
+  const msgEl = document.getElementById("alertMsg");
+  el.className = `alert alert--${type} show`;
+  msgEl.textContent = msg;
+  el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function hideAlert() {
+  document.getElementById("alertEl").classList.remove("show");
+}
+
+function setLoading(btn, on) {
+  btn.disabled = on;
+  btn.classList.toggle("loading", on);
+  const sp = btn.querySelector(".spinner");
+  const tx = btn.querySelector(".btn__text");
+  if (sp) sp.style.display = on ? "block" : "none";
+  if (tx) tx.style.display = on ? "none"  : "flex";
+}
+
+function resetAll() {
+  stopCamera();
+  capturedData = null;
+  studentData  = null;
+  document.getElementById("regNoInput").value    = "";
+  document.getElementById("formStep1").style.display  = "block";
+  document.getElementById("formStep2").style.display  = "none";
+  document.getElementById("previewWrap").classList.remove("show");
+  document.getElementById("camWrap").style.display    = "block";
+  document.getElementById("camWrap").classList.remove("active");
+  document.getElementById("camOverlay").classList.remove("hidden");
+  document.getElementById("captureBtn").disabled  = true;
+  document.getElementById("startCamBtn").disabled = false;
+  document.getElementById("startCamBtn").innerHTML =
+    '<span class="btn__text"><i class="fas fa-video" aria-hidden="true"></i> Start Camera</span><div class="spinner" aria-hidden="true"></div>';
+  document.getElementById("retakeBtn").style.display = "none";
+  hideAlert();
+  setStep(1);
+}
+
+window.addEventListener("beforeunload", stopCamera);
+</script>
+</body>
+</html>

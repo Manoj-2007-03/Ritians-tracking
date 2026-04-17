@@ -1,0 +1,758 @@
+/*
+ * ============================================================
+ * mobile.css  —  Ritians Transport
+ * Shared responsive layer + view-mode system
+ * Works across: index.html, tracking.html, driver.html
+ *
+ * Architecture:
+ *   1. View-mode classes (.mode-desktop / .mode-mobile) set on <html>
+ *   2. Hamburger nav for mobile
+ *   3. Responsive overrides scoped strictly to .mode-mobile
+ *   4. All desktop styles remain untouched (no overrides at desktop)
+ *
+ * NO changes to existing selectors — additions only.
+ * ============================================================
+ */
+
+
+/* ─────────────────────────────────────────────────────────────
+   1. CSS CUSTOM PROPERTIES (mobile-specific additions)
+───────────────────────────────────────────────────────────── */
+:root {
+  --nav-height: 60px;
+  --mobile-padding: 16px;
+  --hamburger-size: 40px;
+  --drawer-width: 280px;
+  --transition-smooth: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  --view-toggle-bg: rgba(26, 37, 64, 0.95);
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   2. VIEW-MODE TOGGLE BUTTON
+   Fixed bottom-right pill — visible on all pages
+───────────────────────────────────────────────────────────── */
+.view-toggle-btn {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;        /* left side to avoid conflict with toasts (right) */
+  z-index: 9999;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 99px;
+  border: 1px solid var(--border2);
+  background: var(--view-toggle-bg);
+  color: var(--text2);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  transition: all var(--transition-smooth);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.view-toggle-btn:hover {
+  background: var(--bg4);
+  color: var(--text);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+.view-toggle-btn i {
+  font-size: 11px;
+  color: var(--accent2);
+}
+
+/* Badge label inside the toggle */
+.vtb-mode-label {
+  color: var(--accent2);
+  font-weight: 600;
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   3. HAMBURGER MENU BUTTON
+   Only rendered/visible in mobile mode
+───────────────────────────────────────────────────────────── */
+.hamburger-btn {
+  display: none; /* hidden by default; shown via .mode-mobile */
+  width: var(--hamburger-size);
+  height: var(--hamburger-size);
+  border-radius: 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex-shrink: 0;
+  transition: all var(--transition-smooth);
+  position: relative;
+  z-index: 1001;
+}
+
+.hamburger-btn:hover {
+  background: var(--bg4);
+  border-color: var(--border2);
+}
+
+.hamburger-btn .hb-line {
+  width: 18px;
+  height: 2px;
+  background: var(--text2);
+  border-radius: 2px;
+  transition: all var(--transition-smooth);
+  transform-origin: center;
+}
+
+/* Animated X state */
+.hamburger-btn.open .hb-line:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+.hamburger-btn.open .hb-line:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+.hamburger-btn.open .hb-line:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   4. MOBILE DRAWER NAV
+   Slides in from right. Contains all nav tabs + clock.
+───────────────────────────────────────────────────────────── */
+.mobile-drawer {
+  position: fixed;
+  inset: 0 0 0 auto;
+  width: var(--drawer-width);
+  max-width: 90vw;
+  z-index: 1000;
+  background: var(--bg2);
+  border-left: 1px solid var(--border2);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  transform: translateX(100%);
+  transition: transform var(--transition-smooth);
+  box-shadow: -24px 0 80px rgba(0, 0, 0, 0.6);
+  will-change: transform;  /* promote to GPU layer */
+}
+
+.mobile-drawer.drawer-open {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.drawer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.drawer-brand-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--accent), #FF4500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.drawer-brand-text {
+  font-family: var(--font-head);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.drawer-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.15s;
+}
+
+.drawer-close-btn:hover {
+  background: var(--bg4);
+  color: var(--text);
+}
+
+.drawer-nav {
+  flex: 1;
+  padding: 16px 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Each item in the drawer nav */
+.drawer-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  color: var(--text2);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  background: transparent;
+  transition: all 0.15s;
+  width: 100%;
+  text-align: left;
+}
+
+.drawer-nav-item:hover {
+  background: var(--bg3);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.drawer-nav-item.active {
+  background: rgba(255, 107, 53, 0.1);
+  border-color: rgba(255, 107, 53, 0.3);
+  color: var(--accent);
+}
+
+.drawer-nav-item.driver-ext {
+  background: rgba(251, 191, 36, 0.08);
+  border-color: rgba(251, 191, 36, 0.2);
+  color: #FDE68A;
+}
+
+.drawer-nav-item i {
+  width: 18px;
+  text-align: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.drawer-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 0;
+}
+
+.drawer-footer {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.drawer-clock {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text2);
+}
+
+/* Backdrop for drawer */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: rgba(6, 10, 20, 0.65);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-smooth);
+}
+
+.drawer-backdrop.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   5. .mode-mobile  —  ALL MOBILE OVERRIDES
+   These only activate when JS adds .mode-mobile to <html>
+───────────────────────────────────────────────────────────── */
+
+/* Show hamburger, hide tab-bar + clock in navbar */
+.mode-mobile .hamburger-btn {
+  display: flex;
+}
+
+.mode-mobile .nav-right .tab-bar,
+.mode-mobile .nav-right .clock {
+  display: none !important;
+}
+
+/* Slim down the navbar itself */
+.mode-mobile .nav {
+  flex-direction: row;
+  align-items: center;
+  padding: 0 var(--mobile-padding);
+  height: var(--nav-height);
+  gap: 0;
+  justify-content: space-between;
+}
+
+.mode-mobile .nav-brand {
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.mode-mobile .nav-logo {
+  width: 36px;
+  height: 36px;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.mode-mobile .nav-title {
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mode-mobile .nav-sub {
+  display: none; /* hide on very small screens */
+}
+
+/* ── HERO ── */
+.mode-mobile .hero {
+  padding: 24px var(--mobile-padding) 20px;
+}
+
+.mode-mobile .hero-grid {
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.mode-mobile .hero h1 {
+  font-size: clamp(22px, 7vw, 32px);
+}
+
+.mode-mobile .hero-desc {
+  font-size: 13px;
+}
+
+.mode-mobile .hero-tags {
+  gap: 6px;
+}
+
+.mode-mobile .hero-tag {
+  font-size: 10px;
+  padding: 3px 8px;
+}
+
+.mode-mobile .hero-actions {
+  gap: 8px;
+}
+
+.mode-mobile .hero-cta {
+  padding: 9px 18px;
+  font-size: 13px;
+}
+
+/* Stat grid stacks 2x2, fits mobile */
+.mode-mobile .stat-grid {
+  grid-template-columns: repeat(2, 1fr);
+  min-width: unset;
+  gap: 8px;
+}
+
+.mode-mobile .stat-val {
+  font-size: 20px;
+}
+
+/* ── WEEK STRIP ── */
+.mode-mobile .week-strip {
+  padding: 12px 14px;
+}
+
+.mode-mobile .week-days {
+  gap: 6px;
+}
+
+.mode-mobile .wday {
+  min-width: 48px;
+  padding: 7px 8px;
+  font-size: 11px;
+}
+
+/* ── PAGE CONTENT ── */
+.mode-mobile .page-content {
+  padding: 16px var(--mobile-padding) 80px; /* extra bottom for the toggle btn */
+}
+
+/* ── MAIN GRID: single column ── */
+.mode-mobile .main-grid {
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+/* ── PANEL HEAD: stack search on mobile ── */
+.mode-mobile .panel-head {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 14px 10px;
+}
+
+.mode-mobile .search-row {
+  width: 100%;
+}
+
+.mode-mobile .search-box {
+  min-width: unset;
+  width: 100%;
+}
+
+.mode-mobile .styled-select {
+  width: 100%;
+  min-width: unset;
+  border-radius: var(--r);
+}
+
+/* ── TABLE: horizontal scroll on mobile ── */
+.mode-mobile .table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Add a scroll-hint fade on the right */
+.mode-mobile .table-wrap::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 32px;
+  background: linear-gradient(to right, transparent, var(--bg2));
+  pointer-events: none;
+  border-radius: 0 var(--r) var(--r) 0;
+}
+
+.mode-mobile .panel {
+  position: relative;
+}
+
+/* Slightly tighten table cells */
+.mode-mobile .routes-table td,
+.mode-mobile .routes-table th {
+  padding: 9px 10px;
+}
+
+/* ── ADMIN LAYOUT ── */
+.mode-mobile .admin-layout {
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.mode-mobile .admin-top {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+}
+
+/* ── DRIVER LAYOUT ── */
+.mode-mobile .driver-layout {
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+/* ── ABOUT SECTION ── */
+.mode-mobile .about-grid {
+  grid-template-columns: 1fr;
+}
+
+.mode-mobile .about-info {
+  border-right: none;
+  border-bottom: 1px solid var(--border);
+  padding: 16px 14px;
+}
+
+.mode-mobile .about-report {
+  padding: 16px 14px;
+}
+
+/* ── FORM GRID ── */
+.mode-mobile .form-grid {
+  grid-template-columns: 1fr;
+}
+
+/* ── PANEL BODY ── */
+.mode-mobile .panel-body {
+  padding: 12px 14px;
+}
+
+/* ── MODAL ── */
+.mode-mobile .modal-box {
+  max-width: calc(100vw - 32px);
+  max-height: 88vh;
+  margin: 0 16px;
+  border-radius: 20px 20px 20px 20px;
+}
+
+/* ── SUMMARY CARDS ── */
+.mode-mobile .summary-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+/* ── TOAST (index.html) ── */
+.mode-mobile .toast-container {
+  bottom: 72px; /* above the view toggle button */
+  right: 16px;
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   6. TRACKING PAGE — mobile overrides
+───────────────────────────────────────────────────────────── */
+
+/* tracking.html has its own .page grid — override for mobile */
+.mode-mobile .page {
+  grid-template-columns: 1fr !important;
+  grid-template-rows: auto 1fr;
+  height: auto !important;
+  min-height: calc(100vh - var(--nav-height));
+}
+
+.mode-mobile .sidebar {
+  max-height: 45vh;
+  border-right: none;
+  border-bottom: 1px solid var(--border);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mode-mobile .sidebar-head {
+  padding: 14px 16px;
+}
+
+.mode-mobile .sidebar-head h2 {
+  font-size: 15px;
+}
+
+.mode-mobile .map-area {
+  min-height: 55vh;
+}
+
+.mode-mobile .search-area {
+  padding: 12px 14px;
+}
+
+/* Back buttons in tracking/driver navbars */
+.mode-mobile .nav-right .back-btn span,
+.mode-mobile .nav-right .back-btn .btn-text {
+  display: none; /* icon only on small screens */
+}
+
+.mode-mobile .back-btn {
+  padding: 8px 10px;
+  min-width: 36px;
+  justify-content: center;
+}
+
+/* tracking.html nav-right */
+.mode-mobile .nav-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Hide clock text in tracking page nav — hamburger replaces it */
+.mode-mobile .nav-right .clock {
+  display: none !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   7. DRIVER PAGE — mobile overrides
+───────────────────────────────────────────────────────────── */
+.mode-mobile .main {
+  padding: 20px var(--mobile-padding) 80px;
+  align-items: flex-start; /* don't fully center — allow natural flow */
+}
+
+.mode-mobile .card {
+  max-width: 100%;
+}
+
+.mode-mobile .card-header {
+  padding: 22px 20px 18px;
+}
+
+.mode-mobile .card-body {
+  padding: 18px 16px;
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   8. .mode-desktop  —  Force desktop layout regardless of screen
+───────────────────────────────────────────────────────────── */
+.mode-desktop .hamburger-btn {
+  display: none !important;
+}
+
+.mode-desktop .nav-right .tab-bar,
+.mode-desktop .nav-right .clock {
+  display: flex !important;
+}
+
+.mode-desktop .mobile-drawer,
+.mode-desktop .drawer-backdrop {
+  display: none !important;
+}
+
+.mode-desktop .main-grid {
+  grid-template-columns: 1fr 340px;
+}
+
+.mode-desktop .admin-layout {
+  grid-template-columns: 1fr 320px;
+}
+
+.mode-desktop .driver-layout {
+  grid-template-columns: 1fr 1fr;
+}
+
+.mode-desktop .about-grid {
+  grid-template-columns: 1fr 1.5fr;
+}
+
+.mode-desktop .about-info {
+  border-right: 1px solid var(--border);
+  border-bottom: none;
+}
+
+.mode-desktop .hero-grid {
+  grid-template-columns: 1fr auto;
+}
+
+.mode-desktop .page {
+  grid-template-columns: 360px 1fr !important;
+  height: calc(100vh - 65px) !important;
+}
+
+/* Tracking page sidebar back to full height in desktop mode */
+.mode-desktop .sidebar {
+  max-height: none;
+  border-right: 1px solid var(--border);
+  border-bottom: none;
+}
+
+.mode-desktop .map-area {
+  min-height: unset;
+}
+
+/* Restore original nav-right layout for tracking/driver pages */
+.mode-desktop .nav-right .back-btn {
+  padding: 7px 14px;
+  min-width: unset;
+}
+
+.mode-desktop .back-btn span,
+.mode-desktop .back-btn .btn-text {
+  display: inline !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   9. TOUCH-FRIENDLY MINIMUM SIZES
+   Applied in mobile mode to ensure 44px tap targets
+───────────────────────────────────────────────────────────── */
+.mode-mobile .btn,
+.mode-mobile .tab-btn,
+.mode-mobile .wday,
+.mode-mobile .rtag,
+.mode-mobile .rtype {
+  min-height: 36px;
+}
+
+.mode-mobile .modal-close {
+  width: 36px;
+  height: 36px;
+}
+
+.mode-mobile .search-box input,
+.mode-mobile .styled-select,
+.mode-mobile .form-field input,
+.mode-mobile .form-field select,
+.mode-mobile .form-field textarea {
+  font-size: 16px; /* prevents iOS zoom-on-focus */
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   10. SMOOTH SECTION TRANSITIONS
+   No layout glitches when switching modes
+───────────────────────────────────────────────────────────── */
+.nav, .hero, .page-content, .main-grid,
+.admin-layout, .driver-layout, .about-grid,
+.stat-grid, .hero-grid {
+  transition: none; /* mode-switch is instant; no unwanted animations */
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   11. SAFE-AREA SUPPORT (iPhone notch / Dynamic Island)
+───────────────────────────────────────────────────────────── */
+@supports (padding: max(0px)) {
+  .mode-mobile .nav {
+    padding-left: max(var(--mobile-padding), env(safe-area-inset-left));
+    padding-right: max(var(--mobile-padding), env(safe-area-inset-right));
+  }
+
+  .mode-mobile .page-content {
+    padding-bottom: max(80px, calc(64px + env(safe-area-inset-bottom)));
+  }
+
+  .view-toggle-btn {
+    bottom: max(20px, calc(12px + env(safe-area-inset-bottom)));
+    left: max(20px, env(safe-area-inset-left));
+  }
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   12. PRINT MEDIA — hide toggle button
+───────────────────────────────────────────────────────────── */
+@media print {
+  .view-toggle-btn,
+  .hamburger-btn,
+  .mobile-drawer,
+  .drawer-backdrop {
+    display: none !important;
+  }
+}

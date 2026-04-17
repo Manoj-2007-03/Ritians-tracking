@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Ritians Transport — RIT Chennai</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
+<style>
+:root{
+  --bg:#060A14;--bg2:#0C1220;--bg3:#121C2E;--bg4:#1A2540;
+  --accent:#FF6B35;--accent2:#4ECDC4;--accent3:#FFE66D;
+  --blue:#3B82F6;--purple:#8B5CF6;--green:#22C55E;--red:#EF4444;
+  --text:#F0F4FF;--text2:#9BAAC8;--text3:#5A6A8A;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --glow-accent:rgba(255,107,53,0.25);--glow-teal:rgba(78,205,196,0.2);
+  --r:12px;--r2:20px;--r3:28px;
+  --font-head:'Syne',sans-serif;--font-body:'DM Sans',sans-serif;--font-mono:'DM Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:14px;line-height:1.6;overflow-x:hidden}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:99px}
+
+/* ── NAVBAR ── */
+.nav{
+  position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 5vw;
+  background:rgba(6,10,20,0.85);
+  backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--border);
+}
+.nav-brand{display:flex;align-items:center;gap:12px}
+.nav-logo{
+  width:40px;height:40px;border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),#FF4500);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;color:#fff;
+  box-shadow:0 0 20px var(--glow-accent);
+}
+.nav-title{font-family:var(--font-head);font-size:18px;font-weight:700;letter-spacing:0.03em}
+.nav-sub{font-size:11px;color:var(--text3);letter-spacing:0.06em;text-transform:uppercase}
+.nav-right{display:flex;align-items:center;gap:12px}
+.tab-bar{
+  display:flex;gap:2px;padding:3px;
+  background:var(--bg3);border:1px solid var(--border);border-radius:99px;
+}
+.tab-btn{
+  border:none;background:transparent;color:var(--text2);
+  font-family:var(--font-body);font-size:12px;font-weight:500;
+  padding:6px 14px;border-radius:99px;cursor:pointer;
+  display:flex;align-items:center;gap:6px;
+  transition:all 0.18s ease;white-space:nowrap;
+}
+.tab-btn.active{background:var(--accent);color:#fff;box-shadow:0 0 16px var(--glow-accent)}
+.tab-btn:not(.active):hover{color:var(--text);background:var(--bg4)}
+.clock{
+  font-family:var(--font-mono);font-size:12px;color:var(--text2);
+  padding:6px 12px;background:var(--bg3);
+  border:1px solid var(--border);border-radius:99px;
+  white-space:nowrap;
+}
+
+/* ── HERO ── */
+.hero{
+  position:relative;overflow:hidden;
+  padding:40px 5vw 32px;
+  background:radial-gradient(ellipse 80% 60% at 20% -10%,rgba(255,107,53,0.12),transparent),
+             radial-gradient(ellipse 60% 50% at 80% 110%,rgba(78,205,196,0.1),transparent);
+}
+.hero-grid{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:11px;letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:12px;
+}
+.hero-eyebrow::before{content:'';width:24px;height:2px;background:var(--accent);border-radius:2px}
+.hero h1{font-family:var(--font-head);font-size:clamp(26px,4vw,42px);font-weight:800;line-height:1.1;margin-bottom:10px}
+.hero h1 span{
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero-desc{font-size:14px;color:var(--text2);max-width:520px;margin-bottom:18px}
+.hero-tags{display:flex;flex-wrap:wrap;gap:8px}
+.hero-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 10px;border-radius:99px;
+  background:rgba(255,255,255,0.05);border:1px solid var(--border2);
+  font-size:11px;color:var(--text2);
+}
+.hero-tag i{color:var(--accent2);font-size:10px}
+.stat-grid{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:8px;min-width:280px;
+}
+.stat-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:14px 16px;position:relative;overflow:hidden;
+}
+.stat-card::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 80% 20%,rgba(255,107,53,0.07),transparent 70%);
+  pointer-events:none;
+}
+.stat-label{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);margin-bottom:4px}
+.stat-val{font-family:var(--font-head);font-size:22px;font-weight:700}
+.stat-val.accent{color:var(--accent)}
+.stat-val.teal{color:var(--accent2)}
+
+/* ── HERO CTA BUTTONS ── */
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.hero-cta{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:10px 22px;border-radius:99px;font-family:var(--font-head);
+  font-size:14px;font-weight:600;text-decoration:none;
+  transition:all 0.2s ease;letter-spacing:0.02em;
+}
+.hero-cta-primary{
+  background:linear-gradient(135deg,var(--accent2),#0EA5E9);
+  color:#fff;box-shadow:0 8px 24px var(--glow-teal);
+}
+.hero-cta-primary:hover{transform:translateY(-2px);box-shadow:0 12px 32px var(--glow-teal)}
+.hero-cta-arrow{font-size:10px;transition:transform 0.2s}
+.hero-cta-primary:hover .hero-cta-arrow{transform:translateX(3px)}
+.hero-cta-secondary{
+  background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.35);
+  color:#FDE68A;
+}
+.hero-cta-secondary:hover{background:rgba(251,191,36,0.2);transform:translateY(-2px)}
+.hero-cta-face{
+  background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.4);
+  color:#C4B5FD;
+}
+.hero-cta-face:hover{background:rgba(139,92,246,0.25);transform:translateY(-2px);box-shadow:0 8px 24px rgba(139,92,246,0.25)}
+.hero-cta-face:hover .hero-cta-arrow{transform:translateX(3px)}
+
+/* ── SECTIONS ── */
+.section-hidden{display:none!important}
+.section-visible{display:block}
+.page-content{padding:24px 5vw 60px}
+
+/* ── WEEK STRIP ── */
+.week-strip{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);
+  padding:16px 20px;margin-bottom:20px;
+}
+.week-label{font-family:var(--font-head);font-size:14px;font-weight:600;margin-bottom:12px}
+.week-label span{color:var(--accent)}
+.week-days{display:flex;gap:8px;flex-wrap:wrap}
+.wday{
+  min-width:56px;padding:8px 10px;border-radius:99px;
+  background:var(--bg3);border:1px solid var(--border);
+  font-size:12px;font-weight:600;letter-spacing:0.04em;
+  color:var(--text2);cursor:pointer;text-align:center;
+  transition:all 0.15s;
+}
+.wday:hover{background:var(--bg4);border-color:var(--border2)}
+.wday.active{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 0 16px var(--glow-accent)}
+
+/* ── MAIN LAYOUT ── */
+.main-grid{display:grid;grid-template-columns:1fr 340px;gap:18px}
+
+/* ── PANEL ── */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+.panel-head{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.panel-head h3{font-family:var(--font-head);font-size:15px;font-weight:600}
+.panel-head p{font-size:12px;color:var(--text3);margin-top:2px}
+.panel-body{padding:16px 18px}
+
+/* ── SEARCH BAR ── */
+.search-row{display:flex;gap:8px;flex-wrap:wrap}
+.search-box{position:relative;flex:1;min-width:200px}
+.search-box i{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:12px}
+.search-box input{
+  width:100%;padding:9px 12px 9px 30px;
+  background:var(--bg3);border:1px solid var(--border);border-radius:99px;
+  color:var(--text);font-family:var(--font-body);font-size:13px;outline:none;
+  transition:border-color 0.15s;
+}
+.search-box input:focus{border-color:var(--accent)}
+.styled-select{
+  padding:9px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:99px;
+  color:var(--text);font-family:var(--font-body);font-size:13px;outline:none;cursor:pointer;min-width:180px;
+}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;margin-top:12px}
+.routes-table{width:100%;border-collapse:collapse;font-size:13px;min-width:600px}
+.routes-table thead tr{background:var(--bg3)}
+.routes-table th{
+  padding:10px 12px;text-align:left;font-size:10px;font-weight:600;
+  text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);
+  border-bottom:1px solid var(--border);white-space:nowrap;
+}
+.routes-table tbody tr{
+  border-bottom:1px solid var(--border);cursor:pointer;
+  transition:background 0.15s;
+}
+.routes-table tbody tr:hover{background:rgba(255,107,53,0.06)}
+.routes-table td{padding:10px 12px;vertical-align:middle}
+.routes-table td:first-child,.routes-table td:nth-child(2){
+  font-family:var(--font-mono);font-size:12px;font-weight:500;
+}
+.badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 8px;border-radius:99px;font-size:11px;font-weight:500;
+}
+.badge-early{background:rgba(59,130,246,0.12);color:#60A5FA;border:1px solid rgba(59,130,246,0.25)}
+.badge-normal{background:rgba(34,197,94,0.1);color:#4ADE80;border:1px solid rgba(34,197,94,0.2)}
+.badge-late{background:rgba(249,115,22,0.12);color:#FB923C;border:1px solid rgba(249,115,22,0.25)}
+.badge-parking-off{background:var(--bg3);color:var(--text3);border:1px solid var(--border)}
+.badge-parking-on{background:rgba(34,197,94,0.1);color:#4ADE80;border:1px solid rgba(34,197,94,0.25)}
+.no-results{padding:40px;text-align:center;color:var(--text3)}
+.no-results i{font-size:28px;margin-bottom:10px;display:block;color:var(--accent)}
+
+/* ── SIDEBAR HIGHLIGHTS ── */
+.hl-card{
+  position:relative;overflow:hidden;
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);
+  padding:12px 14px;margin-bottom:10px;
+}
+.hl-card::before{
+  content:'';position:absolute;top:0;left:0;width:3px;height:100%;
+  background:linear-gradient(180deg,var(--accent),var(--accent2));
+}
+.hl-title{font-family:var(--font-head);font-size:12px;font-weight:600;margin-bottom:6px;padding-left:10px}
+.hl-row{display:flex;justify-content:space-between;font-size:11px;color:var(--text2);padding-left:10px;margin-top:3px}
+.hl-row i{font-size:10px;color:var(--accent2);margin-right:4px}
+.legend-section{margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
+.legend-title{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);margin-bottom:8px;font-weight:600}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text2);margin-bottom:5px}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot-early{background:#3B82F6}
+.dot-normal{background:#22C55E}
+.dot-late{background:#FB923C}
+.dot-on{background:#22C55E}
+.dot-off{background:var(--text3)}
+
+/* ── MODAL ── */
+.modal-overlay{
+  position:fixed;inset:0;z-index:200;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(6,10,20,0.8);backdrop-filter:blur(16px);
+}
+.modal-overlay.hidden{display:none}
+.modal-box{
+  position:relative;width:100%;max-width:460px;max-height:85vh;
+  background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);
+  box-shadow:0 40px 80px rgba(0,0,0,0.7);overflow:hidden;display:flex;flex-direction:column;
+}
+.modal-header{
+  padding:20px 20px 16px;text-align:center;
+  background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(255,107,53,0.12),transparent);
+  border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.modal-icon-ring{
+  width:48px;height:48px;border-radius:50%;margin:0 auto 12px;
+  background:linear-gradient(135deg,var(--accent),#FF4500);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;color:#fff;box-shadow:0 0 24px var(--glow-accent);
+}
+.modal-icon-ring.driver-ring{background:linear-gradient(135deg,#F59E0B,#F97316)}
+.modal-icon-ring.stops-ring{background:linear-gradient(135deg,var(--accent2),#0EA5E9)}
+.modal-header h2{font-family:var(--font-head);font-size:18px;font-weight:700}
+.modal-header p{font-size:12px;color:var(--text3);margin-top:4px}
+.modal-body{padding:16px 20px 20px;overflow-y:auto;flex:1}
+.modal-close{
+  position:absolute;top:12px;right:14px;
+  background:var(--bg4);border:1px solid var(--border);border-radius:99px;
+  width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+  color:var(--text2);cursor:pointer;font-size:12px;
+}
+
+/* ── FORM ELEMENTS ── */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.form-field{display:flex;flex-direction:column;gap:5px}
+.form-field label{font-size:12px;font-weight:500;color:var(--text2)}
+.form-field input,.form-field select,.form-field textarea{
+  padding:9px 11px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:var(--r);color:var(--text);font-family:var(--font-body);font-size:13px;
+  outline:none;resize:vertical;transition:border-color 0.15s;
+}
+.form-field input:focus,.form-field select:focus,.form-field textarea:focus{border-color:var(--accent)}
+.form-field textarea{min-height:64px}
+.hint{font-size:11px;color:var(--text3);margin-top:2px}
+.form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 16px;border-radius:99px;
+  font-family:var(--font-body);font-size:13px;font-weight:500;
+  cursor:pointer;border:none;transition:all 0.15s;
+}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#E8501E);color:#fff;box-shadow:0 8px 24px var(--glow-accent)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 12px 32px var(--glow-accent)}
+.btn-ghost{background:var(--bg3);border:1px solid var(--border);color:var(--text2)}
+.btn-ghost:hover{background:var(--bg4);color:var(--text)}
+.btn-full{width:100%;justify-content:center}
+.btn-sm{padding:5px 10px;font-size:12px}
+
+/* ── STOPS TABLE ── */
+.stops-table{width:100%;border-collapse:collapse;font-size:13px}
+.stops-table th{padding:8px 10px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);border-bottom:1px solid var(--border)}
+.stops-table td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.stops-table tr:last-child td{border-bottom:none}
+.stops-table tbody tr:hover{background:rgba(78,205,196,0.05)}
+.stop-num{font-family:var(--font-mono);font-size:11px;color:var(--text3)}
+.stop-last td{font-weight:600;color:var(--accent2)}
+.stop-time{font-family:var(--font-mono);font-size:12px;color:var(--accent2)}
+
+/* ── ADMIN SECTION ── */
+.admin-wrap{max-width:1200px}
+.admin-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px;padding:16px 18px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2)}
+.admin-status-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 12px;border-radius:99px;font-size:11px;font-weight:500;
+  background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:#4ADE80;
+}
+.admin-layout{display:grid;grid-template-columns:1fr 320px;gap:16px;margin-bottom:16px}
+.summary-cards{display:grid;grid-template-columns:1fr;gap:10px}
+.sum-card{padding:14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r)}
+.sum-label{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);margin-bottom:4px}
+.sum-val{font-family:var(--font-head);font-size:20px;font-weight:700;color:var(--accent)}
+.sum-note{font-size:11px;color:var(--text3);margin-top:2px}
+.admin-table-action{background:transparent;border:none;cursor:pointer;padding:4px 6px;border-radius:6px;font-size:13px;transition:all 0.15s}
+.admin-table-action.edit{color:var(--text3)}.admin-table-action.edit:hover{color:#4ADE80;background:rgba(34,197,94,0.1)}
+.admin-table-action.del{color:var(--text3)}.admin-table-action.del:hover{color:#F87171;background:rgba(239,68,68,0.1)}
+.admin-help{margin-top:14px;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);font-size:12px;color:var(--text3)}
+.admin-help ul{padding-left:14px;margin-top:6px}
+.admin-help li{margin-bottom:3px}
+.cred-note{margin-top:8px;padding:8px;background:rgba(255,107,53,0.05);border:1px solid rgba(255,107,53,0.15);border-radius:8px;font-size:11px;color:var(--text3)}
+
+/* ── DRIVER SECTION ── */
+.driver-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.driver-cards-grid{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.driver-card{
+  background:var(--bg3);border:1px solid rgba(251,191,36,0.2);border-radius:var(--r);padding:12px 14px;
+  position:relative;overflow:hidden;
+}
+.driver-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,#FBBF24,#F97316)}
+.driver-card-title{font-family:var(--font-head);font-size:12px;font-weight:600;margin-bottom:4px;padding-left:10px}
+.driver-card-meta{font-size:11px;color:var(--text3);padding-left:10px}
+.driver-card-loc{font-size:12px;color:#FDE68A;padding-left:10px;margin-top:4px}
+.driver-card-loc i{color:#FBBF24;font-size:10px;margin-right:4px}
+.driver-status-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 12px;border-radius:99px;font-size:11px;font-weight:500;
+  background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);color:#FDE68A;
+}
+.footnote-note{font-size:11px;color:var(--text3);margin-top:10px;padding:8px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border)}
+
+/* ── ABOUT ── */
+.about-section{
+  margin-top:20px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);
+  overflow:hidden;
+}
+.about-grid{display:grid;grid-template-columns:1fr 1.5fr;gap:0}
+.about-info{padding:20px 22px;border-right:1px solid var(--border)}
+.about-info h3{font-family:var(--font-head);font-size:15px;font-weight:600;margin-bottom:8px}
+.about-report{padding:20px 22px}
+.about-report h3{font-family:var(--font-head);font-size:15px;font-weight:600;margin-bottom:4px}
+.about-report p{font-size:12px;color:var(--text3);margin-bottom:12px}
+.report-type-row{display:flex;gap:8px;margin-bottom:12px;padding:3px;background:var(--bg3);border-radius:99px;border:1px solid var(--border);width:fit-content}
+.rtype{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:99px;font-size:12px;cursor:pointer;color:var(--text2)}
+.rtype input{display:none}
+.rtype:has(input:checked){background:var(--accent);color:#fff}
+.report-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.rtag{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:99px;font-size:11px;cursor:pointer;background:var(--bg3);border:1px solid var(--border);color:var(--text2)}
+.rtag input{display:none}
+.rtag:has(input:checked){background:rgba(78,205,196,0.15);border-color:var(--accent2);color:var(--accent2)}
+
+/* ── ADMIN QUICK LINK ── */
+.admin-quick-link{
+  display:flex;align-items:center;gap:14px;
+  padding:14px 18px;
+  background:linear-gradient(135deg,rgba(78,205,196,0.08),rgba(78,205,196,0.04));
+  border:1px solid rgba(78,205,196,0.25);border-radius:var(--r2);
+  text-decoration:none;color:inherit;
+  transition:all 0.2s ease;
+  cursor:pointer;
+}
+.admin-quick-link:hover{
+  background:linear-gradient(135deg,rgba(78,205,196,0.15),rgba(78,205,196,0.08));
+  border-color:var(--accent2);
+  transform:translateY(-1px);
+  box-shadow:0 8px 24px rgba(78,205,196,0.12);
+}
+.admin-quick-link__icon{
+  width:42px;height:42px;border-radius:10px;flex-shrink:0;
+  background:rgba(78,205,196,0.15);border:1px solid rgba(78,205,196,0.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;color:var(--accent2);
+}
+.admin-quick-link__body{flex:1;min-width:0}
+.admin-quick-link__title{font-family:var(--font-head);font-size:14px;font-weight:600;color:var(--text)}
+.admin-quick-link__sub{font-size:12px;color:var(--text3);margin-top:2px}
+.admin-quick-link__arrow{color:var(--text3);font-size:13px;transition:transform 0.2s}
+.admin-quick-link:hover .admin-quick-link__arrow{transform:translateX(4px);color:var(--accent2)}
+
+
+.toast-container{position:fixed;bottom:20px;right:20px;z-index:300;display:flex;flex-direction:column;gap:8px}
+.toast{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 16px;border-radius:99px;font-size:13px;
+  background:var(--bg2);border:1px solid var(--border2);
+  box-shadow:0 16px 48px rgba(0,0,0,0.6);
+  animation:toastIn 0.2s ease-out;
+}
+.toast i{font-size:13px}
+.toast.success i{color:#4ADE80}
+.toast.error i{color:#F87171}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── UTILITIES ── */
+.hidden{display:none!important}
+.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
+.muted{color:var(--text3)}
+code{font-family:var(--font-mono);font-size:11px;background:var(--bg4);padding:1px 5px;border-radius:4px}
+
+/* ── RESPONSIVE (desktop breakpoints — preserved as-is) ── */
+@media(max-width:1100px){
+  .main-grid{grid-template-columns:1fr}
+  .admin-layout{grid-template-columns:1fr}
+  .driver-layout{grid-template-columns:1fr}
+  .about-grid{grid-template-columns:1fr}
+  .about-info{border-right:none;border-bottom:1px solid var(--border)}
+}
+@media(max-width:720px){
+  .nav{flex-direction:column;align-items:flex-start;gap:10px}
+  .hero-grid{grid-template-columns:1fr}
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .tab-btn span{display:none}
+}
+</style>
+<!-- Mobile responsive layer — added on top of existing desktop styles -->
+<link rel="stylesheet" href="mobile.css"/>
+<!-- Auth guard: redirects to login if not logged in -->
+<script src="auth-guard.js"></script>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<header class="nav">
+  <div class="nav-brand">
+    <div class="nav-logo"><i class="fas fa-bus"></i></div>
+    <div>
+      <div class="nav-title">Ritians Transport</div>
+      <div class="nav-sub">RIT Chennai — Route Management Portal</div>
+    </div>
+  </div>
+  <div class="nav-right">
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tabStudent" onclick="showTab('student')">
+        <i class="fas fa-user-graduate"></i><span>Student</span>
+      </button>
+      <button class="tab-btn" id="tabAdmin" onclick="onAdminClick()">
+        <i class="fas fa-user-shield"></i><span>Admin</span>
+      </button>
+      <button class="tab-btn" id="tabDriver" onclick="onDriverClick()">
+        <i class="fas fa-id-card"></i><span>Driver</span>
+      </button>
+      <a class="tab-btn" href="tracking.html" style="text-decoration:none">
+        <i class="fas fa-satellite-dish"></i><span>Live Tracking</span>
+      </a>
+      <a class="tab-btn tab-btn-driver-ext" href="driver.html" style="text-decoration:none;background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.3);color:#FDE68A" title="Open Driver GPS Portal (standalone page)">
+        <i class="fas fa-location-arrow"></i><span>Driver GPS</span>
+      </a>
+    </div>
+    <div class="clock" id="clockEl">--:--:--</div>
+    <!-- Auth chip injected here by auth-guard.js -->
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid">
+    <div>
+      <div class="hero-eyebrow">Live Schedule Portal</div>
+      <h1>Track your bus,<br/><span>plan your day.</span></h1>
+      <p class="hero-desc">View all 51 college bus routes, boarding points, detailed stops, and real-time campus parking updates — all in one place.</p>
+      <div class="hero-tags">
+        <span class="hero-tag"><i class="fas fa-shield-check"></i> Admin-verified schedule</span>
+        <span class="hero-tag"><i class="fas fa-location-dot"></i> Live parking board</span>
+        <span class="hero-tag"><i class="fas fa-route"></i> Detailed stop listings</span>
+      </div>
+      <div class="hero-actions">
+        <a href="tracking.html" class="hero-cta hero-cta-primary">
+          <i class="fas fa-satellite-dish"></i>
+          <span>Live Tracking</span>
+          <i class="fas fa-arrow-right hero-cta-arrow"></i>
+        </a>
+        <a href="driver.html" class="hero-cta hero-cta-secondary">
+          <i class="fas fa-location-arrow"></i>
+          <span>Driver Login</span>
+        </a>
+        <a href="face-register.html" class="hero-cta hero-cta-face">
+          <i class="fas fa-face-viewfinder"></i>
+          <span>Register Face</span>
+          <i class="fas fa-arrow-right hero-cta-arrow"></i>
+        </a>
+      </div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-label">Total Routes</div><div class="stat-val accent" id="statTotal">0</div></div>
+      <div class="stat-card"><div class="stat-label">Earliest Bus</div><div class="stat-val teal" id="statEarliest">–</div></div>
+      <div class="stat-card"><div class="stat-label">Latest Bus</div><div class="stat-val" id="statLatest">–</div></div>
+      <div class="stat-card"><div class="stat-label">Parking Updates</div><div class="stat-val accent" id="statParking">0</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== STUDENT VIEW ===== -->
+<div id="sectionStudent" class="section-visible">
+<div class="page-content">
+
+  <!-- Week strip -->
+  <div class="week-strip">
+    <div class="week-label">Buses for <span id="selectedDateLabel">Today</span></div>
+    <div class="week-days" id="weekDays"></div>
+  </div>
+
+  <!-- Main grid -->
+  <div class="main-grid">
+    <!-- Left: table -->
+    <div class="panel">
+      <div class="panel-head">
+        <div><h3>All Bus Routes</h3><p>Click any row to view detailed boarding stops.</p></div>
+        <div class="search-row">
+          <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Search by route, area, stop, time…"/>
+          </div>
+          <select class="styled-select" id="sortSelect">
+            <option value="time-asc">Earliest First</option>
+            <option value="time-desc">Latest First</option>
+            <option value="route-asc">Route A → Z</option>
+            <option value="route-desc">Route Z → A</option>
+          </select>
+        </div>
+      </div>
+      <div class="panel-body" style="padding-top:0">
+        <div class="table-wrap">
+          <table class="routes-table">
+            <thead>
+              <tr>
+                <th>#</th><th>Route No</th><th>Route Name</th><th>Timing</th>
+                <th>Starting Time</th><th>Campus Parking</th>
+              </tr>
+            </thead>
+            <tbody id="routesTableBody"></tbody>
+          </table>
+          <div id="noResults" class="no-results hidden">
+            <i class="fas fa-bus-simple"></i>
+            <p>No routes match your search.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: sidebar -->
+    <aside>
+      <div class="panel">
+        <div class="panel-head"><div><h3>Highlights</h3><p>Key route clusters</p></div></div>
+        <div class="panel-body" id="highlightCards"></div>
+      </div>
+
+      <div class="panel" style="margin-top:14px">
+        <div class="panel-body">
+          <div class="legend-section" style="margin-top:0;padding-top:0;border-top:none">
+            <div class="legend-title">Timing Legend</div>
+            <div class="legend-item"><span class="dot dot-early"></span> Before 6:00 am — Early</div>
+            <div class="legend-item"><span class="dot dot-normal"></span> 6:00 – 6:30 am — Regular</div>
+            <div class="legend-item"><span class="dot dot-late"></span> After 6:30 am — Late start</div>
+          </div>
+          <div class="legend-section">
+            <div class="legend-title">Parking Legend</div>
+            <div class="legend-item"><span class="dot dot-on"></span> Parking updated by driver</div>
+            <div class="legend-item"><span class="dot dot-off"></span> Not yet updated</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- About -->
+  <div class="about-section">
+    <div class="about-grid">
+      <div class="about-info">
+        <h3>About Ritians Transport</h3>
+        <p class="muted" style="font-size:13px;margin-top:4px;line-height:1.7">
+          <strong style="color:var(--text)">Rajalakshmi Institute of Technology</strong><br/>
+          Bangalore Highway Road, Kuthambakkam,<br/>
+          Chennai, Tamil Nadu – 600124<br/><br/>
+          <i class="fas fa-phone" style="color:var(--accent2);font-size:11px;margin-right:5px"></i>
+          91446718 1600 / 61
+        </p>
+      </div>
+      <div class="about-report">
+        <h3>Report / Feedback</h3>
+        <p>Help us improve your transport experience.</p>
+        <form id="reportForm" onsubmit="submitReport(event)">
+          <div class="report-type-row">
+            <label class="rtype"><input type="radio" name="rType" value="complaint" checked/> Complaint</label>
+            <label class="rtype"><input type="radio" name="rType" value="feedback"/> Feedback</label>
+          </div>
+          <div class="report-tags">
+            <label class="rtag"><input type="checkbox" value="good-driving"/> Good driving</label>
+            <label class="rtag"><input type="checkbox" value="comfortable"/> Comfortable journey</label>
+            <label class="rtag"><input type="checkbox" value="on-time"/> On-time arrival</label>
+            <label class="rtag"><input type="checkbox" value="clean"/> Clean &amp; tidy bus</label>
+            <label class="rtag"><input type="checkbox" value="more-buses"/> Need more buses</label>
+          </div>
+          <div class="form-field" style="margin-bottom:10px">
+            <textarea id="reportMsg" rows="2" placeholder="Additional comments…"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-paper-plane"></i> Submit</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ===== ADMIN VIEW ===== -->
+<div id="sectionAdmin" class="section-hidden">
+<div class="page-content">
+<div class="admin-wrap">
+
+  <div class="admin-top">
+    <div>
+      <div style="font-family:var(--font-head);font-size:15px;font-weight:600">Admin Control Center</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:2px">Manage bus routes &amp; timings. Changes are immediate.</div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <div class="admin-status-chip"><i class="fas fa-circle" style="font-size:8px"></i> Admin access: unlocked</div>
+      <button class="btn btn-ghost btn-sm" onclick="showTab('student')"><i class="fas fa-arrow-left"></i> Back</button>
+    </div>
+  </div>
+
+  <!-- Attendance Dashboard quick-access -->
+  <div style="margin-bottom:16px">
+    <a href="attendence-dashboard.html" class="admin-quick-link">
+      <div class="admin-quick-link__icon"><i class="fas fa-chart-bar"></i></div>
+      <div class="admin-quick-link__body">
+        <div class="admin-quick-link__title">Attendance Dashboard</div>
+        <div class="admin-quick-link__sub">View, filter &amp; export student attendance records</div>
+      </div>
+      <i class="fas fa-arrow-right admin-quick-link__arrow"></i>
+    </a>
+  </div>
+
+  <div class="admin-layout">
+    <!-- Form -->
+    <div class="panel">
+      <div class="panel-head"><div><h3 id="adminFormTitle">Add New Route</h3><p>Fill details and save to update the master list.</p></div></div>
+      <div class="panel-body">
+        <form id="adminRouteForm" onsubmit="adminSaveRoute(event)">
+          <div class="form-grid">
+            <div class="form-field"><label>Route No *</label><input id="aRouteNo" placeholder="e.g., R01, R16A" required/></div>
+            <div class="form-field"><label>Route Name *</label><input id="aRouteName" placeholder="e.g., Ennore, Velachery" required/></div>
+            <div class="form-field"><label>Timing Label *</label><input id="aTiming" placeholder="e.g., Boarding Points" value="Boarding Points" required/></div>
+            <div class="form-field">
+              <label>Starting Time *</label>
+              <input id="aStartTime" placeholder="e.g., 6.10 am" required/>
+              <span class="hint">Format: <code>6.10 am</code>, <code>5.50 am</code></span>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="adminClear()"><i class="fas fa-rotate-left"></i> Clear</button>
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-floppy-disk"></i> <span id="adminSaveLabel">Save Route</span></button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div>
+      <div class="summary-cards">
+        <div class="sum-card"><div class="sum-label">Total Routes</div><div class="sum-val" id="adminTotal">0</div><div class="sum-note">Live from schedule</div></div>
+        <div class="sum-card"><div class="sum-label">Earliest Departure</div><div class="sum-val" style="color:var(--accent2)" id="adminEarliest">–</div><div class="sum-note">First bus start time</div></div>
+        <div class="sum-card"><div class="sum-label">Latest Departure</div><div class="sum-val" style="color:var(--text2)" id="adminLatest">–</div><div class="sum-note">Last bus start time</div></div>
+      </div>
+      <div class="admin-help">
+        <strong style="font-size:12px;color:var(--text2)">Admin notes</strong>
+        <ul style="margin-top:6px">
+          <li>Editing a route instantly updates the student dashboard.</li>
+          <li>Keep time format consistent: <code>6.10 am</code></li>
+        </ul>
+        <div class="cred-note">Default login: <code><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="056461686c6b45666a69696062602b606170">[email&#160;protected]</a></code> / <code>admin123</code></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin table -->
+  <div class="panel">
+    <div class="panel-head"><div><h3>Manage Routes</h3><p>Edit or delete existing routes.</p></div></div>
+    <div class="panel-body" style="padding-top:0">
+      <div class="table-wrap">
+        <table class="routes-table">
+          <thead><tr><th>#</th><th>Route No</th><th>Route Name</th><th>Timing</th><th>Start</th><th style="text-align:right">Actions</th></tr></thead>
+          <tbody id="adminTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+</div>
+
+<!-- ===== DRIVER VIEW ===== -->
+<div id="sectionDriver" class="section-hidden">
+<div class="page-content">
+
+  <div class="admin-top" style="margin-bottom:16px">
+    <div>
+      <div style="font-family:var(--font-head);font-size:15px;font-weight:600">Driver Parking Portal</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:2px">Update your exact parking location inside campus for students.</div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <div class="driver-status-chip"><i class="fas fa-circle" style="font-size:8px"></i> Driver access: unlocked</div>
+      <button class="btn btn-ghost btn-sm" onclick="showTab('student')"><i class="fas fa-arrow-left"></i> Back</button>
+    </div>
+  </div>
+
+  <div class="driver-layout">
+    <!-- Form -->
+    <div class="panel">
+      <div class="panel-head"><div><h3>Update Parking Location</h3><p>Select route and current spot inside campus.</p></div></div>
+      <div class="panel-body">
+        <form id="driverParkingForm" onsubmit="driverSubmit(event)">
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Your Route No *</label>
+              <select id="dRouteSelect" required><option value="">Select route…</option></select>
+            </div>
+            <div class="form-field">
+              <label>Parking Location *</label>
+              <select id="dLocSelect" required>
+                <option value="">Select a location…</option>
+                <option value="In front of green building">1. In front of green building</option>
+                <option value="In front of A block entrance">2. In front of A block entrance</option>
+                <option value="Near to main entrance">3. Near to main entrance</option>
+                <option value="In front of placement banner">4. In front of placement banner</option>
+                <option value="In front of C block">5. In front of C block</option>
+                <option value="In front of hut">6. In front of hut</option>
+                <option value="Near to the ground">7. Near to the ground</option>
+                <option value="Near to the astronaut statue">8. Near to the astronaut statue</option>
+                <option value="In front of B block North">9. In front of B block North</option>
+                <option value="In front of B block South">10. In front of B block South</option>
+                <option value="Other">11. Custom (enter your own)</option>
+              </select>
+            </div>
+            <div class="form-field hidden" id="dCustomField">
+              <label>Custom Location</label>
+              <input id="dCustomLoc" placeholder="e.g., Near canteen gate, workshop corner…"/>
+            </div>
+            <div class="form-field">
+              <label>Extra Note (Optional)</label>
+              <textarea id="dNote" rows="2" placeholder="e.g., Facing main gate, second row from fence…"></textarea>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="driverClear()"><i class="fas fa-rotate-left"></i> Clear</button>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-location-arrow"></i> Publish Location</button>
+          </div>
+          <div class="footnote-note"><i class="fas fa-info-circle" style="color:var(--accent2);font-size:11px;margin-right:5px"></i>Parking stored in <code>localStorage</code>. Connect to Firebase for production use.</div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Live board -->
+    <div class="panel">
+      <div class="panel-head"><div><h3>Live Parking Board</h3><p>Students see these instantly in their table.</p></div></div>
+      <div class="panel-body" id="driverCards"></div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ===== ADMIN LOGIN MODAL ===== -->
+<div id="adminLoginModal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:380px">
+    <button class="modal-close" onclick="closeModal('adminLoginModal')"><i class="fas fa-xmark"></i></button>
+    <div class="modal-header">
+      <div class="modal-icon-ring"><i class="fas fa-user-shield"></i></div>
+      <h2>Admin Login</h2>
+      <p>Only authorized staff may update the official schedule.</p>
+    </div>
+    <div class="modal-body">
+      <form id="adminLoginForm" onsubmit="adminLogin(event)">
+        <div class="form-field" style="margin-bottom:10px"><label>Email</label><input type="email" id="adminEmail" placeholder="admin@college.edu" required/></div>
+        <div class="form-field" style="margin-bottom:14px"><label>Password</label><input type="password" id="adminPass" placeholder="Enter admin password" required/></div>
+        <button type="submit" class="btn btn-primary btn-full"><i class="fas fa-right-to-bracket"></i> Sign in as Admin</button>
+        <p class="muted" style="font-size:11px;margin-top:10px;text-align:center">Demo: <code><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="85e4e1e8ecebc5e6eae9e9e0e2e0abe0e1f0">[email&#160;protected]</a></code> / <code>admin123</code></p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DRIVER LOGIN MODAL ===== -->
+<div id="driverLoginModal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:380px">
+    <button class="modal-close" onclick="closeModal('driverLoginModal')"><i class="fas fa-xmark"></i></button>
+    <div class="modal-header">
+      <div class="modal-icon-ring driver-ring"><i class="fas fa-id-badge"></i></div>
+      <h2>Driver Login</h2>
+      <p>Dedicated portal to mark your parking after entering campus.</p>
+    </div>
+    <div class="modal-body">
+      <form id="driverLoginForm" onsubmit="driverLogin(event)">
+        <div class="form-field" style="margin-bottom:10px"><label>Driver ID</label><input id="driverId" placeholder="e.g., driver01" required/></div>
+        <div class="form-field" style="margin-bottom:14px"><label>Secure PIN</label><input type="password" id="driverPin" placeholder="Enter driver PIN" required/></div>
+        <a href="driver.html" class="btn btn-ghost btn-full" style="text-decoration:none;margin-bottom:10px">
+          <i class="fas fa-location-dot"></i> Share Location
+        </a>
+        <button type="submit" class="btn btn-primary btn-full"><i class="fas fa-truck-front"></i> Sign in as Driver</button>
+        <p class="muted" style="font-size:11px;margin-top:10px;text-align:center">Demo: <code>driver01</code> / <code>driver123</code></p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ===== STOPS MODAL ===== -->
+<div id="stopsModal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:460px">
+    <button class="modal-close" onclick="closeModal('stopsModal')"><i class="fas fa-xmark"></i></button>
+    <div class="modal-header">
+      <div class="modal-icon-ring stops-ring"><i class="fas fa-route"></i></div>
+      <h2 id="stopsModalTitle">Route Stops</h2>
+      <p id="stopsModalSub"></p>
+    </div>
+    <div class="modal-body" id="stopsModalBody"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const routes=[
+  {no:1,routeNo:"R01",routeName:"Ennore",timing:"Boarding Points",start:"5.50 am"},
+  {no:2,routeNo:"R01A",routeName:"Tondiarpet",timing:"Boarding Points",start:"6.17 am"},
+  {no:3,routeNo:"R01B",routeName:"Kasimedu",timing:"Boarding Points",start:"6.15 am"},
+  {no:4,routeNo:"R02",routeName:"Triplicane",timing:"Boarding Points",start:"6.20 am"},
+  {no:5,routeNo:"R03",routeName:"Choolai",timing:"Boarding Points",start:"6.20 am"},
+  {no:6,routeNo:"R03A",routeName:"Collector Nagar",timing:"Boarding Points",start:"6.50 am"},
+  {no:7,routeNo:"R03B",routeName:"Water Tank",timing:"Boarding Points",start:"6.40 am"},
+  {no:8,routeNo:"R04",routeName:"East Mogappair",timing:"Boarding Points",start:"6.30 am"},
+  {no:9,routeNo:"R05",routeName:"CIT Nagar",timing:"Boarding Points",start:"6.10 am"},
+  {no:10,routeNo:"R05A",routeName:"Loyola College",timing:"Boarding Points",start:"6.40 am"},
+  {no:11,routeNo:"R06",routeName:"Chinmayanagar",timing:"Boarding Points",start:"6.10 am"},
+  {no:12,routeNo:"R07",routeName:"Santhome",timing:"Boarding Points",start:"6.10 am"},
+  {no:13,routeNo:"R08",routeName:"Kovilambakkam",timing:"Boarding Points",start:"6.10 am"},
+  {no:14,routeNo:"R08A",routeName:"Adambakkam",timing:"Boarding Points",start:"6.30 am"},
+  {no:15,routeNo:"R09",routeName:"MKB Nagar",timing:"Boarding Points",start:"6.00 am"},
+  {no:16,routeNo:"R09A",routeName:"Perambur",timing:"Boarding Points",start:"6.30 am"},
+  {no:17,routeNo:"R10",routeName:"Thachoor",timing:"Boarding Points",start:"5.50 am"},
+  {no:18,routeNo:"R11",routeName:"Chengalpattu",timing:"Boarding Points",start:"6.00 am"},
+  {no:19,routeNo:"R11A",routeName:"Guduvanchery",timing:"Boarding Points",start:"6.30 am"},
+  {no:20,routeNo:"R12",routeName:"Minjur",timing:"Boarding Points",start:"5.45 am"},
+  {no:21,routeNo:"R13",routeName:"Vyasarpadi",timing:"Boarding Points",start:"6.10 am"},
+  {no:22,routeNo:"R13A",routeName:"ICF",timing:"Boarding Points",start:"6.45 am"},
+  {no:23,routeNo:"R14",routeName:"Thiruvallur",timing:"Boarding Points",start:"6.25 am"},
+  {no:24,routeNo:"R14A",routeName:"Kakkalur",timing:"Boarding Points",start:"6.55 am"},
+  {no:25,routeNo:"R15",routeName:"Kancheepuram",timing:"Boarding Points",start:"6.00 am"},
+  {no:26,routeNo:"R15A",routeName:"Orikkai",timing:"Boarding Points",start:"6.15 am"},
+  {no:27,routeNo:"R16",routeName:"Neelangkarai",timing:"Boarding Points",start:"6.10 am"},
+  {no:28,routeNo:"R16A",routeName:"Guindy",timing:"Boarding Points",start:"6.45 am"},
+  {no:29,routeNo:"R16B",routeName:"Sholinganallur",timing:"Boarding Points",start:"6.10 am"},
+  {no:30,routeNo:"R17",routeName:"Valluvarkottam",timing:"Boarding Points",start:"6.15 am"},
+  {no:31,routeNo:"R17A",routeName:"Valasaravakkam",timing:"Boarding Points",start:"6.45 am"},
+  {no:32,routeNo:"R18",routeName:"Pallikaranai",timing:"Boarding Points",start:"6.15 am"},
+  {no:33,routeNo:"R18A",routeName:"Sembakkam",timing:"Boarding Points",start:"6.25 am"},
+  {no:34,routeNo:"R18B",routeName:"Kelambakkam",timing:"Boarding Points",start:"6.00 am"},
+  {no:35,routeNo:"R19",routeName:"Poombukar",timing:"Boarding Points",start:"6.10 am"},
+  {no:36,routeNo:"R19A",routeName:"Vinayagapuram",timing:"Boarding Points",start:"6.45 am"},
+  {no:37,routeNo:"R20",routeName:"Vepampattu",timing:"Boarding Points",start:"6.30 am"},
+  {no:38,routeNo:"R21",routeName:"Ayyapakkam",timing:"Boarding Points",start:"6.15 am"},
+  {no:39,routeNo:"R22",routeName:"Thiruthani",timing:"Boarding Points",start:"5.55 am"},
+  {no:40,routeNo:"R22A",routeName:"SR Gate",timing:"Boarding Points",start:"6.30 am"},
+  {no:41,routeNo:"R23",routeName:"K4 Police Station",timing:"Boarding Points",start:"6.35 am"},
+  {no:42,routeNo:"R24",routeName:"Arcot",timing:"Boarding Points",start:"5.25 am"},
+  {no:43,routeNo:"R25",routeName:"Kallikuppam",timing:"Boarding Points",start:"6.45 am"},
+  {no:44,routeNo:"R25A",routeName:"Pudur",timing:"Boarding Points",start:"6.45 am"},
+  {no:45,routeNo:"R26",routeName:"Andarkuppam",timing:"Boarding Points",start:"6.35 am"},
+  {no:46,routeNo:"R27",routeName:"Avadi",timing:"Boarding Points",start:"6.25 am"},
+  {no:47,routeNo:"R27A",routeName:"Kollumedu",timing:"Boarding Points",start:"6.30 am"},
+  {no:48,routeNo:"R28",routeName:"Agaram",timing:"Boarding Points",start:"6.20 am"},
+  {no:49,routeNo:"R29",routeName:"Velachery",timing:"Boarding Points",start:"6.10 am"},
+  {no:50,routeNo:"R29A",routeName:"Pammal",timing:"Boarding Points",start:"6.35 am"},
+  {no:51,routeNo:"R29B",routeName:"Sivanthangal",timing:"Boarding Points",start:"7.05 am"}
+];
+
+const routeStops={
+  R01:[{stop:"Lift Gate",time:"5.50 am"},{stop:"Wimco Market",time:"5.55 am"},{stop:"Ajax",time:"6.00 am"},{stop:"Periyar Nagar",time:"6.03 am"},{stop:"Thiruvottiyur Market",time:"6.08 am"},{stop:"Theradi",time:"6.10 am"},{stop:"Ellaimman Koil",time:"6.12 am"},{stop:"Raja Kadai",time:"6.14 am"},{stop:"Toll Gate",time:"6.15 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R01A:[{stop:"New Vannarpettai",time:"6.17 am"},{stop:"Apollo",time:"6.18 am"},{stop:"Tondiarpet",time:"6.19 am"},{stop:"Maharani",time:"6.21 am"},{stop:"Mint",time:"6.22 am"},{stop:"New Bus Stand Mint",time:"6.27 am"},{stop:"Thirupalli Street",time:"6.33 am"},{stop:"Aminjikarai",time:"7.00 am"},{stop:"Skywalk",time:"7.02 am"},{stop:"Arumbakkam",time:"7.07 am"},{stop:"Koyambedu Metro",time:"7.10 am"},{stop:"Vengaya Mandi",time:"7.16 am"},{stop:"Ration Stop (Nerkundram)",time:"7.20 am"},{stop:"Maduravoyal",time:"7.21 am"},{stop:"Maduravoyal Erikarai",time:"7.25 am"},{stop:"Vanagaram",time:"7.29 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R01B:[{stop:"Kasimedu",time:"6.15 am"},{stop:"Kalmandapam",time:"6.21 am"},{stop:"Royapuram Bridge",time:"6.27 am"},{stop:"Beach Station",time:"6.30 am"},{stop:"Parry's",time:"6.34 am"},{stop:"Central",time:"6.37 am"},{stop:"Egmore",time:"6.40 am"},{stop:"Dasaprakash",time:"6.44 am"},{stop:"Ega Theatre",time:"6.48 am"},{stop:"Aminjikarai Market",time:"6.51 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R02:[{stop:"Chintadripet (Post Office)",time:"6.20 am"},{stop:"D1 Police Station",time:"6.25 am"},{stop:"Triplicane Highway",time:"6.29 am"},{stop:"Ice House Police Station",time:"6.32 am"},{stop:"Meersahibpet Market",time:"6.35 am"},{stop:"Royapettah New College",time:"6.39 am"},{stop:"Sterling Road (Bharath Petrol Bunk)",time:"6.40 am"},{stop:"Choolaimedu Subway",time:"6.43 am"},{stop:"Choolaimedu Bus Stop",time:"6.45 am"},{stop:"Anna Arch",time:"6.50 am"},{stop:"Arumbakkam Panchaliamman Koil",time:"6.53 am"},{stop:"NSK",time:"6.55 am"},{stop:"Maduravoyal Murugan Store",time:"6.58 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R03:[{stop:"Pulianthope",time:"6.20 am"},{stop:"Choolai Post Office",time:"6.25 am"},{stop:"Purasaivakkam Doveton",time:"6.30 am"},{stop:"Kellys Signal",time:"6.33 am"},{stop:"Water Tank Road Signal",time:"6.40 am"},{stop:"Kilpauk Garden",time:"6.45 am"},{stop:"Chinthamani",time:"6.50 am"},{stop:"Anna Nagar Roundtana",time:"6.55 am"},{stop:"Thirumangalam Blue Star",time:"6.57 am"},{stop:"VR Mall",time:"7.00 am"},{stop:"Maduravoyal Ration Shop",time:"7.10 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R03A:[{stop:"Collector Nagar",time:"6.50 am"},{stop:"Golden Flat",time:"6.55 am"},{stop:"Mogappair West Depot",time:"7.00 am"},{stop:"Nolambur",time:"7.03 am"},{stop:"MGR University",time:"7.08 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R03B:[{stop:"Gangaiamman Koil",time:"6.40 am"},{stop:"Madina Masjid",time:"6.43 am"},{stop:"New Avadi Road",time:"6.45 am"},{stop:"Chintamani",time:"6.50 am"},{stop:"Nalli Store",time:"6.58 am"},{stop:"Anna Nagar Metro",time:"7.05 am"},{stop:"Thirumangalam Metro",time:"7.10 am"},{stop:"Nerkundram",time:"7.15 am"},{stop:"Maduravoyal Ration Shop",time:"7.25 am"},{stop:"Maduravoyal Erikarai",time:"7.27 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R04:[{stop:"JJ Nagar Police Station",time:"6.30 am"},{stop:"HDFC Bank",time:"6.32 am"},{stop:"IOB Bank",time:"6.35 am"},{stop:"7H Bus Depot",time:"6.40 am"},{stop:"Amutha School",time:"6.50 am"},{stop:"D.R. Super Market",time:"6.52 am"},{stop:"Nolambur",time:"6.55 am"},{stop:"Meadows Apartment",time:"6.57 am"},{stop:"MGR University",time:"7.00 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R05:[{stop:"CIT Nagar",time:"6.10 am"},{stop:"Aranganathan Subway",time:"6.12 am"},{stop:"Srinivasa Theatre",time:"6.14 am"},{stop:"Mettupalayam",time:"6.16 am"},{stop:"Sangamam Hotel",time:"6.19 am"},{stop:"Arya Gowda Road",time:"6.24 am"},{stop:"Vivek",time:"6.29 am"},{stop:"Usman Road",time:"6.34 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R05A:[{stop:"Loyola College",time:"6.40 am"},{stop:"Choolaimedu",time:"6.45 am"},{stop:"Metha Nagar",time:"6.49 am"},{stop:"NSK Nagar",time:"6.55 am"},{stop:"Arumbakkam (SBI Bank)",time:"7.00 am"},{stop:"MMDA Cholan Street",time:"7.05 am"},{stop:"MMDA Vallavan Hotel",time:"7.10 am"},{stop:"CMBT (Koyambedu)",time:"7.15 am"},{stop:"Rohini Theatre",time:"7.18 am"},{stop:"Nerkundram Vengaya Mandi",time:"7.22 am"},{stop:"Maduravoyal Erikarai",time:"7.25 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R06:[{stop:"Chinmayanagar",time:"6.10 am"},{stop:"Sai Nagar",time:"6.12 am"},{stop:"Natesan Nagar",time:"6.13 am"},{stop:"Elango Nagar",time:"6.14 am"},{stop:"Virugampakkam",time:"6.17 am"},{stop:"KK Nagar",time:"6.20 am"},{stop:"KK Nagar ESI",time:"6.27 am"},{stop:"Ashok Pillar",time:"6.32 am"},{stop:"Kasi Theatre",time:"6.37 am"},{stop:"Ekkatuthangal",time:"6.42 am"},{stop:"Olympia",time:"6.43 am"},{stop:"Porur Saravana Stores",time:"6.55 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R07:[{stop:"Mandaveli Bus Depot",time:"6.10 am"},{stop:"Pattinapakkam",time:"6.15 am"},{stop:"Kutchery Road",time:"6.20 am"},{stop:"Luz Corner",time:"6.25 am"},{stop:"P.S. Sivasamy Road",time:"6.27 am"},{stop:"SIET College",time:"6.32 am"},{stop:"Nandanam Signal",time:"6.37 am"},{stop:"Saidapet Veterinary Hospital",time:"6.42 am"},{stop:"Saidapet Bus Stop",time:"6.47 am"},{stop:"Guindy",time:"6.49 am"},{stop:"Butt Road",time:"6.55 am"},{stop:"Chennai Trade Centre",time:"7.10 am"},{stop:"Porur",time:"7.15 am"},{stop:"Ayyappanthangal",time:"7.18 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R08:[{stop:"Kovilampakkam",time:"6.10 am"},{stop:"Keelkattalai Bus Stop",time:"6.12 am"},{stop:"Madipakkam UTI Bank",time:"6.15 am"},{stop:"Madipakkam Koot Road Bus Stop",time:"6.16 am"},{stop:"Ranga Theatre",time:"6.18 am"},{stop:"Nanganallur Chidambaram Stores",time:"6.20 am"},{stop:"Nanganallur Saravana Hotel",time:"6.22 am"},{stop:"Vanuvampet Church",time:"6.25 am"},{stop:"Surendhar Nagar Bus Stop",time:"6.27 am"},{stop:"Jayalakshmi Theatre",time:"6.29 am"},{stop:"Thillai Ganga Nagar Subway",time:"6.32 am"},{stop:"Aazar Khana Bus Stop",time:"6.35 am"},{stop:"Butt Road",time:"6.37 am"},{stop:"Ramavaram",time:"6.39 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R08A:[{stop:"Seasons",time:"6.30 am"},{stop:"Kakkan Bridge",time:"6.33 am"},{stop:"Adambakkam Bus Depot",time:"6.35 am"},{stop:"St Thomas Mount",time:"6.38 am"},{stop:"Deepam Foods",time:"6.40 am"},{stop:"Maharaja Traders",time:"6.45 am"},{stop:"Vanuvampet Church",time:"6.50 am"},{stop:"Thillai Ganga Nagar Subway",time:"6.55 am"},{stop:"Butt Road",time:"7.00 am"},{stop:"Poonamallee",time:"7.35 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R09:[{stop:"Vyasarpadi",time:"6.00 am"},{stop:"MKB Nagar",time:"6.05 am"},{stop:"E.B. Stop",time:"6.08 am"},{stop:"Kannadhasan Nagar",time:"6.10 am"},{stop:"M.R. Nagar",time:"6.13 am"},{stop:"Lakshmi Amman Nagar",time:"6.22 am"},{stop:"B.B. Road",time:"6.26 am"},{stop:"Perambur Market",time:"6.34 am"},{stop:"Agaram",time:"6.40 am"},{stop:"Peravalur Road",time:"6.42 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R09A:[{stop:"BB Road",time:"6.30 am"},{stop:"Perambur Bus Stop",time:"6.35 am"},{stop:"Perambur Railway Station",time:"6.39 am"},{stop:"Perambur Church",time:"6.41 am"},{stop:"Sembium Police Station",time:"6.43 am"},{stop:"Gandhi Salai",time:"6.45 am"},{stop:"Venus Mall",time:"6.47 am"},{stop:"Retteri",time:"6.50 am"},{stop:"Senthil Nagar",time:"6.55 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R10:[{stop:"Thachoor",time:"5.50 am"},{stop:"Panjetty",time:"5.52 am"},{stop:"Janappanchatram Bypass",time:"5.55 am"},{stop:"Karanodai Bypass",time:"5.58 am"},{stop:"Vijaya Nallur",time:"6.03 am"},{stop:"Toll Gate",time:"6.05 am"},{stop:"Padianallur",time:"6.07 am"},{stop:"Red Hills (GRT)",time:"6.10 am"},{stop:"Red Hills Market",time:"6.12 am"},{stop:"Kavangarai",time:"6.15 am"},{stop:"Puzhal Jail",time:"6.17 am"},{stop:"Puzhal Camp",time:"6.20 am"},{stop:"Velammal College",time:"6.25 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R11:[{stop:"Chengalpattu Rattinakinaru",time:"6.00 am"},{stop:"New Bus Stand",time:"6.02 am"},{stop:"Old Bus Stand",time:"6.04 am"},{stop:"Chengalpattu Bypass",time:"6.07 am"},{stop:"SP Kovil",time:"6.18 am"},{stop:"MM Nagar Samiyar Gate",time:"6.23 am"},{stop:"MM Nagar Bus Stand",time:"6.28 am"},{stop:"Kattankulathur",time:"6.30 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R11A:[{stop:"Guduvanchery",time:"6.30 am"},{stop:"Urapakkam",time:"6.35 am"},{stop:"Vandalur",time:"6.40 am"},{stop:"Perungalathur",time:"6.45 am"},{stop:"Vandalur Bridge",time:"6.55 am"},{stop:"Mannivakkam",time:"7.05 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R12:[{stop:"Minjur Bus Stand",time:"5.45 am"},{stop:"Minjur Railway Station",time:"5.50 am"},{stop:"BDO Office",time:"5.52 am"},{stop:"Nandiyambakkam",time:"5.54 am"},{stop:"Pattamandiri",time:"6.00 am"},{stop:"Napalayam",time:"6.05 am"},{stop:"Manali Pudhu Nagar",time:"6.08 am"},{stop:"Manali Market",time:"6.15 am"},{stop:"MMDA 3rd Main Road",time:"6.18 am"},{stop:"Mathur",time:"6.22 am"},{stop:"Veterinary Hospital",time:"6.25 am"},{stop:"Madhavaram Milk Colony",time:"6.28 am"},{stop:"Arul Nagar",time:"6.30 am"},{stop:"Thapalpetti",time:"6.32 am"},{stop:"Moolakadai",time:"6.38 am"},{stop:"Kalpana Lamp",time:"6.45 am"},{stop:"Madhavaram Roundana",time:"6.47 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R13:[{stop:"Ganeshapuram",time:"6.10 am"},{stop:"G3 Police Station",time:"6.15 am"},{stop:"Pattalam",time:"6.18 am"},{stop:"Otteri",time:"6.20 am"},{stop:"Podi Kadai",time:"6.23 am"},{stop:"T.B. Hospital",time:"6.25 am"},{stop:"Ayanavaram Signal",time:"6.27 am"},{stop:"Sayyani",time:"6.30 am"},{stop:"Ayanavaram Noor Hotel",time:"6.33 am"},{stop:"Joint Office",time:"6.35 am"},{stop:"Ayanavaram Railway Quarters",time:"6.37 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R13A:[{stop:"ICF Signal",time:"6.45 am"},{stop:"Villivakkam Bus Stand",time:"6.50 am"},{stop:"Korattur Signal",time:"6.55 am"},{stop:"Nolambur Signal",time:"7.05 am"},{stop:"Vanagaram",time:"7.15 am"},{stop:"Velappanchavadi",time:"7.23 am"},{stop:"Poonamallee Bypass",time:"7.30 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R14:[{stop:"Sevapetai",time:"6.25 am"},{stop:"Kakkalur",time:"6.30 am"},{stop:"Poonga Nagar",time:"6.35 am"},{stop:"GRT",time:"6.50 am"},{stop:"Manavalanagar Signal",time:"6.55 am"},{stop:"Manavalanagar Railway Station",time:"6.57 am"},{stop:"Putlur",time:"7.10 am"},{stop:"Aranvoyal",time:"7.15 am"},{stop:"Puthuchatram (India Japan Company)",time:"7.20 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R14A:[{stop:"Kakkalur Signal",time:"6.55 am"},{stop:"SBI Bank",time:"6.58 am"},{stop:"Vellavedu",time:"7.20 am"},{stop:"Thirumazhisai",time:"7.25 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R15:[{stop:"Ayyangarkulam",time:"6.00 am"},{stop:"Housing Board",time:"6.05 am"},{stop:"Collector Office",time:"6.07 am"},{stop:"Rangasamy Kulam",time:"6.15 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R15A:[{stop:"Orikkai",time:"6.15 am"},{stop:"JJ Nagar",time:"6.17 am"},{stop:"Keerai Mandapam",time:"6.20 am"},{stop:"Tollgate",time:"6.23 am"},{stop:"Pachaiyappa's College",time:"6.30 am"},{stop:"Ayyampettai",time:"6.32 am"},{stop:"Rajampettai",time:"6.40 am"},{stop:"Walajabad",time:"6.50 am"},{stop:"Natha Nallur",time:"7.00 am"},{stop:"Panrutti",time:"7.03 am"},{stop:"Oragadam",time:"7.12 am"},{stop:"Arun Excello",time:"7.15 am"},{stop:"Sriperumbudur High School",time:"7.20 am"},{stop:"Sriperumbudur Tollgate",time:"7.25 am"},{stop:"Irungattukottai Bus Stand",time:"7.30 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R16:[{stop:"Prathana Theatre",time:"6.10 am"},{stop:"Vetuvankeni",time:"6.15 am"},{stop:"Thiruvanmiyur RTO Office",time:"6.20 am"},{stop:"Adyar Depot",time:"6.29 am"},{stop:"Madhya Kailash",time:"6.35 am"},{stop:"Guindy",time:"6.42 am"},{stop:"Mugalivakkam",time:"6.55 am"},{stop:"Karayanchavadi",time:"7.10 am"},{stop:"Poonamallee Bus Stand",time:"7.15 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R16A:[{stop:"Butt Road",time:"6.45 am"},{stop:"Nandambakkam",time:"6.48 am"},{stop:"Ramapuram Signal",time:"6.52 am"},{stop:"DLF",time:"6.55 am"},{stop:"Mugalivakkam",time:"7.00 am"},{stop:"Saravana Stores",time:"7.03 am"},{stop:"Poonamallee Depot",time:"7.25 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R16B:[{stop:"Sholinganallur",time:"6.10 am"},{stop:"Karapakkam",time:"6.16 am"},{stop:"Karapakkam - TCS",time:"6.19 am"},{stop:"PTC (KFC)",time:"6.24 am"},{stop:"Mettukuppam",time:"6.26 am"},{stop:"Selaiyur",time:"6.56 am"},{stop:"MCC",time:"6.59 am"},{stop:"Kulakarai Street",time:"7.05 am"},{stop:"Krishna Nagar",time:"7.07 am"},{stop:"Bharathi Nagar",time:"7.08 am"},{stop:"Madanapuram",time:"7.13 am"},{stop:"Nazarathpettai",time:"7.34 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R17:[{stop:"Valluvarkottam",time:"6.15 am"},{stop:"Liberty",time:"6.20 am"},{stop:"Power House",time:"6.25 am"},{stop:"Lakshman Sruthi",time:"6.30 am"},{stop:"Thai Sathya",time:"6.35 am"},{stop:"Virugampakkam",time:"6.40 am"},{stop:"Alwar Thirunagar",time:"6.42 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R17A:[{stop:"Valasaravakkam Shivan Koil",time:"6.45 am"},{stop:"Valasaravakkam",time:"6.50 am"},{stop:"Saravana Bhavan Hotel",time:"6.53 am"},{stop:"Lakshmi Nagar",time:"6.55 am"},{stop:"Porur Bridge",time:"7.00 am"},{stop:"Iyyappanthangal",time:"7.05 am"},{stop:"Kattupakkam",time:"7.10 am"},{stop:"Kumanachavadi",time:"7.15 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R18:[{stop:"Pallikaranai Munsif Office",time:"6.15 am"},{stop:"Medavakkam Junction",time:"6.20 am"},{stop:"Perumbakkam",time:"6.25 am"},{stop:"Madambakkam",time:"6.30 am"},{stop:"Selaiyur",time:"6.35 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R18A:[{stop:"Sembakkam",time:"6.25 am"},{stop:"Kamarajapuram",time:"6.30 am"},{stop:"Rajakilpakkam Signal",time:"6.32 am"},{stop:"Camp Road",time:"6.35 am"},{stop:"Tambaram Sanatorium",time:"6.50 am"},{stop:"Chrompet",time:"6.55 am"},{stop:"Thiruneermalai",time:"7.00 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R18B:[{stop:"Kelambakkam - GH",time:"6.00 am"},{stop:"Pudupakkam",time:"6.10 am"},{stop:"Mambakkam (Samathuvapuram)",time:"6.15 am"},{stop:"Mambakkam Kulam",time:"6.25 am"},{stop:"Ponmar",time:"6.30 am"},{stop:"Sithalapakkam",time:"6.35 am"},{stop:"Private Parking",time:"6.45 am"},{stop:"Santhosapuram",time:"6.50 am"},{stop:"Kamarajapuram",time:"7.00 am"},{stop:"Kishkinta Kulam",time:"7.15 am"},{stop:"Old Perungalathur",time:"7.20 am"},{stop:"Mudichur Bypass",time:"7.25 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R19:[{stop:"Poombukar",time:"6.10 am"},{stop:"Ganga Cinema",time:"6.25 am"},{stop:"Don Bosco",time:"6.28 am"},{stop:"Poombukar (Second Stop)",time:"6.30 am"},{stop:"Korattur Bus Stop",time:"6.55 am"},{stop:"Padi Britania",time:"6.58 am"},{stop:"TVS Show Room",time:"7.10 am"},{stop:"Ambattur",time:"7.12 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R19A:[{stop:"Vinayagapuram Bus Stand",time:"6.45 am"},{stop:"Retteri RTO Office",time:"6.55 am"},{stop:"Retteri",time:"6.58 am"},{stop:"Senthil Nagar",time:"7.00 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R20:[{stop:"Vepampattu Railway Station",time:"6.30 am"},{stop:"Madha Kovil",time:"6.32 am"},{stop:"Eswar Nagar",time:"6.33 am"},{stop:"Indian Bank Thiruninravur",time:"6.35 am"},{stop:"Thiruninravur Railway Station",time:"6.36 am"},{stop:"Thiruninravur Bridge",time:"6.37 am"},{stop:"Jaya College",time:"6.39 am"},{stop:"Nemilicherri Road",time:"6.40 am"},{stop:"Pattabiram Gandhi Nagar",time:"6.41 am"},{stop:"Pattabiram Vasantha Mandapam",time:"6.42 am"},{stop:"Sekkadu Bus Stand",time:"6.45 am"},{stop:"Avadi Ponnu Store",time:"6.50 am"},{stop:"Avadi J.P. Garden",time:"6.52 am"},{stop:"Govarthanagiri Bus Stand",time:"6.55 am"},{stop:"Chennirkuppam",time:"7.05 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R21:[{stop:"Ayappakkam Parking",time:"6.15 am"},{stop:"Ayappakkam SBI ATM",time:"6.17 am"},{stop:"Ayappakkam Petrol Bunk",time:"6.20 am"},{stop:"ICF Church",time:"6.22 am"},{stop:"Canara Bank",time:"6.27 am"},{stop:"Singapore Shopping",time:"6.32 am"},{stop:"Senneerkuppam",time:"7.05 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R22:[{stop:"Thiruthani Bypass",time:"5.55 am"},{stop:"Thiruvallur Bypass X Road",time:"6.00 am"},{stop:"Nagalamman Nagar",time:"6.08 am"},{stop:"Krishna Poly",time:"6.10 am"},{stop:"Jothi Nagar",time:"6.12 am"},{stop:"Indira Gandhi Nagar",time:"6.15 am"},{stop:"Swalpet",time:"6.16 am"},{stop:"Government Hospital",time:"6.17 am"},{stop:"Old Bus Stand",time:"6.18 am"},{stop:"Railway Station",time:"6.20 am"},{stop:"New Bus Stand",time:"6.22 am"},{stop:"Navy Gate",time:"6.30 am"},{stop:"Venkatesapuram",time:"6.31 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R22A:[{stop:"SR Gate",time:"6.30 am"},{stop:"Thakkolam Koot Road",time:"6.40 am"},{stop:"Thakkolam",time:"6.44 am"},{stop:"Marimangalam",time:"6.50 am"},{stop:"Narasimapuram",time:"6.55 am"},{stop:"Perambakkam",time:"7.05 am"},{stop:"Koovam Bus Stop",time:"7.08 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R23:[{stop:"Nathamuni Theatre",time:"6.35 am"},{stop:"K4 Police Station",time:"6.40 am"},{stop:"Labour Officers Quarters",time:"6.42 am"},{stop:"Vijaya Maruthi (Nuts & Spices)",time:"6.44 am"},{stop:"Udayam Colony",time:"6.46 am"},{stop:"Kambar Colony",time:"6.48 am"},{stop:"Anna Nagar West Depot",time:"6.50 am"},{stop:"Thirumangalam Bridge",time:"6.52 am"},{stop:"Thirumangalam Waves",time:"6.56 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R24:[{stop:"Arcot Bus Stand",time:"5.25 am"},{stop:"Muthukadai",time:"5.30 am"},{stop:"VC Motor",time:"5.33 am"},{stop:"Walajapettai",time:"5.35 am"},{stop:"Arignar Anna Government College",time:"5.37 am"},{stop:"Walajapettai Toll Gate",time:"5.40 am"},{stop:"Kaveripakkam",time:"5.45 am"},{stop:"Perumpullipakkam",time:"6.00 am"},{stop:"Vinayagapuram (KPM)",time:"6.20 am"},{stop:"Olimugamathu Pettai (Gori)",time:"6.22 am"},{stop:"Egambaranathar Koil",time:"6.25 am"},{stop:"Kachapeswarar Koil",time:"6.28 am"},{stop:"Pookadai Chatram",time:"6.32 am"},{stop:"Kammal Street",time:"6.35 am"},{stop:"Indra Nagar (KPM Railway Gate)",time:"6.37 am"},{stop:"Ponnerikarai",time:"6.40 am"},{stop:"Santhavellore",time:"7.05 am"},{stop:"Sungawarchathram",time:"7.10 am"},{stop:"Vadamangalam",time:"7.20 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R25:[{stop:"Kallikuppam",time:"6.45 am"},{stop:"Stedford Hospital",time:"6.50 am"},{stop:"Saraswathy Nagar Indian Oil Petrol Bunk",time:"6.54 am"},{stop:"Manigandapuram",time:"6.56 am"},{stop:"Thirumullaivoyal Junction",time:"6.58 am"},{stop:"Vaishnavi Nagar",time:"7.00 am"},{stop:"Murugappa Polytechnic",time:"7.02 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R25A:[{stop:"Pudur",time:"6.45 am"},{stop:"Oragadam HP Pump",time:"6.47 am"},{stop:"PTR Mahal",time:"6.50 am"},{stop:"Ponnu Supermarket",time:"6.53 am"},{stop:"Govardhanagiri",time:"7.15 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R26:[{stop:"Andarkuppam",time:"6.35 am"},{stop:"Kundrathur",time:"6.40 am"},{stop:"Kundrathur Thandalam",time:"6.43 am"},{stop:"Kovur",time:"6.45 am"},{stop:"Gerugambakkam",time:"6.50 am"},{stop:"Bai Kadai",time:"6.53 am"},{stop:"Mathanandapuram",time:"6.55 am"},{stop:"Venkateswara Nagar",time:"6.58 am"},{stop:"Porur",time:"7.05 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R27:[{stop:"Ajeya Stadium",time:"6.25 am"},{stop:"HVF",time:"6.28 am"},{stop:"CRP",time:"6.32 am"},{stop:"Mitnamalli",time:"6.35 am"},{stop:"Muthapudupet",time:"6.40 am"},{stop:"Sasthri Nagar",time:"6.45 am"},{stop:"Avadi Checkpost",time:"6.55 am"},{stop:"Rama Rathna Theatre",time:"7.06 am"},{stop:"Avadi Mankoil",time:"7.10 am"},{stop:"Vasantham Nagar",time:"7.12 am"},{stop:"Kovarthanagiri",time:"7.14 am"},{stop:"Kendra Vihar",time:"7.15 am"},{stop:"Kaduveti",time:"7.17 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R27A:[{stop:"Kollumedu",time:"6.30 am"},{stop:"Vel Tech College",time:"6.40 am"},{stop:"Kovilpathagai",time:"6.45 am"},{stop:"Ajeya Stadium",time:"6.50 am"},{stop:"CRPF",time:"6.55 am"},{stop:"Mittanemili",time:"7.00 am"},{stop:"Palavedu Service Road",time:"7.10 am"},{stop:"Nemilichery Tollgate",time:"7.15 am"},{stop:"Chithukadu Blue",time:"7.25 am"},{stop:"Panimalar Tollgate",time:"7.30 am"},{stop:"Chembarambakkam",time:"7.37 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R28:[{stop:"Agaram",time:"6.20 am"},{stop:"Periyar Nagar",time:"6.22 am"},{stop:"Thiruvalluvar Thirumanamandapam",time:"6.24 am"},{stop:"Perumal Koil",time:"6.26 am"},{stop:"Kamban Nagar",time:"6.28 am"},{stop:"E.B",time:"6.30 am"},{stop:"Shanmugam Mahal",time:"6.32 am"},{stop:"Senthil Nagar",time:"6.35 am"},{stop:"Thathankuppam",time:"6.38 am"},{stop:"Kalyan Jewellers",time:"6.45 am"},{stop:"Collector Nagar",time:"6.47 am"},{stop:"Cheriyan Hospital",time:"6.48 am"},{stop:"Golden Flats",time:"6.50 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R29:[{stop:"Vijayanagar Bus Stand",time:"6.10 am"},{stop:"Kaiveli",time:"6.15 am"},{stop:"Kamachi Hospital",time:"6.17 am"},{stop:"Pallavaram Singapore Shopping",time:"6.30 am"},{stop:"Krishna Nagar",time:"6.33 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R29A:[{stop:"Pammal",time:"6.35 am"},{stop:"Arunmathi Theatre",time:"6.37 am"},{stop:"Anagaputhur",time:"6.39 am"},{stop:"Manikandan Nagar",time:"6.41 am"},{stop:"Karima Nagar",time:"6.45 am"},{stop:"Kundrathur (Theradi)",time:"6.48 am"},{stop:"RIT Campus",time:"7.40 am"}],
+  R29B:[{stop:"Sivanthangal",time:"7.05 am"},{stop:"Muthukumaran College",time:"7.10 am"},{stop:"Pattu Koot Road",time:"7.13 am"},{stop:"Mangadu",time:"7.15 am"},{stop:"Kankaiyamman Kovil",time:"7.20 am"},{stop:"MGR Nagar",time:"7.23 am"},{stop:"Kumananchavadi",time:"7.25 am"},{stop:"Aravind Hospital",time:"7.30 am"},{stop:"RIT Campus",time:"7.40 am"}]
+};
+
+// ── STATE ──────────────────────────────────────────────────────────────────────
+let isAdmin=false,isDriver=false;
+let editIdx=null;
+let filteredRoutes=[...routes];
+let selectedViewDate=new Date();
+let driverParking={};
+try{const s=localStorage.getItem("driverParking");if(s)driverParking=JSON.parse(s);}catch(_){}
+
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+function parseTime(t){
+  if(!t)return 0;
+  const [tp,mp]=(t.trim().split(/\s+/));
+  const m=(mp||'').toLowerCase();
+  const[h,mn]=tp.split('.');
+  let hr=parseInt(h);const mi=parseInt(mn||0);
+  if(m==='pm'&&hr!==12)hr+=12;
+  if(m==='am'&&hr===12)hr=0;
+  return hr*60+mi;
+}
+function timeCat(min){if(min<360)return'early';if(min<=390)return'normal';return'late';}
+function isToday(ts){if(!ts)return false;const d=typeof ts==='number'?new Date(ts):new Date(ts);const n=new Date();return d.getDate()===n.getDate()&&d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear();}
+function todayParking(){const o={};for(const[k,v]of Object.entries(driverParking))if(isToday(v.updatedAt))o[k]=v;return o;}
+function toast(msg,type='success'){
+  const c=document.getElementById('toastContainer');
+  const el=document.createElement('div');el.className=`toast ${type}`;
+  el.innerHTML=`<i class="fas ${type==='error'?'fa-circle-exclamation':'fa-circle-check'}"></i><span>${msg}</span>`;
+  c.appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transform='translateY(8px)';setTimeout(()=>el.remove(),200);},2500);
+}
+function closeModal(id){document.getElementById(id).classList.add('hidden');}
+function showModal(id){document.getElementById(id).classList.remove('hidden');}
+
+// ── CLOCK ──────────────────────────────────────────────────────────────────────
+function updateClock(){
+  const el=document.getElementById('clockEl');
+  const n=new Date();
+  el.textContent=n.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+setInterval(updateClock,1000);updateClock();
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function showTab(tab){
+  ['student','admin','driver'].forEach(t=>{
+    document.getElementById('section'+t.charAt(0).toUpperCase()+t.slice(1)).classList.add('section-hidden');
+    document.getElementById('section'+t.charAt(0).toUpperCase()+t.slice(1)).classList.remove('section-visible');
+    document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.remove('active');
+  });
+  const sid='section'+tab.charAt(0).toUpperCase()+tab.slice(1);
+  document.getElementById(sid).classList.remove('section-hidden');
+  document.getElementById(sid).classList.add('section-visible');
+  document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active');
+}
+function onAdminClick(){if(!isAdmin){showModal('adminLoginModal');}else{showTab('admin');}}
+function onDriverClick(){if(!isDriver){showModal('driverLoginModal');}else{showTab('driver');}}
+
+// ── WEEK STRIP ──────────────────────────────────────────────────────────────
+function renderWeekStrip(){
+  const c=document.getElementById('weekDays');
+  const today=new Date();today.setHours(0,0,0,0);
+  let html='';
+  for(let i=0;i<7;i++){
+    const d=new Date(today);d.setDate(today.getDate()+i);
+    const lbl=d.toLocaleDateString('en-IN',{weekday:'short'}).toUpperCase()+' '+d.getDate();
+    const active=selectedViewDate.toDateString()===d.toDateString();
+    html+=`<button class="wday${active?' active':''}" data-iso="${d.toISOString()}">${lbl}</button>`;
+  }
+  c.innerHTML=html;
+  c.querySelectorAll('.wday').forEach(b=>b.addEventListener('click',()=>{
+    selectedViewDate=new Date(b.dataset.iso);
+    renderWeekStrip();
+    updateDateLabel();
+  }));
+}
+function updateDateLabel(){
+  const el=document.getElementById('selectedDateLabel');
+  el.textContent=selectedViewDate.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short',year:'numeric'});
+}
+
+// ── STATS ──────────────────────────────────────────────────────────────────────
+function renderStats(){
+  document.getElementById('statTotal').textContent=routes.length;
+  const sorted=[...routes].sort((a,b)=>parseTime(a.start)-parseTime(b.start));
+  document.getElementById('statEarliest').textContent=sorted[0].start;
+  document.getElementById('statLatest').textContent=sorted[sorted.length-1].start;
+  document.getElementById('statParking').textContent=Object.keys(todayParking()).length;
+}
+
+// ── HIGHLIGHTS ──────────────────────────────────────────────────────────────
+function renderHighlights(){
+  const c=document.getElementById('highlightCards');
+  const sorted=[...routes].sort((a,b)=>parseTime(a.start)-parseTime(b.start));
+  const groups=[
+    {title:'Earliest Departures',badge:'Start first',items:sorted.slice(0,3)},
+    {title:'IT Corridor',badge:'South Chennai',items:routes.filter(r=>/(Sholinganallur|Velachery|Neelangkarai|Pallikaranai|Guindy)/i.test(r.routeName)).slice(0,3)},
+    {title:'Far Distance',badge:'Long haul',items:routes.filter(r=>/(Kancheepuram|Thiruthani|Arcot|Chengalpattu)/i.test(r.routeName)).slice(0,3)},
+  ];
+  c.innerHTML=groups.map(g=>`
+    <div class="hl-card">
+      <div class="hl-title">${g.title} <span style="font-family:var(--font-mono);font-size:10px;color:var(--text3);font-weight:400;float:right">${g.badge}</span></div>
+      ${g.items.map(r=>`<div class="hl-row"><span><i class="fas fa-route"></i>${r.routeNo} · ${r.routeName}</span><span>${r.start}</span></div>`).join('')}
+    </div>
+  `).join('');
+}
+
+// ── ROUTE TABLE ──────────────────────────────────────────────────────────────
+function renderTable(){
+  const tbody=document.getElementById('routesTableBody');
+  const noRes=document.getElementById('noResults');
+  if(!filteredRoutes.length){tbody.innerHTML='';noRes.classList.remove('hidden');return;}
+  noRes.classList.add('hidden');
+  const tp=todayParking();
+  tbody.innerHTML=filteredRoutes.map(r=>{
+    const min=parseTime(r.start);const cat=timeCat(min);
+    const bClass=cat==='early'?'badge-early':cat==='late'?'badge-late':'badge-normal';
+    const bLabel=cat==='early'?'Early':cat==='late'?'Late':'Regular';
+    const pk=tp[r.routeNo];
+    const pkHtml=pk
+      ?`<span class="badge badge-parking-on"><i class="fas fa-location-dot" style="font-size:10px"></i> ${pk.location}</span>`
+      :`<span class="badge badge-parking-off"><i class="fas fa-circle" style="font-size:7px"></i> Not updated</span>`;
+    return`<tr data-rno="${r.routeNo}">
+      <td>${r.no}</td>
+      <td>${r.routeNo}</td>
+      <td>${r.routeName}</td>
+      <td style="color:var(--text3)">${r.timing}</td>
+      <td><span class="badge ${bClass}"><i class="fas fa-clock" style="font-size:10px"></i> ${r.start} · ${bLabel}</span></td>
+      <td>${pkHtml}</td>
+    </tr>`;
+  }).join('');
+  tbody.querySelectorAll('tr').forEach(tr=>{
+    tr.addEventListener('click',()=>openStopsModal(tr.dataset.rno));
+  });
+}
+
+// ── SEARCH & SORT ──────────────────────────────────────────────────────────
+function applyFilter(){
+  const q=document.getElementById('searchInput').value.trim().toLowerCase();
+  const sv=document.getElementById('sortSelect').value;
+  filteredRoutes=routes.filter(r=>{
+    let txt=`${r.no} ${r.routeNo} ${r.routeName} ${r.start} ${r.timing}`;
+    const s=routeStops[r.routeNo];if(s)txt+=s.map(x=>x.stop+' '+x.time).join(' ');
+    return txt.toLowerCase().includes(q);
+  });
+  if(sv==='time-asc')filteredRoutes.sort((a,b)=>parseTime(a.start)-parseTime(b.start));
+  else if(sv==='time-desc')filteredRoutes.sort((a,b)=>parseTime(b.start)-parseTime(a.start));
+  else if(sv==='route-asc')filteredRoutes.sort((a,b)=>a.routeNo.localeCompare(b.routeNo));
+  else if(sv==='route-desc')filteredRoutes.sort((a,b)=>b.routeNo.localeCompare(a.routeNo));
+  renderTable();
+}
+
+// ── STOPS MODAL ──────────────────────────────────────────────────────────────
+function openStopsModal(rno){
+  const r=routes.find(x=>x.routeNo===rno);
+  const s=routeStops[rno];
+  document.getElementById('stopsModalTitle').textContent=`Bus ${r?r.no:''} · ${rno} · ${r?r.routeName:''}`;
+  document.getElementById('stopsModalSub').textContent=r?`Departs ${r.start} · Arrives RIT Campus 7.40 am`:rno;
+  let body='';
+  if(!s||!s.length){body='<p style="color:var(--text3);font-size:13px">Stop details not yet configured for this route.</p>';}
+  else{
+    body=`<table class="stops-table"><thead><tr><th>#</th><th>Stop</th><th>Time</th></tr></thead><tbody>
+    ${s.map((st,i)=>`<tr class="${i===s.length-1?'stop-last':''}"><td class="stop-num">${i+1}</td><td>${st.stop}</td><td class="stop-time">${st.time}</td></tr>`).join('')}
+    </tbody></table>`;
+  }
+  document.getElementById('stopsModalBody').innerHTML=body;
+  showModal('stopsModal');
+}
+
+// ── ADMIN LOGIN ──────────────────────────────────────────────────────────────
+function adminLogin(e){
+  e.preventDefault();
+  const em=document.getElementById('adminEmail').value.trim();
+  const pw=document.getElementById('adminPass').value.trim();
+  if(em==='admin@college.edu'&&pw==='admin123'){
+    isAdmin=true;closeModal('adminLoginModal');toast('Admin login successful');showTab('admin');
+    renderAdminTable();renderAdminStats();
+  }else{toast('Invalid credentials','error');}
+}
+
+// ── DRIVER LOGIN ──────────────────────────────────────────────────────────────
+function driverLogin(e){
+  e.preventDefault();
+  const id=document.getElementById('driverId').value.trim();
+  const pin=document.getElementById('driverPin').value.trim();
+  if(id==='driver01'&&pin==='driver123'){
+    isDriver=true;closeModal('driverLoginModal');toast('Driver login successful');showTab('driver');
+    renderDriverRouteSelect();renderDriverCards();
+  }else{toast('Invalid driver credentials','error');}
+}
+
+// ── ADMIN TABLE ──────────────────────────────────────────────────────────────
+function renderAdminStats(){
+  document.getElementById('adminTotal').textContent=routes.length;
+  const sorted=[...routes].sort((a,b)=>parseTime(a.start)-parseTime(b.start));
+  document.getElementById('adminEarliest').textContent=sorted[0].start;
+  document.getElementById('adminLatest').textContent=sorted[sorted.length-1].start;
+}
+function renderAdminTable(){
+  document.getElementById('adminTableBody').innerHTML=routes.map((r,i)=>`
+    <tr>
+      <td>${r.no}</td><td style="font-family:var(--font-mono)">${r.routeNo}</td>
+      <td>${r.routeName}</td><td style="color:var(--text3)">${r.timing}</td>
+      <td style="font-family:var(--font-mono)">${r.start}</td>
+      <td style="text-align:right">
+        <button class="admin-table-action edit" onclick="adminEdit(${i})"><i class="fas fa-pen"></i></button>
+        <button class="admin-table-action del" onclick="adminDelete(${i})"><i class="fas fa-trash"></i></button>
+      </td>
+    </tr>`).join('');
+}
+function adminEdit(i){
+  const r=routes[i];editIdx=i;
+  document.getElementById('aRouteNo').value=r.routeNo;
+  document.getElementById('aRouteName').value=r.routeName;
+  document.getElementById('aTiming').value=r.timing;
+  document.getElementById('aStartTime').value=r.start;
+  document.getElementById('adminFormTitle').textContent='Edit Route';
+  document.getElementById('adminSaveLabel').textContent='Update Route';
+}
+function adminDelete(i){
+  if(!confirm('Delete this route?'))return;
+  routes.splice(i,1);routes.forEach((r,j)=>r.no=j+1);
+  filteredRoutes=[...routes];applyFilter();renderAdminStats();renderAdminTable();
+  toast('Route deleted');
+}
+function adminSaveRoute(e){
+  e.preventDefault();
+  const rno=document.getElementById('aRouteNo').value.trim();
+  const rname=document.getElementById('aRouteName').value.trim();
+  const timing=document.getElementById('aTiming').value.trim();
+  const start=document.getElementById('aStartTime').value.trim();
+  if(!rno||!rname||!timing||!start){toast('Fill all fields','error');return;}
+  if(editIdx!==null){
+    routes[editIdx]={...routes[editIdx],routeNo:rno,routeName:rname,timing,start};
+    toast('Route updated');
+  }else{
+    routes.push({no:routes.length+1,routeNo:rno,routeName:rname,timing,start});
+    toast('Route added');
+  }
+  editIdx=null;
+  document.getElementById('adminFormTitle').textContent='Add New Route';
+  document.getElementById('adminSaveLabel').textContent='Save Route';
+  document.getElementById('adminRouteForm').reset();
+  filteredRoutes=[...routes];applyFilter();renderAdminStats();renderAdminTable();renderStats();renderHighlights();
+}
+function adminClear(){
+  editIdx=null;document.getElementById('adminRouteForm').reset();
+  document.getElementById('adminFormTitle').textContent='Add New Route';
+  document.getElementById('adminSaveLabel').textContent='Save Route';
+}
+
+// ── DRIVER PORTAL ──────────────────────────────────────────────────────────
+function renderDriverRouteSelect(){
+  const sel=document.getElementById('dRouteSelect');
+  sel.innerHTML=`<option value="">Select route…</option>`+routes.map(r=>`<option value="${r.routeNo}">Bus ${r.no} · ${r.routeNo} · ${r.routeName}</option>`).join('');
+}
+function renderDriverCards(){
+  const c=document.getElementById('driverCards');
+  const tp=todayParking();const ents=Object.entries(tp);
+  if(!ents.length){
+    c.innerHTML=`<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px"><i class="fas fa-location-dot" style="font-size:24px;display:block;margin-bottom:8px;color:var(--accent)"></i>No parking updates yet.<br/>Waiting for drivers to check in.</div>`;
+    return;
+  }
+  c.innerHTML=ents.map(([rno,info])=>{
+    const r=routes.find(x=>x.routeNo===rno);
+    const title=r?`Bus ${r.no} · ${r.routeNo} · ${r.routeName}`:rno;
+    const t=new Date(info.updatedAt).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    return`<div class="driver-card">
+      <div class="driver-card-title">${title}</div>
+      <div class="driver-card-meta"><i class="fas fa-clock" style="font-size:10px;color:var(--text3);margin-right:4px"></i>Updated at ${t}</div>
+      <div class="driver-card-loc"><i class="fas fa-location-dot"></i>${info.location}</div>
+      ${info.note?`<div class="driver-card-loc" style="color:var(--text2)"><i class="fas fa-note-sticky"></i>${info.note}</div>`:''}
+    </div>`;
+  }).join('');
+}
+document.getElementById('dLocSelect').addEventListener('change',function(){
+  document.getElementById('dCustomField').classList.toggle('hidden',this.value!=='Other');
+});
+function driverSubmit(e){
+  e.preventDefault();
+  const rno=document.getElementById('dRouteSelect').value;
+  const locSel=document.getElementById('dLocSelect').value;
+  const customLoc=document.getElementById('dCustomLoc').value.trim();
+  const note=document.getElementById('dNote').value.trim();
+  if(!rno||!locSel){toast('Select route and location','error');return;}
+  const location=locSel==='Other'?customLoc||'Custom location':locSel;
+  driverParking[rno]={location,note,updatedAt:Date.now()};
+  try{localStorage.setItem('driverParking',JSON.stringify(driverParking));}catch(_){}
+  toast('Parking location published');renderDriverCards();renderStats();renderTable();
+}
+function driverClear(){document.getElementById('driverParkingForm').reset();document.getElementById('dCustomField').classList.add('hidden');}
+
+// ── REPORT FORM ──────────────────────────────────────────────────────────────
+function submitReport(e){e.preventDefault();toast('Thank you for your feedback!');e.target.reset();}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+(function init(){
+  renderWeekStrip();
+  updateDateLabel();
+  renderStats();
+  renderHighlights();
+  applyFilter();
+  document.getElementById('searchInput').addEventListener('input', applyFilter);
+  document.getElementById('sortSelect').addEventListener('change', () => {
+    applyFilter();
+    renderTable();
+  });
+})();
+
+// ── MOBILE NAV SYNC — keep drawer active state in sync with tab switches ──────
+// Monkey-patch showTab so the mobile drawer reflects which section is active
+(function(){
+  const _origShowTab = window.showTab;
+  if (typeof _origShowTab === 'function') {
+    window.showTab = function(name) {
+      _origShowTab(name);
+      if (window.MobileNav) window.MobileNav.syncDrawerActiveTab(name);
+    };
+  }
+})();
+</script>
+<!-- Mobile responsive layer — loaded after all page scripts to avoid conflicts -->
+<script src="mobile.js"></script>
+</body>
+</html>

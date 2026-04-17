@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Live Tracking – Ritians Transport</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous"/>
+<style>
+:root{
+  --bg:#060A14;--bg2:#0C1220;--bg3:#121C2E;--bg4:#1A2540;
+  --accent:#FF6B35;--accent2:#4ECDC4;--accent3:#FFE66D;
+  --blue:#3B82F6;--green:#22C55E;--red:#EF4444;--yellow:#FBBF24;
+  --text:#F0F4FF;--text2:#9BAAC8;--text3:#5A6A8A;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --glow-accent:rgba(255,107,53,0.25);--glow-teal:rgba(78,205,196,0.2);
+  --r:12px;--r2:20px;
+  --font-head:'Syne',sans-serif;--font-body:'DM Sans',sans-serif;--font-mono:'DM Mono',monospace;
+
+  /* Status colors */
+  --col-departed:#5A6A8A;
+  --col-current:#22C55E;
+  --col-arriving:#FBBF24;
+  --col-upcoming:#4ECDC4;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:14px;line-height:1.6;overflow-x:hidden;min-height:100%}
+
+/* ─────────────────────────── NAVBAR ─────────────────────────── */
+.nav{
+  position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 5vw;background:rgba(6,10,20,0.95);
+  backdrop-filter:blur(24px);border-bottom:1px solid var(--border);
+}
+.nav-brand{display:flex;align-items:center;gap:12px}
+.nav-logo{
+  width:38px;height:38px;border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),#FF4500);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;color:#fff;box-shadow:0 0 16px var(--glow-accent);
+}
+.nav-title{font-family:var(--font-head);font-size:16px;font-weight:700}
+.nav-sub{font-size:10px;color:var(--text3);letter-spacing:0.06em;text-transform:uppercase}
+.nav-right{display:flex;align-items:center;gap:10px}
+.back-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 14px;border-radius:99px;border:1px solid var(--border2);
+  background:var(--bg3);color:var(--text2);font-family:var(--font-body);
+  font-size:12px;cursor:pointer;text-decoration:none;transition:all 0.15s;
+}
+.back-btn:hover{background:var(--bg4);color:var(--text)}
+.clock{font-family:var(--font-mono);font-size:12px;color:var(--text2);padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:99px}
+
+/* ─────────────────────────── PAGE ─────────────────────────── */
+.page{max-width:720px;margin:0 auto;padding:32px 20px}
+.page-header{margin-bottom:28px}
+.page-header h1{font-family:var(--font-head);font-size:26px;font-weight:800;margin-bottom:6px}
+.page-header p{font-size:13px;color:var(--text3)}
+.live-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);
+  color:#4ADE80;font-size:11px;font-weight:600;padding:4px 10px;border-radius:99px;margin-bottom:12px;
+}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#22C55E;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.3)}}
+
+/* SEARCH */
+.search-area{position:relative;margin-bottom:20px}
+.search-area i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px}
+.search-area input{
+  width:100%;padding:12px 14px 12px 38px;
+  background:var(--bg2);border:1px solid var(--border2);border-radius:99px;
+  color:var(--text);font-family:var(--font-body);font-size:13px;outline:none;
+  transition:border-color 0.15s;
+}
+.search-area input:focus{border-color:var(--accent2)}
+
+/* STATS ROW */
+.stats-row{display:flex;gap:12px;margin-bottom:24px}
+.stat-card{flex:1;padding:14px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r)}
+.stat-num{font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--accent2)}
+.stat-label{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* VEHICLE CARD */
+.section-label{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);font-weight:600;margin-bottom:12px}
+.vehicle-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);
+  padding:16px 18px;margin-bottom:12px;transition:border-color 0.15s;
+}
+.vehicle-card:hover{border-color:var(--border2)}
+.vehicle-card-top{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.vehicle-icon{
+  width:44px;height:44px;border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),#FF4500);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;color:#fff;flex-shrink:0;
+}
+.vehicle-icon.moving{background:linear-gradient(135deg,var(--green),#16A34A);animation:iconPulse 2s infinite}
+.vehicle-icon.stopped{background:var(--bg4)}
+.vehicle-icon.offline{background:rgba(239,68,68,0.15)}
+@keyframes iconPulse{0%,100%{box-shadow:0 0 0 rgba(34,197,94,0.4)}50%{box-shadow:0 0 14px rgba(34,197,94,0.7)}}
+.vehicle-info{flex:1;min-width:0}
+.vehicle-name{font-family:var(--font-head);font-size:15px;font-weight:700}
+.vehicle-meta{font-size:12px;color:var(--text3);margin-top:2px}
+.vehicle-badge{font-size:10px;padding:3px 9px;border-radius:99px;font-weight:600;flex-shrink:0}
+.badge-moving{background:rgba(34,197,94,0.1);color:#4ADE80;border:1px solid rgba(34,197,94,0.2)}
+.badge-stopped{background:var(--bg4);color:var(--text3);border:1px solid var(--border)}
+.badge-stale{background:rgba(239,68,68,0.1);color:#F87171;border:1px solid rgba(239,68,68,0.2)}
+
+/* BUTTON ROW */
+.btn-row{display:flex;gap:10px}
+.btn-track{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px 16px;border-radius:99px;border:none;
+  background:linear-gradient(135deg,var(--accent2),#0EA5E9);
+  color:#fff;font-family:var(--font-body);font-size:13px;font-weight:600;
+  cursor:pointer;transition:all 0.2s;box-shadow:0 6px 20px var(--glow-teal);
+}
+.btn-track:hover{transform:translateY(-1px);box-shadow:0 10px 26px var(--glow-teal)}
+.btn-map{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px 16px;border-radius:99px;
+  border:1px solid var(--border2);
+  background:var(--bg3);color:var(--text2);
+  font-family:var(--font-body);font-size:13px;font-weight:600;
+  cursor:pointer;transition:all 0.2s;text-decoration:none;
+}
+.btn-map:hover{background:var(--bg4);color:var(--text);border-color:var(--accent3)}
+.btn-map i{color:var(--accent3)}
+/* NEW: ETA button */
+.btn-eta{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px 16px;border-radius:99px;border:none;
+  background:linear-gradient(135deg,var(--accent),#E8501E);
+  color:#fff;font-family:var(--font-body);font-size:13px;font-weight:600;
+  cursor:pointer;transition:all 0.2s;box-shadow:0 6px 20px var(--glow-accent);
+}
+.btn-eta:hover{transform:translateY(-1px);box-shadow:0 10px 26px var(--glow-accent)}
+
+/* EMPTY STATE */
+.empty-state{
+  text-align:center;padding:60px 20px;
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);
+}
+.empty-state i{font-size:40px;color:var(--accent);display:block;margin-bottom:14px;opacity:0.7}
+.empty-state h3{font-family:var(--font-head);font-size:17px;font-weight:700;margin-bottom:6px}
+.empty-state p{font-size:13px;color:var(--text3)}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--bg3);border:1px solid var(--border2);border-radius:99px;
+  padding:10px 20px;display:flex;align-items:center;gap:8px;
+  font-size:13px;box-shadow:0 8px 32px rgba(0,0,0,0.5);
+  transition:opacity 0.3s;z-index:999;
+}
+.toast.hidden{opacity:0;pointer-events:none}
+
+/* ═══════════════════════════════════════════════════════════════
+   ETA PANEL OVERLAY
+═══════════════════════════════════════════════════════════════ */
+.eta-overlay{
+  position:fixed;inset:0;z-index:500;
+  background:rgba(6,10,20,0.7);
+  backdrop-filter:blur(12px);
+  display:flex;align-items:flex-end;justify-content:center;
+  padding:0;
+  opacity:0;pointer-events:none;
+  transition:opacity 0.3s ease;
+}
+.eta-overlay.open{opacity:1;pointer-events:all}
+
+.eta-panel{
+  width:100%;max-width:680px;
+  background:var(--bg2);
+  border:1px solid var(--border2);
+  border-radius:28px 28px 0 0;
+  max-height:88vh;
+  display:flex;flex-direction:column;
+  transform:translateY(100%);
+  transition:transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+  box-shadow:0 -16px 64px rgba(0,0,0,0.7);
+  overflow:hidden;
+}
+.eta-overlay.open .eta-panel{transform:translateY(0)}
+
+/* Panel handle */
+.eta-handle{
+  width:40px;height:4px;border-radius:99px;
+  background:rgba(255,255,255,0.15);
+  margin:14px auto 0;flex-shrink:0;
+}
+
+/* Panel header */
+.eta-header{
+  padding:16px 22px 14px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+  display:flex;flex-direction:column;gap:10px;
+}
+.eta-header-top{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.eta-bus-info{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+.eta-bus-icon{
+  width:42px;height:42px;border-radius:10px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--accent),#FF4500);
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;color:#fff;
+}
+.eta-bus-icon.moving{background:linear-gradient(135deg,var(--green),#16A34A)}
+.eta-bus-name{font-family:var(--font-head);font-size:17px;font-weight:700}
+.eta-bus-meta{font-size:11px;color:var(--text3)}
+.eta-close-btn{
+  width:32px;height:32px;border-radius:50%;flex-shrink:0;
+  background:rgba(255,255,255,0.08);border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text2);cursor:pointer;font-size:13px;
+  transition:all 0.15s;
+}
+.eta-close-btn:hover{background:rgba(255,255,255,0.16);color:var(--text)}
+
+/* Metrics row */
+.eta-metrics{
+  display:flex;gap:8px;
+  overflow-x:auto;padding-bottom:2px;
+  scrollbar-width:none;
+}
+.eta-metrics::-webkit-scrollbar{display:none}
+.eta-metric{
+  flex-shrink:0;padding:8px 14px;
+  background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+  display:flex;flex-direction:column;gap:1px;
+}
+.eta-metric-label{font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);font-weight:600}
+.eta-metric-val{font-family:var(--font-mono);font-size:13px;font-weight:500;color:var(--text)}
+.eta-metric-val.green{color:#4ADE80}
+.eta-metric-val.yellow{color:#FBBF24}
+.eta-metric-val.teal{color:var(--accent2)}
+
+/* Map preview link */
+.eta-map-btn{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:8px 16px;border-radius:99px;
+  background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.25);
+  color:var(--accent2);font-size:12px;font-weight:600;
+  cursor:pointer;text-decoration:none;transition:all 0.15s;
+  flex-shrink:0;
+}
+.eta-map-btn:hover{background:rgba(78,205,196,0.2)}
+
+/* Progress line (shows how far along the route the bus is) */
+.eta-progress-bar{
+  width:100%;height:4px;border-radius:99px;
+  background:var(--bg4);overflow:hidden;margin-top:4px;flex-shrink:0;
+}
+.eta-progress-fill{
+  height:100%;border-radius:99px;
+  background:linear-gradient(90deg,var(--accent2),var(--accent));
+  transition:width 0.5s ease;
+}
+
+/* ─── STOP LIST ─── */
+.eta-body{
+  flex:1;overflow-y:auto;padding:0;
+  scrollbar-width:thin;scrollbar-color:var(--bg4) transparent;
+}
+.eta-body::-webkit-scrollbar{width:4px}
+.eta-body::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:99px}
+
+.stop-list{padding:12px 22px 32px;position:relative}
+
+/* The vertical line */
+.stop-list::before{
+  content:'';position:absolute;
+  left:43px;top:20px;bottom:20px;width:2px;
+  background:linear-gradient(180deg,transparent,var(--border2) 6%,var(--border2) 94%,transparent);
+}
+
+.stop-item{
+  display:flex;align-items:flex-start;gap:14px;
+  padding:10px 0;position:relative;
+  animation:stopFadeIn 0.3s ease both;
+}
+@keyframes stopFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* Sequence dot */
+.stop-dot-wrap{
+  flex-shrink:0;width:42px;display:flex;align-items:center;justify-content:center;
+  position:relative;z-index:1;padding-top:2px;
+}
+.stop-dot{
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:10px;font-weight:600;
+  border:2px solid transparent;transition:all 0.3s;
+}
+.stop-dot.departed{
+  background:rgba(90,106,138,0.12);border-color:rgba(90,106,138,0.25);color:var(--text3);
+}
+.stop-dot.current{
+  background:rgba(34,197,94,0.15);border-color:#22C55E;color:#4ADE80;
+  box-shadow:0 0 12px rgba(34,197,94,0.4);
+  animation:dotPulse 1.5s infinite;
+}
+@keyframes dotPulse{0%,100%{box-shadow:0 0 8px rgba(34,197,94,0.4)}50%{box-shadow:0 0 20px rgba(34,197,94,0.8)}}
+.stop-dot.arriving{
+  background:rgba(251,191,36,0.15);border-color:#FBBF24;color:#FDE68A;
+  box-shadow:0 0 10px rgba(251,191,36,0.3);
+}
+/* NEW: "next" stop — visually distinct from both upcoming and arriving */
+.stop-dot.next{
+  background:rgba(59,130,246,0.15);border-color:#3B82F6;color:#93C5FD;
+  box-shadow:0 0 8px rgba(59,130,246,0.25);
+}
+.stop-dot.upcoming{
+  background:rgba(78,205,196,0.1);border-color:rgba(78,205,196,0.3);color:var(--accent2);
+}
+
+/* Bus icon for current stop */
+.stop-dot-bus{
+  position:absolute;top:-6px;right:-6px;
+  width:16px;height:16px;border-radius:50%;
+  background:var(--green);
+  display:flex;align-items:center;justify-content:center;
+  font-size:7px;color:#fff;
+  border:2px solid var(--bg2);
+  animation:busPulse 1s infinite;
+}
+@keyframes busPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+
+/* Stop content */
+.stop-content{flex:1;min-width:0}
+.stop-name-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.stop-name{font-size:14px;font-weight:600;transition:color 0.3s}
+.stop-name.departed{color:var(--text3)}
+.stop-name.current{color:#4ADE80;font-family:var(--font-head)}
+.stop-name.arriving{color:#FDE68A}
+.stop-name.next{color:#93C5FD;font-weight:600}
+.stop-name.upcoming{color:var(--text)}
+
+.stop-status-badge{
+  font-size:9px;font-weight:700;padding:2px 7px;border-radius:99px;
+  letter-spacing:0.04em;text-transform:uppercase;flex-shrink:0;
+}
+.stop-status-badge.departed{background:rgba(90,106,138,0.12);color:var(--text3);border:1px solid rgba(90,106,138,0.2)}
+.stop-status-badge.current{background:rgba(34,197,94,0.15);color:#4ADE80;border:1px solid rgba(34,197,94,0.3)}
+.stop-status-badge.arriving{background:rgba(251,191,36,0.12);color:#FBBF24;border:1px solid rgba(251,191,36,0.25)}
+.stop-status-badge.next{background:rgba(59,130,246,0.12);color:#93C5FD;border:1px solid rgba(59,130,246,0.25)}
+.stop-status-badge.upcoming{background:rgba(78,205,196,0.08);color:var(--accent2);border:1px solid rgba(78,205,196,0.2)}
+
+.stop-details{
+  display:flex;gap:12px;margin-top:4px;flex-wrap:wrap;
+}
+.stop-detail-item{
+  display:flex;align-items:center;gap:4px;
+  font-family:var(--font-mono);font-size:11px;color:var(--text3);
+}
+.stop-detail-item i{font-size:9px}
+.stop-detail-item.eta-highlight{color:var(--accent2);font-weight:500}
+.stop-detail-item.arrived-highlight{color:#4ADE80}
+.stop-detail-item.arriving-highlight{color:#FBBF24}
+
+/* Last stop special styling */
+.stop-item.last-stop .stop-dot{
+  background:linear-gradient(135deg,var(--accent),#FF4500);
+  border-color:var(--accent);color:#fff;
+}
+.stop-item.last-stop .stop-name{
+  font-family:var(--font-head);font-weight:700;
+}
+
+/* ─── LOADING / EMPTY STATES ─── */
+.eta-loading{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:48px 24px;gap:14px;
+}
+.eta-spinner{
+  width:40px;height:40px;border-radius:50%;
+  border:3px solid rgba(78,205,196,0.2);
+  border-top-color:var(--accent2);
+  animation:spin 0.9s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.eta-loading p{font-size:13px;color:var(--text3);text-align:center}
+
+.eta-no-route{
+  text-align:center;padding:48px 24px;
+}
+.eta-no-route i{font-size:36px;color:var(--accent3);opacity:0.6;display:block;margin-bottom:12px}
+.eta-no-route h4{font-family:var(--font-head);font-size:15px;font-weight:700;margin-bottom:6px}
+.eta-no-route p{font-size:12px;color:var(--text3)}
+
+/* ─── ROUTE LEGEND ─── */
+.eta-legend{
+  display:flex;gap:10px;flex-wrap:wrap;
+  padding:10px 22px;border-top:1px solid var(--border);
+  background:var(--bg2);flex-shrink:0;
+}
+.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3)}
+
+/* ─────────────────────────── MAP MODAL ─────────────────────────── */
+.map-modal{
+  position:fixed;inset:0;z-index:600;
+  background:rgba(6,10,20,0.9);
+  backdrop-filter:blur(16px);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity 0.3s;
+}
+.map-modal.open{opacity:1;pointer-events:all}
+.map-modal-box{
+  width:100%;max-width:900px;height:85vh;
+  background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);
+  overflow:hidden;display:flex;flex-direction:column;
+  transform:scale(0.96);transition:transform 0.3s;
+  box-shadow:0 40px 100px rgba(0,0,0,0.8);
+}
+.map-modal.open .map-modal-box{transform:scale(1)}
+.map-modal-head{
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.map-modal-head h3{font-family:var(--font-head);font-size:15px;font-weight:700}
+.map-modal-close{
+  width:30px;height:30px;border-radius:99px;
+  background:var(--bg4);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text2);cursor:pointer;font-size:12px;transition:all 0.15s;
+}
+.map-modal-close:hover{background:var(--bg3);color:var(--text)}
+#routeMap{flex:1;width:100%}
+
+/* ─────────────────────────── RESPONSIVE ─────────────────────────── */
+@media(max-width:600px){
+  .stats-row{flex-direction:column;gap:8px}
+  .btn-row{flex-wrap:wrap}
+  .btn-track,.btn-map,.btn-eta{min-width:calc(50% - 5px)}
+  .eta-panel{border-radius:20px 20px 0 0}
+  .nav-right .clock{display:none}
+  .eta-metrics .eta-metric{padding:6px 10px}
+}
+@media(max-width:360px){
+  .btn-track,.btn-map,.btn-eta{font-size:12px;padding:9px 10px}
+}
+
+/* ─── Mobile scroll reveal ─── */
+.stop-item:nth-child(n+2){animation-delay:calc(var(--i,0) * 40ms)}
+</style>
+<!-- Auth guard: redirects to login if not logged in -->
+<script src="auth-guard.js"></script>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="nav">
+  <div class="nav-brand">
+    <div class="nav-logo"><i class="fas fa-bus"></i></div>
+    <div>
+      <div class="nav-title">Ritians Transport</div>
+      <div class="nav-sub">Live Tracking</div>
+    </div>
+  </div>
+  <div class="nav-right">
+    <span class="clock" id="clockEl">--:--:--</span>
+    <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i> Home</a>
+  </div>
+</nav>
+
+<!-- PAGE -->
+<div class="page">
+
+  <div class="page-header">
+    <div class="live-badge"><span class="live-dot"></span> Live Updates</div>
+    <h1>Active Vehicles</h1>
+    <p>Select a vehicle to track live, view ETA for each stop, or open in Maps.</p>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-num" id="totalCount">0</div>
+      <div class="stat-label">Active Vehicles</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="movingCount">0</div>
+      <div class="stat-label">Moving Now</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stoppedCount">0</div>
+      <div class="stat-label">Stopped</div>
+    </div>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="search-area">
+    <i class="fas fa-magnifying-glass"></i>
+    <input type="text" id="searchInput" placeholder="Search vehicle (e.g. R01, R11)…" oninput="filterVehicles()"/>
+  </div>
+
+  <!-- VEHICLE LIST -->
+  <div class="section-label">Fleet Overview</div>
+  <div id="vehicleList">
+    <div class="empty-state">
+      <i class="fas fa-satellite-dish"></i>
+      <h3>Waiting for vehicles…</h3>
+      <p>No active vehicles found. Drivers need to share their location first.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast hidden" id="toastEl">
+  <i id="toastIcon" class="fas fa-circle-check" style="color:var(--green)"></i>
+  <span id="toastMsg"></span>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     ETA PANEL OVERLAY
+═══════════════════════════════════════════════════════════════ -->
+<div class="eta-overlay" id="etaOverlay" onclick="handleOverlayClick(event)">
+  <div class="eta-panel" id="etaPanel">
+    <div class="eta-handle"></div>
+
+    <!-- Header -->
+    <div class="eta-header">
+      <div class="eta-header-top">
+        <div class="eta-bus-info">
+          <div class="eta-bus-icon" id="etaBusIcon"><i class="fas fa-bus"></i></div>
+          <div>
+            <div class="eta-bus-name" id="etaBusName">Bus —</div>
+            <div class="eta-bus-meta" id="etaBusMeta">Loading route data…</div>
+          </div>
+        </div>
+        <button class="eta-close-btn" onclick="closeEtaPanel()"><i class="fas fa-xmark"></i></button>
+      </div>
+
+      <!-- Metrics -->
+      <div class="eta-metrics" id="etaMetrics">
+        <div class="eta-metric">
+          <div class="eta-metric-label">Speed</div>
+          <div class="eta-metric-val teal" id="etaSpeed">— km/h</div>
+        </div>
+        <div class="eta-metric">
+          <div class="eta-metric-label">Status</div>
+          <div class="eta-metric-val green" id="etaStatus">—</div>
+        </div>
+        <div class="eta-metric">
+          <div class="eta-metric-label">Total Stops</div>
+          <div class="eta-metric-val" id="etaTotalStops">—</div>
+        </div>
+        <div class="eta-metric">
+          <div class="eta-metric-label">Next Stop</div>
+          <div class="eta-metric-val teal" id="etaNextStop">—</div>
+        </div>
+        <div class="eta-metric">
+          <div class="eta-metric-label">Updated</div>
+          <div class="eta-metric-val" id="etaUpdated">—</div>
+        </div>
+        <a class="eta-map-btn" id="etaMapBtn" href="#" onclick="openRouteMap(event)">
+          <i class="fas fa-map-location-dot"></i> View Route Map
+        </a>
+      </div>
+
+      <!-- Progress -->
+      <div class="eta-progress-bar">
+        <div class="eta-progress-fill" id="etaProgressFill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- Stop List Body -->
+    <div class="eta-body" id="etaBody">
+      <div class="eta-loading">
+        <div class="eta-spinner"></div>
+        <p>Fetching ETA data…</p>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="eta-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--col-departed)"></div> Departed</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--col-current)"></div> At Stop</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--col-arriving)"></div> Arriving (&lt;2 min)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#3B82F6"></div> Next Stop</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--col-upcoming)"></div> Upcoming</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     ROUTE MAP MODAL
+═══════════════════════════════════════════════════════════════ -->
+<div class="map-modal" id="mapModal" onclick="handleMapModalClick(event)">
+  <div class="map-modal-box">
+    <div class="map-modal-head">
+      <div>
+        <h3 id="mapModalTitle">Route Map – Bus —</h3>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">Stop markers and live route polyline</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <a id="mapModalGoogleLink" href="#" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:99px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);font-size:11px;text-decoration:none">
+          <i class="fas fa-arrow-up-right-from-square"></i> Google Maps
+        </a>
+        <button class="map-modal-close" onclick="closeMapModal()"><i class="fas fa-xmark"></i></button>
+      </div>
+    </div>
+    <div id="routeMap"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════════════ -->
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+const API_BASE      = window.location.origin;
+const REFRESH_MS    = 5000;    // vehicle list refresh
+const ETA_POLL_MS   = 5000;    // FIX: was 8000 — reduce to 5s for fresher ETA
+const MAPS_API_KEY  = 'AIzaSyAjCI_cdiIGzAGDbRMEOpyXDsjIx9SOObI';
+
+// FIX: Reduce cache TTL from 4000ms to 3000ms so stops update faster
+const ETA_CACHE_TTL = 3000;
+
+let allVehicles     = [];
+let refreshTimer    = null;
+let etaPollTimer    = null;
+let currentEtaVehicle = null;
+let etaCache        = {};      // vehicleId → { data, ts }
+let routeMap        = null;
+let routePolyline   = null;
+let stopMarkers     = [];
+let busMarker       = null;
+
+// ── Clock ──────────────────────────────────────────────────────────────────────
+setInterval(() => {
+  document.getElementById('clockEl').textContent =
+    new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+}, 1000);
+
+// ── Fetch all vehicles ────────────────────────────────────────────────────────
+async function refreshVehicleList() {
+  try {
+    const res  = await fetch(`${API_BASE}/all-vehicles`);
+    const data = await res.json();
+    if (!data.success) return;
+    allVehicles = data.vehicles || [];
+    renderVehicles(allVehicles);
+  } catch(e) { console.error('Fetch error:', e); }
+}
+
+// ── Render vehicles ───────────────────────────────────────────────────────────
+function renderVehicles(vehicles) {
+  const moving  = vehicles.filter(v => !v.isStale && v.status === 'Moving').length;
+  const stopped = vehicles.filter(v => !v.isStale && v.status !== 'Moving').length;
+  document.getElementById('totalCount').textContent   = vehicles.length;
+  document.getElementById('movingCount').textContent  = moving;
+  document.getElementById('stoppedCount').textContent = stopped;
+
+  const container = document.getElementById('vehicleList');
+
+  if (!vehicles.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <i class="fas fa-satellite-dish"></i>
+        <h3>No active vehicles</h3>
+        <p>Waiting for drivers to share location…</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = vehicles
+    .sort((a,b) => a.vehicleId.localeCompare(b.vehicleId))
+    .map(v => {
+      const ago      = Math.round((Date.now() - v.updatedAt) / 1000);
+      const isStale  = v.isStale;
+      const isMoving = !isStale && v.status === 'Moving';
+      const iconCls  = isStale ? 'offline' : isMoving ? 'moving' : 'stopped';
+      const badgeCls = isStale ? 'badge-stale' : isMoving ? 'badge-moving' : 'badge-stopped';
+      const badgeTxt = isStale ? 'Offline' : v.status;
+      const mapsUrl  = `https://www.google.com/maps?q=${v.lat},${v.lng}`;
+
+      return `
+        <div class="vehicle-card" id="card-${v.vehicleId}">
+          <div class="vehicle-card-top">
+            <div class="vehicle-icon ${iconCls}"><i class="fas fa-bus"></i></div>
+            <div class="vehicle-info">
+              <div class="vehicle-name">Bus ${v.vehicleId}</div>
+              <div class="vehicle-meta">${v.speed} km/h &nbsp;·&nbsp; Updated ${ago}s ago</div>
+            </div>
+            <span class="vehicle-badge ${badgeCls}">${badgeTxt}</span>
+          </div>
+          <div class="btn-row">
+            <button class="btn-track" onclick="openTrack('${v.vehicleId}')">
+              <i class="fas fa-location-arrow"></i> Track Live
+            </button>
+            <button class="btn-eta" onclick="openEtaPanel('${v.vehicleId}')">
+              <i class="fas fa-clock"></i> See ETA
+            </button>
+            <a class="btn-map" href="${mapsUrl}" target="_blank">
+              <i class="fas fa-map-location-dot"></i> Maps
+            </a>
+          </div>
+        </div>`;
+    }).join('');
+}
+
+// ── Filter ────────────────────────────────────────────────────────────────────
+function filterVehicles() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  renderVehicles(q ? allVehicles.filter(v => v.vehicleId.toLowerCase().includes(q)) : allVehicles);
+}
+
+// ── Track button ──────────────────────────────────────────────────────────────
+function openTrack(vehicleId) {
+  window.location.href = `map.html?vehicleId=${vehicleId}`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ETA PANEL
+// ═══════════════════════════════════════════════════════════════
+
+async function openEtaPanel(vehicleId) {
+  currentEtaVehicle = vehicleId;
+
+  // Show panel immediately
+  document.getElementById('etaOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  // Set bus name
+  document.getElementById('etaBusName').textContent = `Bus ${vehicleId}`;
+  document.getElementById('etaBusMeta').textContent  = 'Fetching route data…';
+
+  // Show loading
+  document.getElementById('etaBody').innerHTML = `
+    <div class="eta-loading">
+      <div class="eta-spinner"></div>
+      <p>Calculating ETA for all stops…</p>
+    </div>`;
+
+  // Fetch ETA
+  await fetchAndRenderEta(vehicleId);
+
+  // Start polling
+  clearInterval(etaPollTimer);
+  etaPollTimer = setInterval(() => {
+    if (currentEtaVehicle) fetchAndRenderEta(currentEtaVehicle);
+  }, ETA_POLL_MS);
+}
+
+function closeEtaPanel() {
+  document.getElementById('etaOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  currentEtaVehicle = null;
+  clearInterval(etaPollTimer);
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('etaOverlay')) closeEtaPanel();
+}
+
+// Escape key closes panel
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (document.getElementById('mapModal').classList.contains('open')) closeMapModal();
+    else if (document.getElementById('etaOverlay').classList.contains('open')) closeEtaPanel();
+  }
+});
+
+// ── Fetch ETA data & render ───────────────────────────────────────────────────
+async function fetchAndRenderEta(vehicleId) {
+  try {
+    // FIX: Use ETA_CACHE_TTL constant (was hardcoded 4000)
+    const cached = etaCache[vehicleId];
+    if (cached && cached.data && (Date.now() - cached.ts) < ETA_CACHE_TTL) {
+      renderEtaPanel(vehicleId, cached.data);
+      return;
+    }
+
+    const res  = await fetch(`${API_BASE}/eta/${vehicleId}`);
+    const data = await res.json();
+
+    if (!data.success) {
+      document.getElementById('etaBody').innerHTML = `
+        <div class="eta-no-route">
+          <i class="fas fa-route"></i>
+          <h4>Route data not configured</h4>
+          <p>ETA data for Bus ${vehicleId} is not available yet.<br/>
+             The bus is being tracked live — use "Track Live" to view its position.</p>
+        </div>`;
+      document.getElementById('etaBusMeta').textContent = 'Live GPS tracking active';
+      return;
+    }
+
+    // Cache it — preserve _stops and map data across refreshes
+    etaCache[vehicleId] = {
+      data,
+      ts: Date.now(),
+      _stops:  cached?._stops  || null,
+      _busLat: cached?._busLat || null,
+      _busLng: cached?._busLng || null,
+    };
+    renderEtaPanel(vehicleId, data);
+
+  } catch(err) {
+    // FIX: Don't wipe the stop list on a transient network error — just show toast
+    showToast('ETA refresh failed — retrying…', 'error');
+  }
+}
+
+// ── Render the ETA panel content ──────────────────────────────────────────────
+function renderEtaPanel(vehicleId, data) {
+  const { stops, speed, status, isStale, updatedAt, totalStops } = data;
+
+  // Bus icon
+  const busIcon = document.getElementById('etaBusIcon');
+  const isMoving = !isStale && status === 'Moving';
+  busIcon.className = `eta-bus-icon ${isMoving ? 'moving' : ''}`;
+
+  // Bus meta
+  const ago = Math.round((Date.now() - updatedAt) / 1000);
+  document.getElementById('etaBusMeta').textContent =
+    `${isStale ? '⚠ Offline' : status} · Updated ${ago}s ago`;
+
+  const displaySpeed = speed != null ? Math.round(speed) : 0;
+  document.getElementById('etaSpeed').textContent    = `${displaySpeed} km/h`;
+  document.getElementById('etaTotalStops').textContent = totalStops;
+  const speedEl = document.getElementById('etaSpeed');
+  speedEl.className = `eta-metric-val ${isMoving ? 'green' : 'yellow'}`;
+
+  const statusEl = document.getElementById('etaStatus');
+  statusEl.textContent = isStale ? 'Offline' : status;
+  statusEl.className   = `eta-metric-val ${isMoving ? 'green' : 'yellow'}`;
+
+  // FIXED BUG: Old code searched for first "upcoming" as nextStop — but "upcoming"
+  // is now 3rd in priority after "next" and "arriving". Should show the actual
+  // immediate next stop (status === "next" or "arriving"), not any upcoming stop.
+  const currentStop  = stops.find(s => s.status === 'current');
+  const arrivingStop = stops.find(s => s.status === 'arriving');
+  const nextStop     = stops.find(s => s.status === 'next');
+  const nextStopEl   = document.getElementById('etaNextStop');
+  if (currentStop) {
+    nextStopEl.textContent = `At ${currentStop.stopName}`;
+  } else if (arrivingStop) {
+    nextStopEl.textContent = `${arrivingStop.etaLabel} → ${arrivingStop.stopName}`;
+  } else if (nextStop) {
+    nextStopEl.textContent = `${nextStop.etaLabel} → ${nextStop.stopName}`;
+  } else {
+    nextStopEl.textContent = '—';
+  }
+
+  const updEl = document.getElementById('etaUpdated');
+  updEl.textContent = `${ago}s ago`;
+
+  // Progress bar — based on departed stops out of total-1 segments
+  const departedCount = stops.filter(s => s.status === 'departed').length;
+  const progress = Math.round((departedCount / Math.max(totalStops - 1, 1)) * 100);
+  document.getElementById('etaProgressFill').style.width = `${progress}%`;
+
+  document.getElementById('etaMapBtn').href = '#';
+
+  // ── Smart DOM update — only re-render if stop statuses changed ──────────────
+  const etaBody = document.getElementById('etaBody');
+  const existingItems = etaBody.querySelectorAll('.stop-item[data-stop-id]');
+  const statusesChanged =
+    existingItems.length !== stops.length ||
+    Array.from(existingItems).some((el, i) => el.dataset.status !== stops[i].status);
+
+  if (statusesChanged) {
+    const stopsHTML = stops.map((s, i) => {
+      const isLast  = i === stops.length - 1;
+      const st      = s.status;
+
+      // FIXED: Added "next" status icon and label
+      const dotIcon = st === 'current'  ? '<i class="fas fa-bus" style="font-size:8px"></i>'
+                    : st === 'departed' ? '<i class="fas fa-check" style="font-size:8px"></i>'
+                    : st === 'next'     ? '<i class="fas fa-arrow-right" style="font-size:8px"></i>'
+                    : s.sequence;
+
+      // FIXED: Added "Next Stop" label for the new "next" status
+      const statusLabels = {
+        departed: 'Departed',
+        current:  'Here Now',
+        arriving: 'Arriving',
+        next:     'Next Stop',   // ← NEW
+        upcoming: 'Upcoming'
+      };
+
+      let detailHTML = '';
+      if (st === 'departed') {
+        detailHTML = `<span class="stop-detail-item"><i class="fas fa-check-circle"></i> Passed ${s.distanceKm} km behind</span>`;
+      } else if (st === 'current') {
+        detailHTML = `<span class="stop-detail-item arrived-highlight"><i class="fas fa-location-dot"></i> Bus is here</span>
+          <span class="stop-detail-item"><i class="fas fa-clock"></i> ${s.scheduledTime}</span>`;
+      } else if (st === 'arriving') {
+        detailHTML = `<span class="stop-detail-item arriving-highlight"><i class="fas fa-hourglass-half"></i> Arriving in ${s.etaLabel}</span>
+          <span class="stop-detail-item"><i class="fas fa-ruler-horizontal"></i> ${s.distanceKm} km away</span>
+          <span class="stop-detail-item"><i class="fas fa-clock"></i> Sched. ${s.scheduledTime}</span>`;
+      } else if (st === 'next') {
+        // FIXED: New "next" stop detail — shows ETA prominently
+        detailHTML = `<span class="stop-detail-item eta-highlight"><i class="fas fa-arrow-right"></i> Next · ETA: ${s.etaLabel}</span>
+          <span class="stop-detail-item"><i class="fas fa-ruler-horizontal"></i> ${s.distanceKm} km</span>
+          <span class="stop-detail-item"><i class="fas fa-calendar-clock"></i> Sched. ${s.scheduledTime}</span>`;
+      } else {
+        detailHTML = `<span class="stop-detail-item eta-highlight"><i class="fas fa-clock"></i> ETA: ${s.etaLabel}</span>
+          <span class="stop-detail-item"><i class="fas fa-ruler-horizontal"></i> ${s.distanceKm} km</span>
+          <span class="stop-detail-item"><i class="fas fa-calendar-clock"></i> Sched. ${s.scheduledTime}</span>`;
+      }
+
+      return `
+        <div class="stop-item ${isLast ? 'last-stop' : ''}" style="--i:${i}" data-stop-id="${s.stopId}" data-status="${st}">
+          <div class="stop-dot-wrap">
+            <div class="stop-dot ${st}">
+              ${dotIcon}
+              ${st === 'current' ? '<div class="stop-dot-bus"><i class="fas fa-bus" style="font-size:6px"></i></div>' : ''}
+            </div>
+          </div>
+          <div class="stop-content">
+            <div class="stop-name-row">
+              <span class="stop-name ${st}">${s.stopName}</span>
+              <span class="stop-status-badge ${st}">${statusLabels[st] || 'Upcoming'}</span>
+            </div>
+            <div class="stop-details">${detailHTML}</div>
+          </div>
+        </div>`;
+    }).join('');
+
+    // Save scroll position before replacing HTML, restore after
+    const scrollTop = etaBody.scrollTop;
+    etaBody.innerHTML = `<div class="stop-list">${stopsHTML}</div>`;
+    etaBody.scrollTop = scrollTop;
+
+    // Auto-scroll to current/next stop only on first render
+    if (!existingItems.length) {
+      setTimeout(() => {
+        const anchor = etaBody.querySelector('.stop-dot.current, .stop-dot.next, .stop-dot.arriving');
+        if (anchor) anchor.closest('.stop-item')?.scrollIntoView({ behavior:'smooth', block:'center' });
+      }, 200);
+    }
+  } else {
+    // Just update ETA labels in-place without touching DOM structure (no flicker)
+    Array.from(existingItems).forEach((el, i) => {
+      const s = stops[i];
+      const detailEl = el.querySelector('.stop-details');
+      if (!detailEl) return;
+      if (s.status === 'upcoming' || s.status === 'arriving' || s.status === 'next') {
+        const etaEl = detailEl.querySelector('.eta-highlight, .arriving-highlight');
+        if (etaEl) {
+          const icon   = s.status === 'arriving' ? 'fa-hourglass-half'
+                       : s.status === 'next'     ? 'fa-arrow-right' : 'fa-clock';
+          const prefix = s.status === 'arriving' ? 'Arriving in'
+                       : s.status === 'next'     ? 'Next · ETA:' : 'ETA:';
+          etaEl.innerHTML = `<i class="fas ${icon}"></i> ${prefix} ${s.etaLabel}`;
+        }
+      }
+    });
+  }
+
+  // Store stops for map use
+  etaCache[vehicleId]._stops  = stops;
+  etaCache[vehicleId]._busLat = data.currentLocation.lat;
+  etaCache[vehicleId]._busLng = data.currentLocation.lng;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ROUTE MAP MODAL
+// ═══════════════════════════════════════════════════════════════
+
+let googleMapsLoaded = false;
+let pendingMapOpen   = false;
+
+function loadGoogleMaps() {
+  if (googleMapsLoaded || document.getElementById('gmaps-script')) return;
+  const s  = document.createElement('script');
+  s.id     = 'gmaps-script';
+  s.src    = `https://maps.googleapis.com/maps/api/js?key=${MAPS_API_KEY}&callback=onGoogleMapsReady`;
+  s.async  = true;
+  document.head.appendChild(s);
+}
+
+function onGoogleMapsReady() {
+  googleMapsLoaded = true;
+  if (pendingMapOpen) { pendingMapOpen = false; buildRouteMap(); }
+}
+window.onGoogleMapsReady = onGoogleMapsReady;
+
+function openRouteMap(e) {
+  e && e.preventDefault();
+  const vehicleId = currentEtaVehicle;
+  if (!vehicleId) return;
+
+  const cache = etaCache[vehicleId];
+  if (!cache || !cache._stops) {
+    showToast('Route data not loaded yet. Try again in a moment.', 'error'); return;
+  }
+
+  document.getElementById('mapModal').classList.add('open');
+  document.getElementById('mapModalTitle').textContent = `Route Map – Bus ${vehicleId}`;
+  const busLat = cache._busLat, busLng = cache._busLng;
+  document.getElementById('mapModalGoogleLink').href =
+    `https://www.google.com/maps?q=${busLat},${busLng}`;
+
+  if (!googleMapsLoaded) { pendingMapOpen = true; loadGoogleMaps(); }
+  else buildRouteMap();
+}
+
+function closeMapModal() {
+  document.getElementById('mapModal').classList.remove('open');
+}
+
+function handleMapModalClick(e) {
+  if (e.target === document.getElementById('mapModal')) closeMapModal();
+}
+
+const darkMapStyle = [
+  {elementType:'geometry',stylers:[{color:'#0C1220'}]},
+  {elementType:'labels.text.stroke',stylers:[{color:'#060A14'}]},
+  {elementType:'labels.text.fill',stylers:[{color:'#5A6A8A'}]},
+  {featureType:'road',elementType:'geometry',stylers:[{color:'#1A2540'}]},
+  {featureType:'road.highway',elementType:'geometry',stylers:[{color:'#243050'}]},
+  {featureType:'water',elementType:'geometry',stylers:[{color:'#060D1A'}]},
+  {featureType:'poi',stylers:[{visibility:'off'}]},
+  {featureType:'transit',stylers:[{visibility:'off'}]},
+];
+
+function buildRouteMap() {
+  const vehicleId = currentEtaVehicle;
+  const cache     = etaCache[vehicleId];
+  if (!cache || !cache._stops) return;
+
+  const stops  = cache._stops;
+  const busLat = cache._busLat;
+  const busLng = cache._busLng;
+
+  // Clear old map elements
+  stopMarkers.forEach(m => m.setMap(null));
+  stopMarkers = [];
+  if (routePolyline) routePolyline.setMap(null);
+  if (busMarker)     busMarker.setMap(null);
+
+  const container = document.getElementById('routeMap');
+
+  if (!routeMap) {
+    routeMap = new google.maps.Map(container, {
+      zoom: 11,
+      center: { lat: busLat, lng: busLng },
+      styles: darkMapStyle,
+      disableDefaultUI: true,
+      gestureHandling: 'greedy',
+    });
+  } else {
+    routeMap.panTo({ lat: busLat, lng: busLng });
+  }
+
+  // Draw route polyline
+  const routeCoords = stops.map(s => ({ lat: s.lat, lng: s.lng }));
+  routePolyline = new google.maps.Polyline({
+    path:          routeCoords,
+    geodesic:      true,
+    strokeColor:   '#4ECDC4',
+    strokeOpacity: 0.7,
+    strokeWeight:  3,
+    map:           routeMap,
+  });
+
+  // Fit bounds to route
+  const bounds = new google.maps.LatLngBounds();
+  stops.forEach(s => bounds.extend({ lat: s.lat, lng: s.lng }));
+  bounds.extend({ lat: busLat, lng: busLng });
+  routeMap.fitBounds(bounds, { padding: 50 });
+
+  // Color scheme per status
+  const statusColors = {
+    departed: '#5A6A8A', current: '#22C55E', arriving: '#FBBF24', upcoming: '#4ECDC4'
+  };
+
+  // Draw stop markers
+  stops.forEach((s, idx) => {
+    const isLast = idx === stops.length - 1;
+    const color  = isLast ? '#FF6B35' : (statusColors[s.status] || '#4ECDC4');
+    const scale  = s.status === 'current' ? 14 : (isLast ? 13 : 8);
+
+    const marker = new google.maps.Marker({
+      position:  { lat: s.lat, lng: s.lng },
+      map:       routeMap,
+      title:     s.stopName,
+      icon: {
+        path:          google.maps.SymbolPath.CIRCLE,
+        fillColor:     color,
+        fillOpacity:   s.status === 'departed' ? 0.5 : 1,
+        strokeColor:   '#ffffff',
+        strokeWeight:  s.status === 'current' ? 2.5 : 1.5,
+        scale,
+      },
+      zIndex: s.status === 'current' ? 10 : (isLast ? 9 : idx),
+    });
+
+    // Info window
+    const infoWindow = new google.maps.InfoWindow({
+      content: `
+        <div style="background:#0C1220;color:#F0F4FF;padding:10px 14px;border-radius:10px;font-family:DM Sans,sans-serif;min-width:160px">
+          <div style="font-weight:700;font-size:13px;margin-bottom:4px">${s.stopName}</div>
+          <div style="font-size:11px;color:#9BAAC8">Stop ${s.sequence} · ${s.scheduledTime}</div>
+          <div style="margin-top:6px;font-size:11px;color:${color};font-weight:600">
+            ${s.status === 'departed' ? '✓ Departed' :
+              s.status === 'current'  ? '📍 Bus is here' :
+              s.status === 'arriving' ? `⏱ Arriving in ${s.etaLabel}` :
+              `🕐 ETA: ${s.etaLabel}`}
+          </div>
+          <div style="font-size:10px;color:#5A6A8A;margin-top:2px">${s.distanceKm} km from bus</div>
+        </div>`,
+      pixelOffset: new google.maps.Size(0, -scale - 4),
+    });
+
+    marker.addListener('click', () => {
+      stopMarkers.forEach(m => m.infoWindow?.close());
+      infoWindow.open(routeMap, marker);
+    });
+    marker.infoWindow = infoWindow;
+    stopMarkers.push(marker);
+  });
+
+  // Draw live bus marker
+  busMarker = new google.maps.Marker({
+    position:  { lat: busLat, lng: busLng },
+    map:       routeMap,
+    title:     `Bus ${vehicleId} — Live`,
+    icon: {
+      path:          'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z',
+      fillColor:     '#FF6B35',
+      fillOpacity:   1,
+      strokeColor:   '#ffffff',
+      strokeWeight:  2,
+      scale:         1.8,
+      anchor:        new google.maps.Point(12, 22),
+    },
+    zIndex: 999,
+    animation: google.maps.Animation.BOUNCE,
+  });
+  // Stop bounce after 2s
+  setTimeout(() => { if (busMarker) busMarker.setAnimation(null); }, 2000);
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type='success') {
+  const el   = document.getElementById('toastEl');
+  const icon = document.getElementById('toastIcon');
+  document.getElementById('toastMsg').textContent = msg;
+  icon.style.color = type==='error' ? 'var(--red)' : 'var(--green)';
+  icon.className   = type==='error' ? 'fas fa-circle-exclamation' : 'fas fa-circle-check';
+  el.classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.add('hidden'), 3000);
+}
+
+// ── Start ──────────────────────────────────────────────────────────────────────
+refreshVehicleList();
+refreshTimer = setInterval(refreshVehicleList, REFRESH_MS);
+loadGoogleMaps();
+</script>
+<!-- Mobile responsive layer -->
+<script src="mobile.js"></script>
+</body>
+</html>

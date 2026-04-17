@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Sign Up – Ritians Transport</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#060A14;
+  --bg2:#0C1220;
+  --bg3:#111927;
+  --bg4:#1A2540;
+  --accent:#4ECDC4;
+  --accent2:#FFE66D;
+  --accent3:#FF6B9D;
+  --text1:#F0F4FF;
+  --text2:#9BAAC8;
+  --text3:#5A6A8A;
+  --border:rgba(255,255,255,0.08);
+  --border-focus:rgba(78,205,196,0.5);
+  --danger:#F87171;
+  --success:#4ADE80;
+  --warn:#FBBF24;
+  --glow-accent:rgba(78,205,196,0.18);
+  --glow-accent2:rgba(255,230,109,0.12);
+}
+
+html,body{min-height:100%;font-family:'DM Sans',sans-serif;color:var(--text1)}
+body{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:32px 16px;min-height:100vh;
+  background:var(--bg);
+  background-image:
+    radial-gradient(ellipse 70% 50% at 15% 20%,rgba(78,205,196,0.07) 0%,transparent 60%),
+    radial-gradient(ellipse 60% 40% at 85% 80%,rgba(255,107,157,0.05) 0%,transparent 55%),
+    radial-gradient(ellipse 50% 60% at 50% 50%,rgba(255,230,109,0.03) 0%,transparent 70%);
+  position:relative;overflow-x:hidden;
+}
+
+/* ── Floating orbs ── */
+body::before,body::after{
+  content:'';position:fixed;border-radius:50%;pointer-events:none;animation:drift 12s ease-in-out infinite alternate;
+}
+body::before{
+  width:320px;height:320px;top:-80px;left:-100px;
+  background:radial-gradient(circle,rgba(78,205,196,0.06) 0%,transparent 70%);
+  filter:blur(40px);
+}
+body::after{
+  width:260px;height:260px;bottom:-60px;right:-80px;
+  background:radial-gradient(circle,rgba(255,107,157,0.06) 0%,transparent 70%);
+  filter:blur(40px);animation-delay:-6s;
+}
+@keyframes drift{0%{transform:translate(0,0) scale(1)}100%{transform:translate(20px,30px) scale(1.1)}}
+
+/* ── Grid overlay ── */
+.grid-overlay{
+  position:fixed;inset:0;pointer-events:none;opacity:0.018;
+  background-image:linear-gradient(rgba(78,205,196,1) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(78,205,196,1) 1px,transparent 1px);
+  background-size:48px 48px;z-index:0;
+}
+
+/* ── Brand ── */
+.brand{
+  display:flex;align-items:center;gap:12px;margin-bottom:24px;
+  animation:slideDown 0.5s ease both;z-index:1;
+}
+.brand-icon{
+  width:44px;height:44px;border-radius:14px;
+  background:linear-gradient(135deg,rgba(78,205,196,0.2),rgba(78,205,196,0.05));
+  border:1px solid rgba(78,205,196,0.35);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--accent);font-size:17px;
+  box-shadow:0 0 20px rgba(78,205,196,0.15),inset 0 1px 0 rgba(255,255,255,0.1);
+}
+.brand-name{font-family:'Syne',sans-serif;font-size:19px;font-weight:700;letter-spacing:-0.01em}
+.brand-name span{color:var(--accent)}
+
+/* ── Card ── */
+.card{
+  width:100%;max-width:500px;
+  background:linear-gradient(160deg,rgba(12,18,32,0.95),rgba(10,15,28,0.98));
+  border:1px solid var(--border);border-radius:24px;
+  padding:32px 30px 28px;
+  box-shadow:
+    0 24px 80px rgba(0,0,0,0.6),
+    0 1px 0 rgba(255,255,255,0.06) inset,
+    0 0 0 1px rgba(78,205,196,0.05);
+  position:relative;overflow:hidden;z-index:1;
+  animation:slideUp 0.55s cubic-bezier(0.22,1,0.36,1) both 0.1s;
+}
+.card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(78,205,196,0.4),rgba(255,230,109,0.2),transparent);
+}
+
+/* ── Header ── */
+.card-header{margin-bottom:22px}
+.step-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;
+  color:var(--accent);background:rgba(78,205,196,0.1);
+  border:1px solid rgba(78,205,196,0.2);border-radius:20px;
+  padding:4px 10px;margin-bottom:10px;
+}
+.card-title{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-bottom:5px;letter-spacing:-0.02em}
+.card-sub{font-size:13px;color:var(--text2);line-height:1.5}
+
+/* ── Section dividers ── */
+.section-label{
+  display:flex;align-items:center;gap:10px;margin:18px 0 12px;
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);
+}
+.section-label::before,.section-label::after{
+  content:'';flex:1;height:1px;background:var(--border);
+}
+.section-label::before{max-width:20px}
+
+/* ── Grid ── */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* ── Fields ── */
+.field{margin-bottom:12px;position:relative}
+.field label{
+  display:flex;align-items:center;gap:5px;
+  font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;
+  color:var(--text3);margin-bottom:7px;transition:color 0.2s;
+}
+.field label i{font-size:10px;opacity:0.7}
+.field:focus-within label{color:var(--accent)}
+
+/* Input wrapper with icon */
+.input-wrap{position:relative}
+.input-icon{
+  position:absolute;left:13px;top:50%;transform:translateY(-50%);
+  color:var(--text3);font-size:13px;pointer-events:none;transition:color 0.2s;z-index:1;
+}
+.field:focus-within .input-icon{color:var(--accent)}
+
+.field input,.field select{
+  width:100%;padding:10px 13px 10px 36px;border-radius:11px;
+  font-size:14px;font-family:inherit;
+  background:rgba(26,37,64,0.5);
+  border:1px solid var(--border);color:var(--text1);
+  transition:border 0.2s,box-shadow 0.2s,background 0.2s;outline:none;
+  -webkit-appearance:none;appearance:none;
+}
+.field input:focus,.field select:focus{
+  border-color:var(--border-focus);
+  box-shadow:0 0 0 3px rgba(78,205,196,0.1),0 0 20px rgba(78,205,196,0.05);
+  background:rgba(26,37,64,0.8);
+}
+.field input::placeholder{color:var(--text3);font-size:13px}
+.field select option{background:#0C1220;color:var(--text1)}
+
+/* custom select arrow */
+.select-wrap::after{
+  content:'\f078';font-family:'Font Awesome 6 Free';font-weight:900;
+  position:absolute;right:13px;top:50%;transform:translateY(-50%);
+  font-size:11px;color:var(--text3);pointer-events:none;transition:color 0.2s;
+}
+.field:focus-within .select-wrap::after{color:var(--accent)}
+
+/* Input without icon (for special layouts) */
+.no-icon input,.no-icon select{padding-left:13px}
+
+/* ── Password ── */
+.pw-wrap{position:relative}
+.pw-wrap input{padding-right:40px}
+.pw-eye{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;
+  padding:5px;transition:color 0.2s;z-index:2;
+}
+.pw-eye:hover{color:var(--accent)}
+
+/* ── Strength bar ── */
+.strength-wrap{margin-top:7px}
+.strength-bar{
+  display:flex;gap:4px;margin-bottom:4px;
+}
+.strength-seg{
+  flex:1;height:3px;border-radius:2px;
+  background:var(--bg4);transition:background 0.3s ease;
+}
+.strength-seg.active-weak{background:var(--danger)}
+.strength-seg.active-fair{background:var(--warn)}
+.strength-seg.active-good{background:var(--accent2)}
+.strength-seg.active-strong{background:var(--success)}
+.strength-text{font-size:11px;color:var(--text3);transition:color 0.3s}
+
+/* ── Validation states ── */
+.field-error{font-size:11.5px;color:var(--danger);margin-top:5px;display:none;align-items:center;gap:4px}
+.field-error.show{display:flex}
+.field-ok{position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  color:var(--success);font-size:12px;display:none;animation:popIn 0.2s ease;}
+.field-ok.show{display:block}
+@keyframes popIn{0%{transform:translateY(-50%) scale(0.5)}100%{transform:translateY(-50%) scale(1)}}
+
+/* invalid border */
+.field.invalid input,.field.invalid select{border-color:rgba(248,113,113,0.4)}
+.field.valid input,.field.valid select{border-color:rgba(74,222,128,0.3)}
+
+/* ── Reg check badge ── */
+.reg-status{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  font-size:11px;font-weight:600;display:none;align-items:center;gap:4px;
+}
+.reg-status.show{display:flex}
+.reg-status.checking{color:var(--text3)}
+.reg-status.taken{color:var(--danger)}
+.reg-status.available{color:var(--success)}
+
+/* ── Alert ── */
+.alert{
+  padding:11px 14px;border-radius:11px;font-size:13px;font-weight:500;
+  margin-bottom:14px;display:none;align-items:center;gap:9px;line-height:1.4;
+}
+.alert.show{display:flex}
+.alert-error{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);color:var(--danger)}
+.alert-success{background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.25);color:var(--success)}
+
+/* ── Progress bar at top ── */
+.form-progress{
+  display:flex;gap:3px;margin-bottom:20px;
+}
+.prog-dot{
+  flex:1;height:3px;border-radius:2px;background:var(--bg4);
+  transition:background 0.4s ease;
+}
+.prog-dot.filled{background:var(--accent)}
+
+/* ── Submit ── */
+.btn-submit{
+  width:100%;padding:13px;border-radius:13px;font-size:15px;font-weight:700;
+  font-family:inherit;cursor:pointer;border:none;
+  background:linear-gradient(135deg,var(--accent),#38b2ac);
+  color:#060A14;
+  transition:opacity 0.2s,transform 0.1s,box-shadow 0.2s;
+  margin-top:8px;letter-spacing:-0.01em;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:0 4px 20px rgba(78,205,196,0.25);
+  position:relative;overflow:hidden;
+}
+.btn-submit::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,0.1),transparent);
+  opacity:0;transition:opacity 0.2s;
+}
+.btn-submit:hover{opacity:0.92;box-shadow:0 6px 28px rgba(78,205,196,0.35);transform:translateY(-1px)}
+.btn-submit:hover::after{opacity:1}
+.btn-submit:active{transform:scale(0.98) translateY(0)}
+.btn-submit:disabled{opacity:0.45;cursor:not-allowed;transform:none;box-shadow:none}
+
+.spinner{
+  width:17px;height:17px;border:2.5px solid rgba(6,10,20,0.25);
+  border-top-color:#060A14;border-radius:50%;
+  animation:spin 0.7s linear infinite;display:none;
+}
+.btn-submit.loading .btn-text{display:none}
+.btn-submit.loading .spinner{display:block}
+.btn-submit.loading .btn-icon{display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Success overlay ── */
+.success-state{
+  display:none;text-align:center;padding:32px 0 16px;
+  animation:fadeIn 0.4s ease;
+}
+.success-state.show{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.success-icon{
+  width:68px;height:68px;border-radius:50%;
+  background:linear-gradient(135deg,rgba(74,222,128,0.2),rgba(74,222,128,0.05));
+  border:2px solid rgba(74,222,128,0.4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;color:var(--success);margin:0 auto 16px;
+  box-shadow:0 0 30px rgba(74,222,128,0.15);
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{box-shadow:0 0 30px rgba(74,222,128,0.15)}50%{box-shadow:0 0 40px rgba(74,222,128,0.3)}}
+.success-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:6px}
+.success-sub{font-size:13px;color:var(--text2);line-height:1.5}
+
+/* ── Footer ── */
+.footer-link{margin-top:18px;font-size:13px;color:var(--text2);text-align:center;z-index:1}
+.footer-link a{color:var(--accent);text-decoration:none;font-weight:600}
+.footer-link a:hover{text-decoration:underline}
+
+/* ── Animations ── */
+@keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Mobile ── */
+@media(max-width:500px){
+  .form-row{grid-template-columns:1fr}
+  .card{padding:24px 18px}
+  .card-title{font-size:20px}
+}
+</style>
+</head>
+<body>
+
+<div class="grid-overlay"></div>
+
+<div class="brand">
+  <div class="brand-icon"><i class="fas fa-bus-simple"></i></div>
+  <div class="brand-name">Ritians <span>Transport</span></div>
+</div>
+
+<div class="card">
+  <!-- Form section -->
+  <div id="formSection">
+    <div class="card-header">
+      <div class="step-badge"><i class="fas fa-user-plus"></i> Student Registration</div>
+      <div class="card-title">Create Account</div>
+      <div class="card-sub">Fill in your details to track your college bus in real-time</div>
+    </div>
+
+    <!-- Progress dots -->
+    <div class="form-progress" id="progressDots">
+      <div class="prog-dot" id="pd1"></div>
+      <div class="prog-dot" id="pd2"></div>
+      <div class="prog-dot" id="pd3"></div>
+      <div class="prog-dot" id="pd4"></div>
+      <div class="prog-dot" id="pd5"></div>
+      <div class="prog-dot" id="pd6"></div>
+      <div class="prog-dot" id="pd7"></div>
+      <div class="prog-dot" id="pd8"></div>
+    </div>
+
+    <!-- Alert -->
+    <div class="alert alert-error" id="alertEl">
+      <i class="fas fa-circle-exclamation"></i>
+      <span id="alertMsg">Please fill in all required fields.</span>
+    </div>
+
+    <!-- ── Personal Details ── -->
+    <div class="section-label">Personal</div>
+
+    <div class="field" id="field-name">
+      <label><i class="fas fa-user"></i> Full Name</label>
+      <div class="input-wrap">
+        <i class="input-icon fas fa-user"></i>
+        <input type="text" id="name" placeholder="e.g. Arun Kumar" autocomplete="name" oninput="validateField('name')"/>
+        <i class="field-ok fas fa-check" id="ok-name"></i>
+      </div>
+      <div class="field-error" id="err-name"><i class="fas fa-xmark"></i> Enter your full name</div>
+    </div>
+
+    <div class="form-row">
+      <div class="field" id="field-regNo">
+        <label><i class="fas fa-id-card"></i> Register No.</label>
+        <div class="input-wrap">
+          <i class="input-icon fas fa-id-card"></i>
+          <input type="text" id="regNo" placeholder="e.g. 2022CS001" autocomplete="off"
+            style="text-transform:uppercase" oninput="onRegInput()"/>
+          <div class="reg-status" id="regStatus"></div>
+        </div>
+        <div class="field-error" id="err-regNo"><i class="fas fa-xmark"></i> Enter a valid register number</div>
+      </div>
+
+      <div class="field" id="field-password">
+        <label><i class="fas fa-lock"></i> Password</label>
+        <div class="input-wrap pw-wrap">
+          <i class="input-icon fas fa-lock"></i>
+          <input type="password" id="password" placeholder="Min. 6 characters"
+            autocomplete="new-password" oninput="onPasswordInput()"/>
+          <button class="pw-eye" type="button" onclick="togglePw('password','eyeIcon1')" tabindex="-1">
+            <i class="fas fa-eye" id="eyeIcon1"></i>
+          </button>
+        </div>
+        <div class="strength-wrap" id="strengthWrap" style="display:none">
+          <div class="strength-bar">
+            <div class="strength-seg" id="s1"></div>
+            <div class="strength-seg" id="s2"></div>
+            <div class="strength-seg" id="s3"></div>
+            <div class="strength-seg" id="s4"></div>
+          </div>
+          <div class="strength-text" id="strengthText">Too short</div>
+        </div>
+        <div class="field-error" id="err-password"><i class="fas fa-xmark"></i> Min. 6 characters required</div>
+      </div>
+    </div>
+
+    <!-- ── Academic Details ── -->
+    <div class="section-label">Academic</div>
+
+    <div class="form-row">
+      <div class="field" id="field-department">
+        <label><i class="fas fa-building-columns"></i> Department</label>
+        <div class="input-wrap select-wrap">
+          <i class="input-icon fas fa-building-columns"></i>
+          <select id="department" onchange="validateField('department')">
+            <option value="">Select dept.</option>
+            <option value="CSE">CSE</option>
+            <option value="CSE (AIML)">CSE (AIML)</option>
+            <option value="ECE">ECE</option>
+            <option value="VLSI">VLSI</option>
+            <option value="Mechanical">Mechanical</option>
+            <option value="Civil">Civil</option>
+            <option value="Bio Tech">Bio Tech</option>
+          </select>
+        </div>
+        <div class="field-error" id="err-department"><i class="fas fa-xmark"></i> Select a department</div>
+      </div>
+
+      <div class="field" id="field-year">
+        <label><i class="fas fa-layer-group"></i> Year</label>
+        <div class="input-wrap select-wrap">
+          <i class="input-icon fas fa-layer-group"></i>
+          <select id="year" onchange="validateField('year')">
+            <option value="">Select year</option>
+            <option value="1st Year">1st Year</option>
+            <option value="2nd Year">2nd Year</option>
+            <option value="3rd Year">3rd Year</option>
+            <option value="4th Year">4th Year</option>
+          </select>
+        </div>
+        <div class="field-error" id="err-year"><i class="fas fa-xmark"></i> Select your year</div>
+      </div>
+    </div>
+
+    <div class="field" id="field-className">
+      <label><i class="fas fa-chalkboard"></i> Class / Section</label>
+      <div class="input-wrap">
+        <i class="input-icon fas fa-chalkboard"></i>
+        <input type="text" id="className" placeholder="e.g. CSE-A" oninput="validateField('className')"/>
+        <i class="field-ok fas fa-check" id="ok-className"></i>
+      </div>
+      <div class="field-error" id="err-className"><i class="fas fa-xmark"></i> Enter your class/section</div>
+    </div>
+
+    <!-- ── Transport Details ── -->
+    <div class="section-label">Transport</div>
+
+    <div class="field" id="field-busNumber">
+      <label><i class="fas fa-bus"></i> Route / Bus</label>
+      <div class="input-wrap select-wrap">
+        <i class="input-icon fas fa-bus"></i>
+        <select id="busNumber" onchange="onBusChange()">
+          <option value="">Select your route…</option>
+          <option value="R01">R01 — Ennore (5:50 am)</option>
+          <option value="R01A">R01A — Tondiarpet (6:17 am)</option>
+          <option value="R01B">R01B — Kasimedu (6:15 am)</option>
+          <option value="R02">R02 — Triplicane (6:20 am)</option>
+          <option value="R03">R03 — Choolai (6:20 am)</option>
+          <option value="R03A">R03A — Collector Nagar (6:50 am)</option>
+          <option value="R03B">R03B — Water Tank (6:40 am)</option>
+          <option value="R04">R04 — East Mogappair (6:30 am)</option>
+          <option value="R05">R05 — CIT Nagar (6:10 am)</option>
+          <option value="R05A">R05A — Loyola College (6:40 am)</option>
+          <option value="R06">R06 — Chinmayanagar (6:10 am)</option>
+          <option value="R07">R07 — Santhome (6:10 am)</option>
+          <option value="R08">R08 — Kovilambakkam (6:10 am)</option>
+          <option value="R08A">R08A — Adambakkam (6:30 am)</option>
+          <option value="R09">R09 — MKB Nagar (6:00 am)</option>
+          <option value="R09A">R09A — Perambur (6:30 am)</option>
+          <option value="R10">R10 — Thachoor (5:50 am)</option>
+          <option value="R11">R11 — Chengalpattu (6:00 am)</option>
+          <option value="R11A">R11A — Guduvanchery (6:30 am)</option>
+          <option value="R12">R12 — Minjur (5:45 am)</option>
+          <option value="R13">R13 — Vyasarpadi (6:10 am)</option>
+          <option value="R13A">R13A — ICF (6:45 am)</option>
+          <option value="R14">R14 — Thiruvallur (6:25 am)</option>
+          <option value="R14A">R14A — Kakkalur (6:55 am)</option>
+          <option value="R15">R15 — Kancheepuram (6:00 am)</option>
+          <option value="R15A">R15A — Orikkai (6:15 am)</option>
+          <option value="R16">R16 — Neelangkarai (6:10 am)</option>
+          <option value="R16A">R16A — Guindy (6:45 am)</option>
+          <option value="R16B">R16B — Sholinganallur (6:10 am)</option>
+          <option value="R17">R17 — Valluvarkottam (6:15 am)</option>
+          <option value="R17A">R17A — Valasaravakkam (6:45 am)</option>
+          <option value="R18">R18 — Pallikaranai (6:15 am)</option>
+          <option value="R18A">R18A — Sembakkam (6:25 am)</option>
+          <option value="R18B">R18B — Kelambakkam (6:00 am)</option>
+          <option value="R19">R19 — Poombukar (6:10 am)</option>
+          <option value="R19A">R19A — Vinayagapuram (6:45 am)</option>
+          <option value="R20">R20 — Vepampattu (6:30 am)</option>
+          <option value="R21">R21 — Ayyapakkam (6:15 am)</option>
+          <option value="R22">R22 — Thiruthani (5:55 am)</option>
+          <option value="R22A">R22A — SR Gate (6:30 am)</option>
+          <option value="R23">R23 — K4 Police Station (6:35 am)</option>
+          <option value="R24">R24 — Arcot (5:25 am)</option>
+          <option value="R25">R25 — Kallikuppam (6:45 am)</option>
+          <option value="R25A">R25A — Pudur (6:45 am)</option>
+          <option value="R26">R26 — Andarkuppam (6:35 am)</option>
+          <option value="R27">R27 — Avadi (6:25 am)</option>
+          <option value="R27A">R27A — Kollumedu (6:30 am)</option>
+          <option value="R28">R28 — Agaram (6:20 am)</option>
+          <option value="R29">R29 — Velachery (6:10 am)</option>
+          <option value="R29A">R29A — Pammal (6:35 am)</option>
+          <option value="R29B">R29B — Sivanthangal (7:05 am)</option>
+        </select>
+      </div>
+      <div class="field-error" id="err-busNumber"><i class="fas fa-xmark"></i> Select your bus route</div>
+    </div>
+
+    <div class="field" id="field-boardingPoint">
+      <label><i class="fas fa-map-pin"></i> Boarding Point</label>
+      <div class="input-wrap select-wrap">
+        <i class="input-icon fas fa-map-pin"></i>
+        <select id="boardingPoint" onchange="validateField('boardingPoint')" disabled>
+          <option value="">Select a route first</option>
+        </select>
+      </div>
+      <div class="field-error" id="err-boardingPoint"><i class="fas fa-xmark"></i> Select your boarding stop</div>
+    </div>
+
+    <button class="btn-submit" id="submitBtn" onclick="handleSignup()" disabled>
+      <i class="fas fa-arrow-right btn-icon"></i>
+      <span class="btn-text">Create Account</span>
+      <div class="spinner"></div>
+    </button>
+  </div>
+
+  <!-- Success state -->
+  <div class="success-state" id="successState">
+    <div class="success-icon"><i class="fas fa-check"></i></div>
+    <div class="success-title">You're all set! 🎉</div>
+    <div class="success-sub" id="successMsg">Account created successfully.<br>Redirecting to login…</div>
+  </div>
+</div>
+
+<div class="footer-link">
+  Already have an account? <a href="login.html">Log in</a>
+</div>
+
+<script>
+/* ── Redirect if logged in ── */
+if (localStorage.getItem('ritians_student')) window.location.href = 'index.html';
+
+/* ── Real RIT Bus Routes → Boarding Stops ── */
+const BUS_STOPS = {
+  R01:  ["Lift Gate","Wimco Market","Ajax","Periyar Nagar","Thiruvottiyur Market","Theradi","Ellaimman Koil","Raja Kadai","Toll Gate","RIT Campus"],
+  R01A: ["New Vannarpettai","Apollo","Tondiarpet","Maharani","Mint","New Bus Stand Mint","Thirupalli Street","Aminjikarai","Skywalk","Arumbakkam","Koyambedu Metro","Vengaya Mandi","Ration Stop (Nerkundram)","Maduravoyal","Maduravoyal Erikarai","Vanagaram","RIT Campus"],
+  R01B: ["Kasimedu","Kalmandapam","Royapuram Bridge","Beach Station","Parry's","Central","Egmore","Dasaprakash","Ega Theatre","Aminjikarai Market","RIT Campus"],
+  R02:  ["Chintadripet (Post Office)","D1 Police Station","Triplicane Highway","Ice House Police Station","Meersahibpet Market","Royapettah New College","Sterling Road (Bharath Petrol Bunk)","Choolaimedu Subway","Choolaimedu Bus Stop","Anna Arch","Arumbakkam Panchaliamman Koil","NSK","Maduravoyal Murugan Store","RIT Campus"],
+  R03:  ["Pulianthope","Choolai Post Office","Purasaivakkam Doveton","Kellys Signal","Water Tank Road Signal","Kilpauk Garden","Chinthamani","Anna Nagar Roundtana","Thirumangalam Blue Star","VR Mall","Maduravoyal Ration Shop","RIT Campus"],
+  R03A: ["Collector Nagar","Golden Flat","Mogappair West Depot","Nolambur","MGR University","RIT Campus"],
+  R03B: ["Gangaiamman Koil","Madina Masjid","New Avadi Road","Chintamani","Nalli Store","Anna Nagar Metro","Thirumangalam Metro","Nerkundram","Maduravoyal Ration Shop","Maduravoyal Erikarai","RIT Campus"],
+  R04:  ["JJ Nagar Police Station","HDFC Bank","IOB Bank","7H Bus Depot","Amutha School","D.R. Super Market","Nolambur","Meadows Apartment","MGR University","RIT Campus"],
+  R05:  ["CIT Nagar","Aranganathan Subway","Srinivasa Theatre","Mettupalayam","Sangamam Hotel","Arya Gowda Road","Vivek","Usman Road","RIT Campus"],
+  R05A: ["Loyola College","Choolaimedu","Metha Nagar","NSK Nagar","Arumbakkam (SBI Bank)","MMDA Cholan Street","MMDA Vallavan Hotel","CMBT (Koyambedu)","Rohini Theatre","Nerkundram Vengaya Mandi","Maduravoyal Erikarai","RIT Campus"],
+  R06:  ["Chinmayanagar","Sai Nagar","Natesan Nagar","Elango Nagar","Virugampakkam","KK Nagar","KK Nagar ESI","Ashok Pillar","Kasi Theatre","Ekkatuthangal","Olympia","Porur Saravana Stores","RIT Campus"],
+  R07:  ["Mandaveli Bus Depot","Pattinapakkam","Kutchery Road","Luz Corner","P.S. Sivasamy Road","SIET College","Nandanam Signal","Saidapet Veterinary Hospital","Saidapet Bus Stop","Guindy","Butt Road","Chennai Trade Centre","Porur","Ayyappanthangal","RIT Campus"],
+  R08:  ["Kovilampakkam","Keelkattalai Bus Stop","Madipakkam UTI Bank","Madipakkam Koot Road Bus Stop","Ranga Theatre","Nanganallur Chidambaram Stores","Nanganallur Saravana Hotel","Vanuvampet Church","Surendhar Nagar Bus Stop","Jayalakshmi Theatre","Thillai Ganga Nagar Subway","Aazar Khana Bus Stop","Butt Road","Ramavaram","RIT Campus"],
+  R08A: ["Seasons","Kakkan Bridge","Adambakkam Bus Depot","St Thomas Mount","Deepam Foods","Maharaja Traders","Vanuvampet Church","Thillai Ganga Nagar Subway","Butt Road","Poonamallee","RIT Campus"],
+  R09:  ["Vyasarpadi","MKB Nagar","E.B. Stop","Kannadhasan Nagar","M.R. Nagar","Lakshmi Amman Nagar","B.B. Road","Perambur Market","Agaram","Peravalur Road","RIT Campus"],
+  R09A: ["BB Road","Perambur Bus Stop","Perambur Railway Station","Perambur Church","Sembium Police Station","Gandhi Salai","Venus Mall","Retteri","Senthil Nagar","RIT Campus"],
+  R10:  ["Thachoor","Panjetty","Janappanchatram Bypass","Karanodai Bypass","Vijaya Nallur","Toll Gate","Padianallur","Red Hills (GRT)","Red Hills Market","Kavangarai","Puzhal Jail","Puzhal Camp","Velammal College","RIT Campus"],
+  R11:  ["Chengalpattu Rattinakinaru","New Bus Stand","Old Bus Stand","Chengalpattu Bypass","SP Kovil","MM Nagar Samiyar Gate","MM Nagar Bus Stand","Kattankulathur","RIT Campus"],
+  R11A: ["Guduvanchery","Urapakkam","Vandalur","Perungalathur","Vandalur Bridge","Mannivakkam","RIT Campus"],
+  R12:  ["Minjur Bus Stand","Minjur Railway Station","BDO Office","Nandiyambakkam","Pattamandiri","Napalayam","Manali Pudhu Nagar","Manali Market","MMDA 3rd Main Road","Mathur","Veterinary Hospital","Madhavaram Milk Colony","Arul Nagar","Thapalpetti","Moolakadai","Kalpana Lamp","Madhavaram Roundana","RIT Campus"],
+  R13:  ["Ganeshapuram","G3 Police Station","Pattalam","Otteri","Podi Kadai","T.B. Hospital","Ayanavaram Signal","Sayyani","Ayanavaram Noor Hotel","Joint Office","Ayanavaram Railway Quarters","RIT Campus"],
+  R13A: ["ICF Signal","Villivakkam Bus Stand","Korattur Signal","Nolambur Signal","Vanagaram","Velappanchavadi","Poonamallee Bypass","RIT Campus"],
+  R14:  ["Sevapetai","Kakkalur","Poonga Nagar","GRT","Manavalanagar Signal","Manavalanagar Railway Station","Putlur","Aranvoyal","Puthuchatram (India Japan Company)","RIT Campus"],
+  R14A: ["Kakkalur Signal","SBI Bank","Vellavedu","Thirumazhisai","RIT Campus"],
+  R15:  ["Ayyangarkulam","Housing Board","Collector Office","Rangasamy Kulam","RIT Campus"],
+  R15A: ["Orikkai","JJ Nagar","Keerai Mandapam","Tollgate","Pachaiyappa's College","Ayyampettai","Rajampettai","Walajabad","Natha Nallur","Panrutti","Oragadam","Arun Excello","Sriperumbudur High School","Sriperumbudur Tollgate","Irungattukottai Bus Stand","RIT Campus"],
+  R16:  ["Prathana Theatre","Vetuvankeni","Thiruvanmiyur RTO Office","Adyar Depot","Madhya Kailash","Guindy","Mugalivakkam","Karayanchavadi","Poonamallee Bus Stand","RIT Campus"],
+  R16A: ["Butt Road","Nandambakkam","Ramapuram Signal","DLF","Mugalivakkam","Saravana Stores","Poonamallee Depot","RIT Campus"],
+  R16B: ["Sholinganallur","Karapakkam","Karapakkam - TCS","PTC (KFC)","Mettukuppam","Selaiyur","MCC","Kulakarai Street","Krishna Nagar","Bharathi Nagar","Madanapuram","Nazarathpettai","RIT Campus"],
+  R17:  ["Valluvarkottam","Liberty","Power House","Lakshman Sruthi","Thai Sathya","Virugampakkam","Alwar Thirunagar","RIT Campus"],
+  R17A: ["Valasaravakkam Shivan Koil","Valasaravakkam","Saravana Bhavan Hotel","Lakshmi Nagar","Porur Bridge","Iyyappanthangal","Kattupakkam","Kumanachavadi","RIT Campus"],
+  R18:  ["Pallikaranai Munsif Office","Medavakkam Junction","Perumbakkam","Madambakkam","Selaiyur","RIT Campus"],
+  R18A: ["Sembakkam","Kamarajapuram","Rajakilpakkam Signal","Camp Road","Tambaram Sanatorium","Chrompet","Thiruneermalai","RIT Campus"],
+  R18B: ["Kelambakkam - GH","Pudupakkam","Mambakkam (Samathuvapuram)","Mambakkam Kulam","Ponmar","Sithalapakkam","Private Parking","Santhosapuram","Kamarajapuram","Kishkinta Kulam","Old Perungalathur","Mudichur Bypass","RIT Campus"],
+  R19:  ["Poombukar","Ganga Cinema","Don Bosco","Poombukar (Second Stop)","Korattur Bus Stop","Padi Britania","TVS Show Room","Ambattur","RIT Campus"],
+  R19A: ["Vinayagapuram Bus Stand","Retteri RTO Office","Retteri","Senthil Nagar","RIT Campus"],
+  R20:  ["Vepampattu Railway Station","Madha Kovil","Eswar Nagar","Indian Bank Thiruninravur","Thiruninravur Railway Station","Thiruninravur Bridge","Jaya College","Nemilicherri Road","Pattabiram Gandhi Nagar","Pattabiram Vasantha Mandapam","Sekkadu Bus Stand","Avadi Ponnu Store","Avadi J.P. Garden","Govarthanagiri Bus Stand","Chennirkuppam","RIT Campus"],
+  R21:  ["Ayappakkam Parking","Ayappakkam SBI ATM","Ayappakkam Petrol Bunk","ICF Church","Canara Bank","Singapore Shopping","Senneerkuppam","RIT Campus"],
+  R22:  ["Thiruthani Bypass","Thiruvallur Bypass X Road","Nagalamman Nagar","Krishna Poly","Jothi Nagar","Indira Gandhi Nagar","Swalpet","Government Hospital","Old Bus Stand","Railway Station","New Bus Stand","Navy Gate","Venkatesapuram","RIT Campus"],
+  R22A: ["SR Gate","Thakkolam Koot Road","Thakkolam","Marimangalam","Narasimapuram","Perambakkam","Koovam Bus Stop","RIT Campus"],
+  R23:  ["Nathamuni Theatre","K4 Police Station","Labour Officers Quarters","Vijaya Maruthi (Nuts & Spices)","Udayam Colony","Kambar Colony","Anna Nagar West Depot","Thirumangalam Bridge","Thirumangalam Waves","RIT Campus"],
+  R24:  ["Arcot Bus Stand","Muthukadai","VC Motor","Walajapettai","Arignar Anna Government College","Walajapettai Toll Gate","Kaveripakkam","Perumpullipakkam","Vinayagapuram (KPM)","Olimugamathu Pettai (Gori)","Egambaranathar Koil","Kachapeswarar Koil","Pookadai Chatram","Kammal Street","Indra Nagar (KPM Railway Gate)","Ponnerikarai","Santhavellore","Sungawarchathram","Vadamangalam","RIT Campus"],
+  R25:  ["Kallikuppam","Stedford Hospital","Saraswathy Nagar Indian Oil Petrol Bunk","Manigandapuram","Thirumullaivoyal Junction","Vaishnavi Nagar","Murugappa Polytechnic","RIT Campus"],
+  R25A: ["Pudur","Oragadam HP Pump","PTR Mahal","Ponnu Supermarket","Govardhanagiri","RIT Campus"],
+  R26:  ["Andarkuppam","Kundrathur","Kundrathur Thandalam","Kovur","Gerugambakkam","Bai Kadai","Mathanandapuram","Venkateswara Nagar","Porur","RIT Campus"],
+  R27:  ["Ajeya Stadium","HVF","CRP","Mitnamalli","Muthapudupet","Sasthri Nagar","Avadi Checkpost","Rama Rathna Theatre","Avadi Mankoil","Vasantham Nagar","Kovarthanagiri","Kendra Vihar","Kaduveti","RIT Campus"],
+  R27A: ["Kollumedu","Vel Tech College","Kovilpathagai","Ajeya Stadium","CRPF","Mittanemili","Palavedu Service Road","Nemilichery Tollgate","Chithukadu Blue","Panimalar Tollgate","Chembarambakkam","RIT Campus"],
+  R28:  ["Agaram","Periyar Nagar","Thiruvalluvar Thirumanamandapam","Perumal Koil","Kamban Nagar","E.B","Shanmugam Mahal","Senthil Nagar","Thathankuppam","Kalyan Jewellers","Collector Nagar","Cheriyan Hospital","Golden Flats","RIT Campus"],
+  R29:  ["Vijayanagar Bus Stand","Kaiveli","Kamachi Hospital","Pallavaram Singapore Shopping","Krishna Nagar","RIT Campus"],
+  R29A: ["Pammal","Arunmathi Theatre","Anagaputhur","Manikandan Nagar","Karima Nagar","Kundrathur (Theradi)","RIT Campus"],
+  R29B: ["Sivanthangal","Muthukumaran College","Pattu Koot Road","Mangadu","Kankaiyamman Kovil","MGR Nagar","Kumananchavadi","Aravind Hospital","RIT Campus"],
+};
+
+/* ── Toggle password visibility ── */
+function togglePw(inputId, iconId) {
+  const inp = document.getElementById(inputId);
+  const ic  = document.getElementById(iconId);
+  inp.type  = inp.type === 'password' ? 'text' : 'password';
+  ic.className = inp.type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+}
+
+/* ── Password strength ── */
+function getStrength(pw) {
+  if (pw.length < 4) return 0;
+  let s = 0;
+  if (pw.length >= 6)  s++;
+  if (pw.length >= 10) s++;
+  if (/[A-Z]/.test(pw) && /[0-9]/.test(pw)) s++;
+  if (/[^A-Za-z0-9]/.test(pw)) s++;
+  return Math.min(s, 4);
+}
+
+function onPasswordInput() {
+  const pw  = document.getElementById('password').value;
+  const sw  = document.getElementById('strengthWrap');
+  const txt = document.getElementById('strengthText');
+  const segs = [document.getElementById('s1'),document.getElementById('s2'),document.getElementById('s3'),document.getElementById('s4')];
+  const classes = ['active-weak','active-fair','active-good','active-strong'];
+  const labels  = ['Too short','Weak','Fair','Good','Strong'];
+
+  if (!pw) { sw.style.display='none'; return; }
+  sw.style.display = 'block';
+
+  const str = getStrength(pw);
+  segs.forEach((seg,i) => {
+    seg.className = 'strength-seg';
+    if (i < str) seg.classList.add(classes[str-1]);
+  });
+  txt.textContent = labels[str];
+  txt.style.color = ['var(--text3)','var(--danger)','var(--warn)','var(--accent2)','var(--success)'][str];
+
+  validateField('password');
+  updateProgress();
+}
+
+/* ── Reg number debounce check ── */
+let regTimer = null;
+function onRegInput() {
+  const val = document.getElementById('regNo').value.trim().toUpperCase();
+  document.getElementById('regNo').value = val;
+  clearTimeout(regTimer);
+  const status = document.getElementById('regStatus');
+  status.className = 'reg-status';
+
+  if (val.length < 5) { updateProgress(); return; }
+
+  status.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Checking…';
+  status.className = 'reg-status checking show';
+
+  regTimer = setTimeout(async () => {
+    try {
+      const res  = await fetch(`/check-reg?regNo=${encodeURIComponent(val)}`);
+      const data = await res.json();
+      if (data.taken) {
+        status.innerHTML = '<i class="fas fa-xmark"></i> Taken';
+        status.className = 'reg-status taken show';
+        setFieldState('regNo', false);
+      } else {
+        status.innerHTML = '<i class="fas fa-check"></i> Available';
+        status.className = 'reg-status available show';
+        setFieldState('regNo', true);
+      }
+    } catch {
+      /* network error: let server validate */
+      status.className = 'reg-status';
+      setFieldState('regNo', val.length >= 5);
+    }
+    updateProgress();
+  }, 600);
+}
+
+/* ── Bus change ── */
+function onBusChange() {
+  const bus = document.getElementById('busNumber').value;
+  const bp  = document.getElementById('boardingPoint');
+  validateField('busNumber');
+
+  // Reset boarding point
+  bp.innerHTML = '';
+  bp.disabled  = !bus;
+
+  if (bus && BUS_STOPS[bus]) {
+    const stops = BUS_STOPS[bus];
+    // All stops except last (RIT Campus) as selectable boarding points
+    const boardingStops = stops.slice(0, -1); // exclude RIT Campus
+    bp.innerHTML = '<option value="">Select your stop…</option>';
+    boardingStops.forEach(stop => {
+      const opt = document.createElement('option');
+      opt.value = stop; opt.textContent = stop;
+      bp.appendChild(opt);
+    });
+    bp.disabled = false;
+  } else {
+    bp.innerHTML = '<option value="">Select a route first</option>';
+  }
+
+  // Reset boarding point validation
+  const bpField = document.getElementById('field-boardingPoint');
+  bpField.classList.remove('valid','invalid');
+  const bpOk = document.getElementById('ok-boardingPoint');
+  const bpErr = document.getElementById('err-boardingPoint');
+  if (bpOk) bpOk.classList.remove('show');
+  if (bpErr) bpErr.classList.remove('show');
+
+  updateProgress();
+}
+
+/* ── Generic field validation ── */
+const VALIDATORS = {
+  name:         v => v.trim().length >= 2,
+  regNo:        v => v.trim().length >= 5,
+  password:     v => v.length >= 6,
+  department:   v => !!v,
+  year:         v => !!v,
+  className:    v => v.trim().length >= 1,
+  busNumber:    v => !!v,
+  boardingPoint:v => !!v,
+};
+
+function validateField(id) {
+  const el  = document.getElementById(id);
+  const val = el ? el.value : '';
+  const ok  = VALIDATORS[id] ? VALIDATORS[id](val) : !!val;
+  setFieldState(id, ok);
+  updateProgress();
+  return ok;
+}
+
+function setFieldState(id, ok) {
+  const fieldEl = document.getElementById(`field-${id}`);
+  const okEl    = document.getElementById(`ok-${id}`);
+  const errEl   = document.getElementById(`err-${id}`);
+  if (!fieldEl) return;
+  fieldEl.classList.toggle('valid', ok);
+  fieldEl.classList.toggle('invalid', !ok);
+  if (okEl)  okEl.classList.toggle('show', ok);
+  if (errEl) errEl.classList.toggle('show', !ok && document.getElementById(id)?.value !== '');
+}
+
+/* ── Progress indicator ── */
+const TRACKED_FIELDS = ['name','regNo','password','department','year','className','busNumber','boardingPoint'];
+
+function updateProgress() {
+  const filled = TRACKED_FIELDS.filter(id => {
+    const el = document.getElementById(id);
+    return el && VALIDATORS[id] && VALIDATORS[id](el.value);
+  }).length;
+
+  TRACKED_FIELDS.forEach((_,i) => {
+    document.getElementById(`pd${i+1}`)?.classList.toggle('filled', i < filled);
+  });
+
+  document.getElementById('submitBtn').disabled = (filled < TRACKED_FIELDS.length);
+}
+
+/* ── Alert helpers ── */
+function showAlert(msg, type='error') {
+  const el = document.getElementById('alertEl');
+  el.className = `alert alert-${type} show`;
+  document.getElementById('alertMsg').textContent = msg;
+}
+function hideAlert() {
+  document.getElementById('alertEl').classList.remove('show');
+}
+
+function setLoading(on) {
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = on;
+  btn.classList.toggle('loading', on);
+}
+
+/* ── Submit ── */
+async function handleSignup() {
+  hideAlert();
+
+  const name          = document.getElementById('name').value.trim();
+  const regNo         = document.getElementById('regNo').value.trim().toUpperCase();
+  const department    = document.getElementById('department').value;
+  const year          = document.getElementById('year').value;
+  const className     = document.getElementById('className').value.trim();
+  const password      = document.getElementById('password').value;
+  const busNumber     = document.getElementById('busNumber').value;
+  const boardingPoint = document.getElementById('boardingPoint').value;
+
+  // Final client validation
+  const allValid = TRACKED_FIELDS.every(id => validateField(id));
+  if (!allValid) return showAlert('Please complete all fields correctly.');
+
+  setLoading(true);
+  try {
+    const res  = await fetch('/signup', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ name, regNo, className, department, year, password, busNumber, boardingPoint }),
+    });
+    const data = await res.json();
+
+    if (!data.success) {
+      showAlert(data.message || 'Signup failed. Please try again.');
+    } else {
+      document.getElementById('formSection').style.display = 'none';
+      document.getElementById('successState').classList.add('show');
+      setTimeout(() => window.location.href = 'login.html', 2200);
+    }
+  } catch {
+    showAlert('Network error. Please check your connection and try again.');
+  } finally {
+    setLoading(false);
+  }
+}
+
+/* ── Enter key ── */
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.getElementById('submitBtn').disabled) handleSignup(); });
+
+/* ── Init progress ── */
+updateProgress();
+</script>
+</body>
+</html>

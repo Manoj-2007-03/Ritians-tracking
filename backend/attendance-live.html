@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="theme-color" content="#060A14"/>
+<title>Live Attendance – Ritians Transport</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous"/>
+<link rel="stylesheet" href="mobile.css"/>
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   LIVE ATTENDANCE — Production CSS
+   Architecture: mobile-first, BEM-aligned, 8px grid
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── 1. DESIGN TOKENS ── */
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #060A14;
+  --bg2:     #0C1220;
+  --bg3:     #1A2540;
+  --bg4:     #0F1829;
+  --accent:  #4ECDC4;
+  --accent2: #FFE66D;
+  --accent3: rgba(78,205,196,0.12);
+  --text1:   #F0F4FF;
+  --text2:   #9BAAC8;
+  --text3:   #5A6A8A;
+  --border:  rgba(255,255,255,0.08);
+  --border2: rgba(78,205,196,0.25);
+  --danger:  #F87171;
+  --success: #4ADE80;
+  --warn:    #FBBF24;
+
+  --font-head: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+
+  --sp-1: 8px;
+  --sp-2: 16px;
+  --sp-3: 24px;
+  --sp-4: 32px;
+
+  --r:     12px;
+  --r-lg:  16px;
+
+  --shadow:    0 8px 32px rgba(0,0,0,0.5);
+  --shadow-lg: 0 20px 60px rgba(0,0,0,0.6);
+
+  --t-base:   0.2s ease;
+  --t-smooth: 0.28s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ── 2. BASE ── */
+html, body {
+  min-height: 100%;
+  background: var(--bg);
+  font-family: var(--font-body);
+  color: var(--text1);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ── 3. NAVIGATION ── */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--sp-2);
+  height: 60px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(6,10,20,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  flex: 1;
+  min-width: 0;
+}
+
+.nav-brand-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--accent3);
+  border: 1px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.nav-brand-name {
+  font-family: var(--font-head);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 99px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all var(--t-base);
+  min-height: 36px;
+  white-space: nowrap;
+}
+
+.nav-btn:hover, .nav-btn:focus-visible {
+  background: rgba(255,255,255,0.1);
+  color: var(--text1);
+  outline: none;
+}
+
+/* Hide nav button labels on small screens */
+.nav-btn .nav-btn__label { display: none; }
+@media (min-width: 480px) { .nav-btn .nav-btn__label { display: inline; } }
+
+/* ── 4. PAGE ── */
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--sp-3) var(--sp-2) 96px;
+}
+
+/* ── 5. PAGE HEADER ── */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+
+.page-header__left {}
+
+.page-header__title {
+  font-family: var(--font-head);
+  font-size: clamp(20px, 4vw, 26px);
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--text1) 30%, var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.2;
+}
+
+.page-header__sub {
+  color: var(--text2);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+/* ── 6. SESSION TABS ── */
+.session-tabs {
+  display: flex;
+  background: var(--bg3);
+  border-radius: 10px;
+  padding: 4px;
+  gap: 4px;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.session-tab {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--text3);
+  transition: all var(--t-base);
+  font-family: var(--font-body);
+  min-height: 36px;
+  white-space: nowrap;
+}
+
+.session-tab.active  { background: var(--accent); color: #060A14; }
+.session-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ── 7. STATS ROW ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-3);
+}
+
+.stat-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: var(--sp-2);
+  text-align: center;
+  transition: border-color var(--t-base);
+}
+
+.stat-card:hover { border-color: var(--border2); }
+
+.stat-val {
+  font-family: var(--font-head);
+  font-size: clamp(18px, 4vw, 24px);
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+/* ── 8. MAIN GRID ── */
+/* Mobile: stacked */
+.live-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-2);
+}
+
+/* Desktop: side-by-side */
+@media (min-width: 900px) {
+  .live-grid {
+    grid-template-columns: 1fr 400px;
+    gap: var(--sp-3);
+  }
+}
+
+/* ── 9. CARD ── */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: var(--sp-3);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.card__title {
+  font-family: var(--font-head);
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-2);
+  color: var(--text1);
+}
+
+.card__title i { color: var(--accent); font-size: 13px; }
+
+/* ── 10. CAMERA ── */
+.cam-container {
+  position: relative;
+  border-radius: var(--r);
+  overflow: hidden;
+  background: #000;
+  aspect-ratio: 4/3;
+  border: 2px solid var(--border);
+  transition: border-color var(--t-base);
+}
+
+.cam-container.scanning { border-color: var(--accent); }
+
+#videoEl {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+#canvasEl { display: none; }
+
+/* Idle overlay */
+.cam-idle {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(6,10,20,0.85);
+  color: var(--text3);
+  font-size: 13px;
+  transition: opacity var(--t-smooth);
+}
+
+.cam-idle i { font-size: 28px; }
+.cam-idle.hidden { display: none; }
+
+/* Scan line overlay */
+.scan-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: scanDown 2.5s ease-in-out infinite;
+  display: none;
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.scan-overlay.active .scan-line { display: block; }
+
+/* Corner frame decoration when scanning */
+.scan-corner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-color: var(--accent);
+  border-style: solid;
+  opacity: 0;
+  transition: opacity var(--t-smooth);
+}
+
+.scan-overlay.active .scan-corner { opacity: 0.7; }
+.scan-corner--tl { top: 12px;    left: 12px;   border-width: 2px 0 0 2px; }
+.scan-corner--tr { top: 12px;    right: 12px;  border-width: 2px 2px 0 0; }
+.scan-corner--bl { bottom: 12px; left: 12px;   border-width: 0 0 2px 2px; }
+.scan-corner--br { bottom: 12px; right: 12px;  border-width: 0 2px 2px 0; }
+
+/* ── 11. CONFIDENCE BAR ── */
+.conf-bar-wrap {
+  margin-top: 10px;
+  height: 4px;
+  background: var(--bg3);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.conf-bar {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.4s var(--t-smooth), background 0.4s;
+  width: 0;
+}
+
+/* ── 12. STATUS ROW ── */
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: var(--sp-1);
+  min-height: 20px;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text3);
+  flex-shrink: 0;
+  transition: background var(--t-base);
+}
+
+.status-dot.scanning { background: var(--accent); animation: blink 1s infinite; }
+.status-dot.success  { background: var(--success); }
+.status-dot.fail     { background: var(--danger); }
+
+/* ── 13. CAMERA CONTROLS ── */
+.cam-controls {
+  display: flex;
+  gap: var(--sp-1);
+  margin-top: var(--sp-2);
+}
+
+/* ── 14. RESULT CARD ── */
+.result-card {
+  margin-top: var(--sp-2);
+  padding: var(--sp-2);
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  transition: all var(--t-smooth);
+  display: none;
+  animation: slideIn 0.3s ease-out;
+}
+
+.result-card.show         { display: block; }
+.result-card.success-card { border-color: rgba(74,222,128,0.3);  background: rgba(74,222,128,0.06); }
+.result-card.already-card { border-color: rgba(251,191,36,0.3);  background: rgba(251,191,36,0.06); }
+.result-card.fail-card    { border-color: rgba(248,113,113,0.3); background: rgba(248,113,113,0.06); }
+
+.result-name {
+  font-family: var(--font-head);
+  font-size: clamp(16px, 3vw, 20px);
+  font-weight: 700;
+  color: var(--text1);
+}
+
+.result-reg {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+.result-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  margin-top: var(--sp-2);
+}
+
+.result-chip {
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--accent3);
+  border: 1px solid var(--border2);
+  color: var(--accent);
+}
+
+.result-status {
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.result-status.ok   { color: var(--success); }
+.result-status.warn { color: var(--warn); }
+.result-status.fail { color: var(--danger); }
+
+.result-conf {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 4px;
+}
+
+/* ── 15. BUTTONS ── */
+.btn {
+  flex: 1;
+  padding: 11px 14px;
+  border-radius: var(--r);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: all var(--t-base);
+  min-height: 44px;
+  user-select: none;
+}
+
+.btn--primary  { background: var(--accent); color: #060A14; }
+.btn--primary:hover,
+.btn--primary:focus-visible { opacity: 0.9; outline: none; box-shadow: 0 4px 16px rgba(78,205,196,0.3); }
+.btn--primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn--danger {
+  background: rgba(248,113,113,0.1);
+  border: 1px solid rgba(248,113,113,0.3);
+  color: var(--danger);
+}
+.btn--danger:hover, .btn--danger:focus-visible {
+  background: rgba(248,113,113,0.18);
+  outline: none;
+}
+
+.btn--ghost {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: var(--text2);
+}
+.btn--ghost:hover, .btn--ghost:focus-visible {
+  background: rgba(255,255,255,0.1);
+  color: var(--text1);
+  outline: none;
+}
+
+/* ── 16. SPINNER ── */
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(6,10,20,0.25);
+  border-top-color: #060A14;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+/* ── 17. RECENT ATTENDANCE PANEL ── */
+.recent-panel {}
+
+.recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  /* Mobile: compact height with scroll */
+  max-height: 340px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Desktop: taller */
+@media (min-width: 900px) {
+  .recent-list { max-height: 520px; }
+}
+
+/* Custom scrollbar */
+.recent-list::-webkit-scrollbar { width: 4px; }
+.recent-list::-webkit-scrollbar-track { background: transparent; }
+.recent-list::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 99px; }
+
+/* Empty placeholder */
+.recent-empty {
+  text-align: center;
+  padding: 40px 0;
+  color: var(--text3);
+  font-size: 13px;
+}
+
+.recent-empty i {
+  font-size: 24px;
+  display: block;
+  margin-bottom: var(--sp-1);
+}
+
+/* Each item */
+.recent-item {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: slideIn 0.3s ease-out;
+  transition: border-color var(--t-base);
+}
+
+.recent-item:hover { border-color: var(--border2); }
+
+.recent-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent3);
+  border: 1px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-head);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.recent-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.recent-name {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text1);
+}
+
+.recent-meta {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recent-time {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text3);
+  flex-shrink: 0;
+}
+
+/* ── 18. ANIMATIONS ── */
+@keyframes scanDown  { 0%{top:10%} 50%{top:85%} 100%{top:10%} }
+@keyframes blink     { 0%,100%{opacity:1} 50%{opacity:0.3} }
+@keyframes spin      { to{transform:rotate(360deg)} }
+@keyframes slideIn   { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeUp    { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+.live-grid { animation: fadeUp 0.4s var(--t-smooth) both; }
+
+/* ── 19. RESPONSIVE TWEAKS ── */
+@media (min-width: 768px) {
+  .page { padding: var(--sp-4) var(--sp-4) 96px; }
+  .nav  { padding: 0 var(--sp-4); }
+}
+
+/* ── 20. MODE-MOBILE OVERRIDES ── */
+.mode-mobile .live-grid {
+  grid-template-columns: 1fr;
+}
+
+.mode-mobile .nav-btn .nav-btn__label { display: none; }
+.mode-mobile .stats-row { gap: 6px; }
+.mode-mobile .stat-card { padding: 12px 8px; }
+
+/* ── 21. MODE-DESKTOP OVERRIDES ── */
+.mode-desktop .live-grid {
+  grid-template-columns: 1fr 400px;
+}
+
+/* ── 22. FOCUS VISIBILITY ── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+</style>
+</head>
+<body>
+
+<!-- ══ NAVIGATION ══════════════════════════════════════════════════ -->
+<nav class="nav" role="banner" aria-label="Main navigation">
+  <a class="nav-brand" href="index.html" aria-label="Ritians Transport home">
+    <div class="nav-brand-icon" aria-hidden="true"><i class="fas fa-bus"></i></div>
+    <div class="nav-brand-name">Ritians Transport</div>
+  </a>
+  <div class="nav-right">
+    <a class="nav-btn" href="attendance-dashboard.html" aria-label="View dashboard">
+      <i class="fas fa-chart-bar" aria-hidden="true"></i>
+      <span class="nav-btn__label">Dashboard</span>
+    </a>
+    <a class="nav-btn" href="index.html" aria-label="Go back to home">
+      <i class="fas fa-arrow-left" aria-hidden="true"></i>
+      <span class="nav-btn__label">Back</span>
+    </a>
+    <!-- Hamburger injected by mobile.css JS -->
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobileDrawer">
+      <span class="hb-line"></span>
+      <span class="hb-line"></span>
+      <span class="hb-line"></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ══ MOBILE DRAWER ═══════════════════════════════════════════════ -->
+<div class="mobile-drawer" id="mobileDrawer" role="navigation" aria-label="Mobile navigation">
+  <div class="drawer-header">
+    <div class="drawer-brand">
+      <div class="drawer-brand-icon" aria-hidden="true"><i class="fas fa-bus"></i></div>
+      <div class="drawer-brand-text">Ritians Transport</div>
+    </div>
+    <button class="drawer-close-btn" id="drawerCloseBtn" aria-label="Close navigation menu">
+      <i class="fas fa-times" aria-hidden="true"></i>
+    </button>
+  </div>
+  <nav class="drawer-nav">
+    <a class="drawer-nav-item" href="index.html"><i class="fas fa-home" aria-hidden="true"></i>Home</a>
+    <a class="drawer-nav-item" href="face-register.html"><i class="fas fa-fingerprint" aria-hidden="true"></i>Register Face</a>
+    <a class="drawer-nav-item active" href="attendance-live.html"><i class="fas fa-camera" aria-hidden="true"></i>Live Attendance</a>
+    <a class="drawer-nav-item" href="attendance-dashboard.html"><i class="fas fa-chart-bar" aria-hidden="true"></i>Dashboard</a>
+  </nav>
+  <div class="drawer-footer">
+    <span class="drawer-clock" id="drawerClock" aria-live="polite"></span>
+  </div>
+</div>
+<div class="drawer-backdrop" id="drawerBackdrop" aria-hidden="true"></div>
+
+<!-- ══ MAIN PAGE ════════════════════════════════════════════════════ -->
+<main class="page" id="mainContent" role="main">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header__left">
+      <h1 class="page-header__title">Live Attendance</h1>
+      <p class="page-header__sub">Face recognition auto-marks attendance in real time</p>
+    </div>
+
+    <!-- Session Tabs -->
+    <div class="session-tabs" role="group" aria-label="Select session">
+      <button class="session-tab active" id="tab-morning" onclick="setSession('morning')"
+        aria-pressed="true" aria-label="Morning session">
+        🌅 <span>Morning</span>
+      </button>
+      <button class="session-tab" id="tab-evening" onclick="setSession('evening')"
+        aria-pressed="false" aria-label="Evening session">
+        🌆 <span>Evening</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row" role="region" aria-label="Session statistics">
+    <div class="stat-card">
+      <div class="stat-val" id="statToday" aria-live="polite">0</div>
+      <div class="stat-label">Today</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="statSession" aria-live="polite">0</div>
+      <div class="stat-label">This Session</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="statConf" aria-live="polite">—</div>
+      <div class="stat-label">Avg Confidence</div>
+    </div>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="live-grid">
+
+    <!-- ── CAMERA CARD ── -->
+    <div class="card">
+      <h2 class="card__title">
+        <i class="fas fa-camera" aria-hidden="true"></i> Camera Feed
+      </h2>
+
+      <!-- Camera container -->
+      <div class="cam-container" id="camContainer" aria-label="Camera viewfinder">
+        <video id="videoEl" autoplay playsinline muted aria-hidden="true"></video>
+        <canvas id="canvasEl" aria-hidden="true"></canvas>
+
+        <!-- Idle state overlay -->
+        <div class="cam-idle" id="camIdle" aria-live="polite">
+          <i class="fas fa-video-slash" aria-hidden="true"></i>
+          <span>Press Start to begin scanning</span>
+        </div>
+
+        <!-- Scanning overlay -->
+        <div class="scan-overlay" id="scanOverlay" aria-hidden="true">
+          <div class="scan-line"></div>
+          <div class="scan-corner scan-corner--tl"></div>
+          <div class="scan-corner scan-corner--tr"></div>
+          <div class="scan-corner scan-corner--bl"></div>
+          <div class="scan-corner scan-corner--br"></div>
+        </div>
+      </div>
+
+      <!-- Confidence bar -->
+      <div class="conf-bar-wrap" aria-hidden="true">
+        <div class="conf-bar" id="confBar"></div>
+      </div>
+
+      <!-- Status -->
+      <div class="status-row" aria-live="polite" aria-atomic="true">
+        <div class="status-dot" id="statusDot" aria-hidden="true"></div>
+        <span id="statusText">Camera not started</span>
+      </div>
+
+      <!-- Controls -->
+      <div class="cam-controls" role="group" aria-label="Scanning controls">
+        <button class="btn btn--primary" id="startBtn" onclick="startScanning()" aria-label="Start face scanning">
+          <i class="fas fa-play" aria-hidden="true"></i> Start Scanning
+        </button>
+        <button class="btn btn--danger" id="stopBtn" onclick="stopScanning()"
+          style="display:none" aria-label="Stop face scanning">
+          <i class="fas fa-stop" aria-hidden="true"></i> Stop
+        </button>
+      </div>
+
+      <!-- Recognition Result -->
+      <div class="result-card" id="resultCard" role="status" aria-live="polite" aria-atomic="true">
+        <div class="result-name" id="resultName">—</div>
+        <div class="result-reg"  id="resultReg">—</div>
+        <div class="result-meta" id="resultMeta"></div>
+        <div class="result-status" id="resultStatus"></div>
+        <div class="result-conf"   id="resultConf"></div>
+      </div>
+    </div>
+
+    <!-- ── RECENT ATTENDANCE CARD ── -->
+    <div class="card recent-panel">
+      <h2 class="card__title">
+        <i class="fas fa-list-check" aria-hidden="true"></i> Recent Attendance
+      </h2>
+      <div class="recent-list" id="recentList" aria-live="polite" aria-label="Recent attendance entries">
+        <div class="recent-empty" aria-live="polite">
+          <i class="fas fa-clock" aria-hidden="true"></i>
+          Attendance records will appear here
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /live-grid -->
+</main>
+
+<!-- ══ VIEW MODE TOGGLE ════════════════════════════════════════════ -->
+<button class="view-toggle-btn" id="viewToggleBtn" aria-label="Switch view mode">
+  <i class="fas fa-desktop" aria-hidden="true"></i>
+  Switch to <span class="vtb-mode-label" id="vtbLabel">Desktop View</span>
+</button>
+
+<script src="auth-guard.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   attendance-live.js — All business logic preserved exactly.
+   Performance: debounced scan interval, optimized DOM updates.
+   ═══════════════════════════════════════════════════════════════ */
+
+// ── State ──────────────────────────────────────────────────────
+let stream         = null;
+let scanning       = false;
+let scanInterval   = null;
+let currentSession = "morning";
+let sessionCount   = 0;
+let totalConf      = 0;
+let confCount      = 0;
+let _scanPending   = false; // debounce guard — prevents overlapping fetches
+
+const SCAN_INTERVAL_MS = 1800; // scan every 1.8s (unchanged)
+
+// ── View Mode System ───────────────────────────────────────────
+(function initViewMode() {
+  const html = document.documentElement;
+  const btn  = document.getElementById("viewToggleBtn");
+  const lbl  = document.getElementById("vtbLabel");
+  const saved = localStorage.getItem("ritians_view_mode");
+  let mode = saved || (window.innerWidth < 768 ? "mobile" : "desktop");
+  applyMode(mode);
+
+  btn.addEventListener("click", () => {
+    const next = html.classList.contains("mode-mobile") ? "desktop" : "mobile";
+    applyMode(next);
+    localStorage.setItem("ritians_view_mode", next);
+  });
+
+  function applyMode(m) {
+    html.classList.remove("mode-mobile", "mode-desktop");
+    html.classList.add("mode-" + m);
+    if (m === "mobile") {
+      btn.querySelector("i").className = "fas fa-desktop";
+      lbl.textContent = "Desktop View";
+    } else {
+      btn.querySelector("i").className = "fas fa-mobile-alt";
+      lbl.textContent = "Mobile View";
+    }
+  }
+})();
+
+// ── Mobile Drawer ──────────────────────────────────────────────
+(function initDrawer() {
+  const hamburger = document.getElementById("hamburgerBtn");
+  const drawer    = document.getElementById("mobileDrawer");
+  const backdrop  = document.getElementById("drawerBackdrop");
+  const closeBtn  = document.getElementById("drawerCloseBtn");
+  const clock     = document.getElementById("drawerClock");
+
+  const open = () => {
+    drawer.classList.add("drawer-open");
+    backdrop.classList.add("visible");
+    hamburger.classList.add("open");
+    hamburger.setAttribute("aria-expanded", "true");
+    document.body.style.overflow = "hidden";
+  };
+  const close = () => {
+    drawer.classList.remove("drawer-open");
+    backdrop.classList.remove("visible");
+    hamburger.classList.remove("open");
+    hamburger.setAttribute("aria-expanded", "false");
+    document.body.style.overflow = "";
+  };
+
+  hamburger.addEventListener("click", open);
+  closeBtn.addEventListener("click", close);
+  backdrop.addEventListener("click", close);
+  document.addEventListener("keydown", e => { if (e.key === "Escape") close(); });
+
+  const updateClock = () => {
+    clock.textContent = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+  };
+  updateClock();
+  setInterval(updateClock, 1000);
+})();
+
+// ── Session ────────────────────────────────────────────────────
+function setSession(s) {
+  currentSession = s;
+  const morning = document.getElementById("tab-morning");
+  const evening = document.getElementById("tab-evening");
+  morning.classList.toggle("active", s === "morning");
+  morning.setAttribute("aria-pressed", s === "morning");
+  evening.classList.toggle("active", s === "evening");
+  evening.setAttribute("aria-pressed", s === "evening");
+}
+
+// ── Start Scanning ─────────────────────────────────────────────
+async function startScanning() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" }
+    });
+    const video = document.getElementById("videoEl");
+    video.srcObject = stream;
+    await video.play();
+
+    // Hide idle overlay
+    const idleEl = document.getElementById("camIdle");
+    if (idleEl) idleEl.classList.add("hidden");
+    document.getElementById("camContainer").classList.add("scanning");
+
+    scanning = true;
+    document.getElementById("startBtn").style.display = "none";
+    document.getElementById("stopBtn").style.display  = "flex";
+    document.getElementById("scanOverlay").classList.add("active");
+    setStatus("scanning", "Scanning for faces…");
+
+    loadTodayStats();
+    scanInterval = setInterval(scanFrame, SCAN_INTERVAL_MS);
+  } catch (e) {
+    // Use showStatus instead of alert for better UX
+    setStatus("fail", "Camera access denied. Please allow permission in browser settings.");
+  }
+}
+
+function stopScanning() {
+  scanning = false;
+  clearInterval(scanInterval);
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+
+  document.getElementById("startBtn").style.display = "flex";
+  document.getElementById("stopBtn").style.display  = "none";
+  document.getElementById("scanOverlay").classList.remove("active");
+  document.getElementById("camContainer").classList.remove("scanning");
+
+  const idleEl = document.getElementById("camIdle");
+  if (idleEl) idleEl.classList.remove("hidden");
+
+  setStatus("", "Scanning stopped");
+  updateConfBar(0, "#5A6A8A");
+}
+
+// ── Scan Frame (debounced — skip if previous fetch still in flight) ──
+async function scanFrame() {
+  if (!scanning || _scanPending) return;
+  const video  = document.getElementById("videoEl");
+  const canvas = document.getElementById("canvasEl");
+  if (!video.videoWidth) return;
+
+  canvas.width  = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext("2d").drawImage(video, 0, 0);
+  const imageData = canvas.toDataURL("image/jpeg", 0.85);
+
+  _scanPending = true;
+  try {
+    const res  = await fetch("/attendance/recognize", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ image: imageData, session: currentSession }),
+    });
+    const data = await res.json();
+    handleResult(data);
+  } catch (e) {
+    setStatus("fail", "Service error — retrying…");
+  } finally {
+    _scanPending = false;
+  }
+}
+
+// ── Handle Result ──────────────────────────────────────────────
+function handleResult(data) {
+  const card = document.getElementById("resultCard");
+
+  if (data.noFace) {
+    setStatus("scanning", "No face detected — please look at camera");
+    updateConfBar(0, "#5A6A8A");
+    card.classList.remove("show");
+    return;
+  }
+
+  if (!data.success) {
+    setStatus("fail", data.message || "Face not recognized");
+    updateConfBar(data.confidence || 0, "#F87171");
+    card.className = "result-card show fail-card";
+    document.getElementById("resultName").textContent = "Not Recognized";
+    document.getElementById("resultReg").textContent  = "";
+    document.getElementById("resultMeta").innerHTML   = "";
+    document.getElementById("resultStatus").innerHTML = `<i class="fas fa-times-circle" aria-hidden="true"></i> ${data.message}`;
+    document.getElementById("resultStatus").className = "result-status fail";
+    document.getElementById("resultConf").textContent = data.confidence ? `Confidence: ${data.confidence}%` : "";
+    return;
+  }
+
+  const s    = data.student;
+  const conf = data.confidence || 0;
+  totalConf += conf; confCount++;
+  document.getElementById("statConf").textContent = Math.round(totalConf / confCount) + "%";
+
+  updateConfBar(conf, conf > 80 ? "#4ADE80" : conf > 60 ? "#FBBF24" : "#F87171");
+
+  document.getElementById("resultName").textContent = s.name;
+  document.getElementById("resultReg").textContent  = s.regNo;
+  document.getElementById("resultMeta").innerHTML   = [s.department, s.year, `Bus ${s.busNo}`, s.route]
+    .filter(Boolean)
+    .map(v => `<div class="result-chip">${v}</div>`)
+    .join("");
+
+  if (data.alreadyMarked) {
+    card.className = "result-card show already-card";
+    document.getElementById("resultStatus").innerHTML = `<i class="fas fa-clock" aria-hidden="true"></i> Already marked today`;
+    document.getElementById("resultStatus").className = "result-status warn";
+    setStatus("scanning", `${s.name} — already marked`);
+  } else {
+    card.className = "result-card show success-card";
+    document.getElementById("resultStatus").innerHTML = `<i class="fas fa-check-circle" aria-hidden="true"></i> Attendance marked!`;
+    document.getElementById("resultStatus").className = "result-status ok";
+    document.getElementById("resultConf").textContent = `Confidence: ${conf}%`;
+    setStatus("success", `✅ ${s.name} marked present`);
+    sessionCount++;
+    document.getElementById("statSession").textContent = sessionCount;
+    addRecentEntry(s, data.timestamp, conf);
+    loadTodayStats();
+  }
+}
+
+// ── Recent List ────────────────────────────────────────────────
+function addRecentEntry(s, timestamp, conf) {
+  const list = document.getElementById("recentList");
+
+  // Remove empty placeholder if present
+  const empty = list.querySelector(".recent-empty");
+  if (empty) empty.remove();
+
+  const time = timestamp
+    ? new Date(timestamp).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
+    : "--:--";
+  const initials = (s.name || "?").split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
+
+  const item = document.createElement("div");
+  item.className = "recent-item";
+  item.setAttribute("role", "listitem");
+  item.innerHTML = `
+    <div class="recent-avatar" aria-hidden="true">${initials}</div>
+    <div class="recent-info">
+      <div class="recent-name">${s.name}</div>
+      <div class="recent-meta">${s.department || ""} · Bus ${s.busNo || "—"} · ${conf}%</div>
+    </div>
+    <div class="recent-time">${time}</div>`;
+  list.insertBefore(item, list.firstChild);
+
+  // Cap list at 20 items to limit DOM size
+  while (list.children.length > 20) list.removeChild(list.lastChild);
+}
+
+// ── Stats ──────────────────────────────────────────────────────
+async function loadTodayStats() {
+  try {
+    const res  = await fetch("/attendance/stats", { headers: { "x-admin-key": "ritians_admin_2025" } });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById("statToday").textContent = data.stats.totalToday;
+    }
+  } catch (_) { /* non-critical */ }
+}
+
+// ── Helpers ────────────────────────────────────────────────────
+function setStatus(type, msg) {
+  document.getElementById("statusText").textContent = msg;
+  const dot = document.getElementById("statusDot");
+  dot.className = "status-dot" + (type ? " " + type : "");
+}
+
+function updateConfBar(pct, color) {
+  const bar = document.getElementById("confBar");
+  bar.style.width      = Math.min(100, Math.max(0, pct)) + "%";
+  bar.style.background = color;
+}
+
+window.addEventListener("beforeunload", stopScanning);
+</script>
+</body>
+</html>

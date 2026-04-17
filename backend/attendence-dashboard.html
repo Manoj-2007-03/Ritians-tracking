@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="theme-color" content="#060A14"/>
+<title>Attendance Dashboard – Ritians Transport</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous"/>
+<link rel="stylesheet" href="mobile.css"/>
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   ATTENDANCE DASHBOARD — Production CSS
+   Architecture: mobile-first, BEM-aligned, 8px grid
+   Key mobile enhancement: card-stacked records replace bare table
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── 1. DESIGN TOKENS ── */
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #060A14;
+  --bg2:     #0C1220;
+  --bg3:     #1A2540;
+  --bg4:     #0F1829;
+  --accent:  #4ECDC4;
+  --accent2: #FFE66D;
+  --accent3: rgba(78,205,196,0.12);
+  --text1:   #F0F4FF;
+  --text2:   #9BAAC8;
+  --text3:   #5A6A8A;
+  --border:  rgba(255,255,255,0.08);
+  --border2: rgba(78,205,196,0.25);
+  --danger:  #F87171;
+  --success: #4ADE80;
+  --warn:    #FBBF24;
+
+  --font-head: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+
+  --sp-1: 8px;
+  --sp-2: 16px;
+  --sp-3: 24px;
+  --sp-4: 32px;
+
+  --r:     12px;
+  --r-lg:  16px;
+
+  --shadow:    0 8px 32px rgba(0,0,0,0.5);
+
+  --t-base:   0.2s ease;
+  --t-smooth: 0.28s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ── 2. BASE ── */
+html, body {
+  min-height: 100%;
+  background: var(--bg);
+  font-family: var(--font-body);
+  color: var(--text1);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ── 3. NAVIGATION ── */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--sp-2);
+  height: 60px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(6,10,20,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  flex: 1;
+  min-width: 0;
+}
+
+.nav-brand-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--accent3);
+  border: 1px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.nav-brand-name {
+  font-family: var(--font-head);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 99px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all var(--t-base);
+  min-height: 36px;
+  white-space: nowrap;
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+
+.nav-btn:hover, .nav-btn:focus-visible {
+  background: rgba(255,255,255,0.1);
+  color: var(--text1);
+  outline: none;
+}
+
+.nav-btn.accent {
+  background: var(--accent);
+  color: #060A14;
+  border-color: transparent;
+}
+
+.nav-btn.accent:hover {
+  opacity: 0.9;
+  box-shadow: 0 4px 16px rgba(78,205,196,0.3);
+}
+
+/* Hide label text on smallest screens */
+.nav-btn .nav-btn__label { display: none; }
+@media (min-width: 520px) { .nav-btn .nav-btn__label { display: inline; } }
+
+/* ── 4. PAGE ── */
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--sp-3) var(--sp-2) 96px;
+}
+
+/* ── 5. ADMIN PROMPT ── */
+.admin-prompt {
+  background: var(--bg2);
+  border: 1px solid rgba(251,191,36,0.25);
+  border-radius: var(--r-lg);
+  padding: var(--sp-4);
+  max-width: 420px;
+  margin: 48px auto;
+  text-align: center;
+  box-shadow: var(--shadow);
+  animation: fadeUp 0.4s var(--t-smooth) both;
+}
+
+.admin-prompt__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: rgba(251,191,36,0.1);
+  border: 1px solid rgba(251,191,36,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: var(--warn);
+  margin: 0 auto var(--sp-2);
+}
+
+.admin-prompt__title {
+  font-family: var(--font-head);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text1);
+  margin-bottom: var(--sp-1);
+}
+
+.admin-prompt__sub {
+  font-size: 13px;
+  color: var(--text2);
+  margin-bottom: var(--sp-3);
+  line-height: 1.5;
+}
+
+.admin-input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--r);
+  font-size: 15px;
+  font-family: var(--font-body);
+  background: var(--bg3);
+  border: 1.5px solid var(--border);
+  color: var(--text1);
+  outline: none;
+  margin-bottom: var(--sp-2);
+  text-align: center;
+  letter-spacing: 0.05em;
+  min-height: 48px;
+  transition: border-color var(--t-base), box-shadow var(--t-base);
+}
+
+.admin-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(78,205,196,0.12);
+}
+
+/* ── 6. PAGE HEADER ── */
+.page-header {
+  margin-bottom: var(--sp-3);
+}
+
+.page-header__title {
+  font-family: var(--font-head);
+  font-size: clamp(20px, 4vw, 26px);
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--text1) 30%, var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.2;
+}
+
+.page-header__sub {
+  color: var(--text2);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+/* ── 7. STATS GRID ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* mobile: 2 col */
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-3);
+}
+
+/* Tablet+: 4 columns */
+@media (min-width: 640px) {
+  .stats-grid { grid-template-columns: repeat(4, 1fr); gap: var(--sp-2); }
+}
+
+.stat-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: var(--sp-2);
+  transition: border-color var(--t-base), transform var(--t-base);
+}
+
+.stat-card:hover {
+  border-color: var(--border2);
+  transform: translateY(-1px);
+}
+
+.stat-label {
+  font-size: 10px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-weight: 700;
+}
+
+.stat-val {
+  font-family: var(--font-head);
+  font-size: clamp(22px, 4vw, 30px);
+  font-weight: 800;
+  color: var(--accent);
+  margin-top: 6px;
+  line-height: 1;
+}
+
+.stat-sub {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* ── 8. FILTERS CARD ── */
+.filters-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: var(--sp-2);
+  margin-bottom: var(--sp-2);
+  box-shadow: var(--shadow);
+}
+
+/* Collapsible on mobile */
+.filters-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  padding-bottom: var(--sp-2);
+}
+
+.filters-header:not(.expanded) + .filters-body { display: none; }
+.filters-header.expanded + .filters-body { display: block; }
+
+/* Always show on desktop */
+@media (min-width: 768px) {
+  .filters-header { cursor: default; pointer-events: none; }
+  .filters-header + .filters-body { display: block !important; }
+  .filters-toggle-icon { display: none; }
+}
+
+.filters-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filters-toggle-icon {
+  color: var(--text3);
+  font-size: 12px;
+  transition: transform var(--t-base);
+}
+
+.filters-header.expanded .filters-toggle-icon {
+  transform: rotate(180deg);
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: 1fr; /* mobile: stacked */
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-2);
+}
+
+@media (min-width: 480px) {
+  .filters-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 768px) {
+  .filters-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+}
+
+.filter-field select,
+.filter-field input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--r);
+  font-size: 14px;
+  font-family: var(--font-body);
+  background: var(--bg3);
+  border: 1.5px solid var(--border);
+  color: var(--text1);
+  outline: none;
+  transition: border-color var(--t-base), box-shadow var(--t-base);
+  min-height: 44px;
+  -webkit-appearance: none;
+}
+
+/* Prevent iOS zoom */
+@media (max-width: 768px) {
+  .filter-field select,
+  .filter-field input { font-size: 16px; }
+}
+
+.filter-field select:focus,
+.filter-field input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(78,205,196,0.1);
+}
+
+.filter-field select option { background: var(--bg2); }
+
+.filters-actions {
+  display: flex;
+  gap: var(--sp-1);
+  flex-wrap: wrap;
+}
+
+/* ── 9. BUTTONS ── */
+.btn {
+  padding: 10px 18px;
+  border-radius: var(--r);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--t-base);
+  min-height: 44px;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.btn--primary { background: var(--accent); color: #060A14; }
+.btn--primary:hover, .btn--primary:focus-visible {
+  opacity: 0.9; outline: none;
+  box-shadow: 0 4px 16px rgba(78,205,196,0.3);
+}
+
+.btn--ghost {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: var(--text2);
+}
+.btn--ghost:hover, .btn--ghost:focus-visible {
+  background: rgba(255,255,255,0.1);
+  color: var(--text1);
+  outline: none;
+}
+
+.btn--success {
+  background: rgba(74,222,128,0.1);
+  border: 1px solid rgba(74,222,128,0.25);
+  color: var(--success);
+}
+.btn--success:hover, .btn--success:focus-visible {
+  background: rgba(74,222,128,0.18);
+  outline: none;
+}
+.btn--pdf {
+  background: rgba(248,113,113,0.1);
+  border: 1px solid rgba(248,113,113,0.3);
+  color: var(--danger);
+}
+.btn--pdf:hover, .btn--pdf:focus-visible {
+  background: rgba(248,113,113,0.18);
+  outline: none;
+  box-shadow: 0 4px 16px rgba(248,113,113,0.2);
+}
+
+/* On mobile: make action buttons full-width */
+@media (max-width: 480px) {
+  .filters-actions { flex-direction: column; }
+  .filters-actions .btn { width: 100%; justify-content: center; }
+}
+
+/* ── 10. TABLE CARD ── */
+.table-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-2);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+
+.table-title {
+  font-family: var(--font-head);
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.table-title i { color: var(--accent); }
+
+.table-count {
+  font-size: 12px;
+  color: var(--text3);
+}
+
+/* ── 11. TABLE (desktop) ── */
+/* Table is shown only on desktop / mode-desktop */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  display: none; /* hidden on mobile by default */
+}
+
+/* Show table on tablet+ */
+@media (min-width: 768px) {
+  .table-wrap { display: block; }
+  .record-cards { display: none; }
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+thead th {
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text3);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg3);
+  white-space: nowrap;
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background var(--t-base);
+}
+
+tbody tr:hover  { background: rgba(255,255,255,0.025); }
+tbody tr:last-child { border-bottom: none; }
+
+td {
+  padding: 10px 16px;
+  color: var(--text2);
+  white-space: nowrap;
+}
+
+td.name-cell  { color: var(--text1); font-weight: 500; }
+td.reg-cell   { font-family: var(--font-mono); font-size: 12px; color: var(--accent); }
+
+/* ── 12. RECORD CARDS (mobile alternative to table) ── */
+.record-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1px; /* seamless rows */
+  background: var(--border); /* gap becomes separator */
+}
+
+.record-card {
+  background: var(--bg2);
+  padding: var(--sp-2);
+  transition: background var(--t-base);
+}
+
+.record-card:hover { background: rgba(255,255,255,0.02); }
+
+.record-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-1);
+}
+
+.record-card__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text1);
+  line-height: 1.3;
+}
+
+.record-card__reg {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent);
+  margin-top: 2px;
+}
+
+.record-card__badges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.record-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.record-card__meta-item {
+  font-size: 11px;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.record-card__meta-item i {
+  font-size: 10px;
+  color: var(--text3);
+}
+
+.record-card__time {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.record-card__num {
+  font-size: 11px;
+  color: var(--text3);
+  margin-bottom: 2px;
+}
+
+/* ── 13. BADGES ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge--present {
+  background: rgba(74,222,128,0.1);
+  border: 1px solid rgba(74,222,128,0.25);
+  color: var(--success);
+}
+
+.badge--morning {
+  background: rgba(78,205,196,0.1);
+  border: 1px solid rgba(78,205,196,0.2);
+  color: var(--accent);
+}
+
+.badge--evening {
+  background: rgba(255,230,109,0.1);
+  border: 1px solid rgba(255,230,109,0.2);
+  color: #FFE66D;
+}
+
+/* ── 14. CONFIDENCE CHIP ── */
+.conf-chip {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 99px;
+  border: 1px solid transparent;
+}
+
+.conf-chip--high   { color: var(--success); border-color: rgba(74,222,128,0.25); background: rgba(74,222,128,0.08); }
+.conf-chip--medium { color: var(--warn);    border-color: rgba(251,191,36,0.25);  background: rgba(251,191,36,0.08); }
+.conf-chip--low    { color: var(--danger);  border-color: rgba(248,113,113,0.25); background: rgba(248,113,113,0.08); }
+
+/* ── 15. PAGINATION ── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-2);
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+
+.page-info {
+  font-size: 12px;
+  color: var(--text3);
+}
+
+.page-btns {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.page-btn {
+  padding: 7px 12px;
+  border-radius: var(--r);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  color: var(--text2);
+  transition: all var(--t-base);
+  min-height: 36px;
+}
+
+.page-btn:hover  { background: rgba(255,255,255,0.08); color: var(--text1); }
+.page-btn.active { background: var(--accent); color: #060A14; border-color: transparent; }
+.page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ── 16. EMPTY / LOADING STATES ── */
+.empty-state {
+  text-align: center;
+  padding: 56px var(--sp-3);
+  color: var(--text3);
+}
+
+.empty-state i {
+  font-size: 32px;
+  display: block;
+  margin-bottom: var(--sp-2);
+  color: var(--text3);
+}
+
+.empty-state__title {
+  font-family: var(--font-head);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text2);
+  margin-bottom: var(--sp-1);
+}
+
+.empty-state__sub { font-size: 13px; }
+
+.loading-cell {
+  text-align: center;
+  padding: 48px var(--sp-3);
+  color: var(--text3);
+}
+
+/* ── 17. ANIMATIONS ── */
+@keyframes spin    { to { transform: rotate(360deg); } }
+@keyframes fadeUp  { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+@keyframes slideIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+
+.spin { animation: spin 0.7s linear infinite; }
+.page { animation: fadeUp 0.4s var(--t-smooth) both; }
+
+/* ── 18. MODE-MOBILE OVERRIDES ── */
+.mode-mobile .table-wrap  { display: none !important; }
+.mode-mobile .record-cards { display: flex !important; }
+.mode-mobile .nav-btn .nav-btn__label { display: none; }
+.mode-mobile .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.mode-mobile .page { padding: var(--sp-2) var(--sp-2) 96px; }
+
+/* ── 19. MODE-DESKTOP OVERRIDES ── */
+.mode-desktop .table-wrap  { display: block !important; }
+.mode-desktop .record-cards { display: none !important; }
+.mode-desktop .stats-grid { grid-template-columns: repeat(4, 1fr); }
+
+/* ── 20. TABLET RESPONSIVE ── */
+@media (min-width: 768px) {
+  .page { padding: var(--sp-4) var(--sp-4) 96px; }
+  .nav  { padding: 0 var(--sp-4); }
+  .filters-card { padding: var(--sp-3); }
+  .table-header { padding: var(--sp-2) var(--sp-3); }
+}
+
+/* ── 21. FOCUS VISIBILITY ── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+
+<!-- ══ NAVIGATION ══════════════════════════════════════════════════ -->
+<nav class="nav" role="banner" aria-label="Main navigation">
+  <a class="nav-brand" href="index.html" aria-label="Ritians Transport home">
+    <div class="nav-brand-icon" aria-hidden="true"><i class="fas fa-bus"></i></div>
+    <div class="nav-brand-name">Ritians Transport</div>
+  </a>
+  <div class="nav-right">
+    <a class="nav-btn accent" href="attendance-live.html" aria-label="Open live attendance">
+      <i class="fas fa-camera" aria-hidden="true"></i>
+      <span class="nav-btn__label">Live Attendance</span>
+    </a>
+    <a class="nav-btn" href="face-register.html" aria-label="Register face">
+      <i class="fas fa-fingerprint" aria-hidden="true"></i>
+      <span class="nav-btn__label">Register Face</span>
+    </a>
+    <a class="nav-btn" href="index.html" aria-label="Go back to home">
+      <i class="fas fa-arrow-left" aria-hidden="true"></i>
+      <span class="nav-btn__label">Back</span>
+    </a>
+    <!-- Hamburger injected by mobile.css JS -->
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobileDrawer">
+      <span class="hb-line"></span>
+      <span class="hb-line"></span>
+      <span class="hb-line"></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ══ MOBILE DRAWER ═══════════════════════════════════════════════ -->
+<div class="mobile-drawer" id="mobileDrawer" role="navigation" aria-label="Mobile navigation">
+  <div class="drawer-header">
+    <div class="drawer-brand">
+      <div class="drawer-brand-icon" aria-hidden="true"><i class="fas fa-bus"></i></div>
+      <div class="drawer-brand-text">Ritians Transport</div>
+    </div>
+    <button class="drawer-close-btn" id="drawerCloseBtn" aria-label="Close navigation menu">
+      <i class="fas fa-times" aria-hidden="true"></i>
+    </button>
+  </div>
+  <nav class="drawer-nav">
+    <a class="drawer-nav-item" href="index.html"><i class="fas fa-home" aria-hidden="true"></i>Home</a>
+    <a class="drawer-nav-item" href="face-register.html"><i class="fas fa-fingerprint" aria-hidden="true"></i>Register Face</a>
+    <a class="drawer-nav-item" href="attendance-live.html"><i class="fas fa-camera" aria-hidden="true"></i>Live Attendance</a>
+    <a class="drawer-nav-item active" href="attendance-dashboard.html"><i class="fas fa-chart-bar" aria-hidden="true"></i>Dashboard</a>
+  </nav>
+  <div class="drawer-footer">
+    <span class="drawer-clock" id="drawerClock" aria-live="polite"></span>
+  </div>
+</div>
+<div class="drawer-backdrop" id="drawerBackdrop" aria-hidden="true"></div>
+
+<!-- ══ ADMIN KEY PROMPT ═════════════════════════════════════════════ -->
+<div id="adminPrompt" style="display:none" role="main" aria-label="Admin authentication">
+  <div class="admin-prompt">
+    <div class="admin-prompt__icon" aria-hidden="true">
+      <i class="fas fa-lock"></i>
+    </div>
+    <div class="admin-prompt__title">Admin Access Required</div>
+    <p class="admin-prompt__sub">Enter your admin key to view the attendance dashboard</p>
+    <input
+      class="admin-input"
+      type="password"
+      id="adminKeyInput"
+      placeholder="Enter admin key"
+      aria-label="Admin key"
+      autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')verifyAdmin()"
+    />
+    <button class="btn btn--primary" onclick="verifyAdmin()" style="width:100%;justify-content:center" aria-label="Access dashboard">
+      <i class="fas fa-unlock" aria-hidden="true"></i> Access Dashboard
+    </button>
+  </div>
+</div>
+
+<!-- ══ MAIN DASHBOARD ════════════════════════════════════════════════ -->
+<div id="mainDash" class="page" style="display:none" role="main">
+
+  <!-- Page Header -->
+  <header class="page-header">
+    <h1 class="page-header__title">Attendance Dashboard</h1>
+    <p class="page-header__sub">View, filter and export attendance records</p>
+  </header>
+
+  <!-- Stats Grid -->
+  <div class="stats-grid" role="region" aria-label="Attendance statistics">
+    <div class="stat-card">
+      <div class="stat-label">Today's Attendance</div>
+      <div class="stat-val" id="statToday" aria-live="polite">—</div>
+      <div class="stat-sub">students present</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Students</div>
+      <div class="stat-val" id="statTotal" aria-live="polite">—</div>
+      <div class="stat-sub">registered in system</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Attendance Rate</div>
+      <div class="stat-val" id="statRate" aria-live="polite">—</div>
+      <div class="stat-sub">for today</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Top Bus Today</div>
+      <div class="stat-val" id="statBus" aria-live="polite">—</div>
+      <div class="stat-sub">most students present</div>
+    </div>
+  </div>
+
+  <!-- Filters Card -->
+  <div class="filters-card" role="search" aria-label="Filter records">
+    <!-- Collapsible header (mobile: tap to expand; desktop: always visible) -->
+    <div class="filters-header" id="filtersHeader" onclick="toggleFilters()" aria-expanded="false" aria-controls="filtersBody" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' ')toggleFilters()">
+      <div class="filters-title">
+        <i class="fas fa-filter" aria-hidden="true"></i> Filters
+      </div>
+      <i class="fas fa-chevron-down filters-toggle-icon" id="filterToggleIcon" aria-hidden="true"></i>
+    </div>
+
+    <div class="filters-body" id="filtersBody">
+      <div class="filters-grid">
+        <div class="filter-field">
+          <label for="filterDate" class="sr-only">Filter by date</label>
+          <input type="date" id="filterDate" aria-label="Filter by date"/>
+        </div>
+        <div class="filter-field">
+          <label for="filterSession" class="sr-only">Filter by session</label>
+          <select id="filterSession" aria-label="Filter by session">
+            <option value="">All Sessions</option>
+            <option value="morning">Morning</option>
+            <option value="evening">Evening</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label for="filterDept" class="sr-only">Filter by department</label>
+          <select id="filterDept" aria-label="Filter by department">
+            <option value="">All Departments</option>
+            <option>CSE</option><option>CSE (AIML)</option><option>ECE</option>
+            <option>VLSI</option><option>Mechanical</option><option>Civil</option>
+            <option>Bio Tech</option>
+            <!-- Legacy: retained for backward compatibility with existing IT records -->
+            <option value="IT" style="color:var(--text3);font-style:italic">IT (legacy)</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label for="filterYear" class="sr-only">Filter by year</label>
+          <select id="filterYear" aria-label="Filter by year">
+            <option value="">All Years</option>
+            <option>1st Year</option><option>2nd Year</option>
+            <option>3rd Year</option><option>4th Year</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label for="filterClass" class="sr-only">Filter by class name</label>
+          <input type="text" id="filterClass" placeholder="Class Name (e.g. CSE-A)" aria-label="Filter by class name"/>
+        </div>
+        <div class="filter-field">
+          <label for="filterBus" class="sr-only">Filter by bus number</label>
+          <input type="text" id="filterBus" placeholder="Bus No (e.g. R01)" aria-label="Filter by bus number"/>
+        </div>
+      </div>
+
+      <div class="filters-actions">
+        <button class="btn btn--primary" onclick="applyFilters()" aria-label="Apply filters">
+          <i class="fas fa-search" aria-hidden="true"></i> Search
+        </button>
+        <button class="btn btn--ghost" onclick="clearFilters()" aria-label="Clear all filters">
+          <i class="fas fa-times" aria-hidden="true"></i> Clear
+        </button>
+        <button class="btn btn--success" onclick="exportCSV()" aria-label="Export records as CSV">
+          <i class="fas fa-download" aria-hidden="true"></i> Export CSV
+        </button>
+        <button class="btn btn--pdf" onclick="exportPDF()" aria-label="Export records as PDF">
+          <i class="fas fa-file-pdf" aria-hidden="true"></i> Export as PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Records: Table (desktop) + Cards (mobile) -->
+  <div class="table-card" role="region" aria-label="Attendance records">
+    <div class="table-header">
+      <div class="table-title">
+        <i class="fas fa-table" aria-hidden="true"></i> Attendance Records
+      </div>
+      <div class="table-count" id="tableCount" aria-live="polite">Loading…</div>
+    </div>
+
+    <!-- Desktop table view -->
+    <div class="table-wrap" role="region" aria-label="Records table" tabindex="0">
+      <table aria-label="Attendance records table">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Name</th>
+            <th scope="col">Register No</th>
+            <th scope="col">Department</th>
+            <th scope="col">Year</th>
+            <th scope="col">Bus</th>
+            <th scope="col">Route</th>
+            <th scope="col">Session</th>
+            <th scope="col">Timestamp</th>
+            <th scope="col">Confidence</th>
+            <th scope="col">Status</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr>
+            <td colspan="11" class="loading-cell">
+              <i class="fas fa-circle-notch spin" aria-hidden="true"></i>
+              <span style="margin-left:8px">Loading records…</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile card view -->
+    <div class="record-cards" id="recordCards" aria-live="polite" aria-label="Attendance record cards">
+      <div class="loading-cell">
+        <i class="fas fa-circle-notch spin" aria-hidden="true"></i>
+        <span style="margin-left:8px">Loading records…</span>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" id="paginationEl" aria-label="Pagination" role="navigation"></div>
+  </div>
+
+</div><!-- /mainDash -->
+
+<!-- Visually hidden utility -->
+<style>
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+</style>
+
+<!-- ══ VIEW MODE TOGGLE ════════════════════════════════════════════ -->
+<button class="view-toggle-btn" id="viewToggleBtn" aria-label="Switch view mode">
+  <i class="fas fa-desktop" aria-hidden="true"></i>
+  Switch to <span class="vtb-mode-label" id="vtbLabel">Desktop View</span>
+</button>
+
+<script src="auth-guard.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   attendance-dashboard.js — All business logic preserved exactly.
+   Additions: card view for mobile, collapsible filters, view mode.
+   ═══════════════════════════════════════════════════════════════ */
+
+// ── Admin Auth ─────────────────────────────────────────────────
+let adminKey    = sessionStorage.getItem("ritians_admin_key") || "";
+let currentPage = 1;
+const PAGE_SIZE = 50;
+
+function verifyAdmin() {
+  const key = document.getElementById("adminKeyInput").value.trim();
+  if (!key) return;
+  adminKey = key;
+  sessionStorage.setItem("ritians_admin_key", key);
+  showDashboard();
+}
+
+function showDashboard() {
+  document.getElementById("adminPrompt").style.display = "none";
+  document.getElementById("mainDash").style.display    = "block";
+  setTodayDate();
+  loadStats();
+  loadRecords();
+}
+
+function setTodayDate() {
+  const today = new Date().toISOString().split("T")[0];
+  document.getElementById("filterDate").value = today;
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  if (adminKey) {
+    showDashboard();
+  } else {
+    document.getElementById("adminPrompt").style.display = "block";
+  }
+  // Auto-expand filters on desktop
+  if (window.innerWidth >= 768) {
+    const header = document.getElementById("filtersHeader");
+    if (header) header.classList.add("expanded");
+  }
+});
+
+// ── View Mode System ───────────────────────────────────────────
+(function initViewMode() {
+  const html  = document.documentElement;
+  const btn   = document.getElementById("viewToggleBtn");
+  const lbl   = document.getElementById("vtbLabel");
+  const saved = localStorage.getItem("ritians_view_mode");
+  let mode    = saved || (window.innerWidth < 768 ? "mobile" : "desktop");
+  applyMode(mode);
+
+  btn.addEventListener("click", () => {
+    const next = html.classList.contains("mode-mobile") ? "desktop" : "mobile";
+    applyMode(next);
+    localStorage.setItem("ritians_view_mode", next);
+  });
+
+  function applyMode(m) {
+    html.classList.remove("mode-mobile", "mode-desktop");
+    html.classList.add("mode-" + m);
+    if (m === "mobile") {
+      btn.querySelector("i").className = "fas fa-desktop";
+      lbl.textContent = "Desktop View";
+    } else {
+      btn.querySelector("i").className = "fas fa-mobile-alt";
+      lbl.textContent = "Mobile View";
+    }
+  }
+})();
+
+// ── Mobile Drawer ──────────────────────────────────────────────
+(function initDrawer() {
+  const hamburger = document.getElementById("hamburgerBtn");
+  const drawer    = document.getElementById("mobileDrawer");
+  const backdrop  = document.getElementById("drawerBackdrop");
+  const closeBtn  = document.getElementById("drawerCloseBtn");
+  const clock     = document.getElementById("drawerClock");
+
+  const open = () => {
+    drawer.classList.add("drawer-open");
+    backdrop.classList.add("visible");
+    hamburger.classList.add("open");
+    hamburger.setAttribute("aria-expanded", "true");
+    document.body.style.overflow = "hidden";
+  };
+  const close = () => {
+    drawer.classList.remove("drawer-open");
+    backdrop.classList.remove("visible");
+    hamburger.classList.remove("open");
+    hamburger.setAttribute("aria-expanded", "false");
+    document.body.style.overflow = "";
+  };
+
+  hamburger.addEventListener("click", open);
+  closeBtn.addEventListener("click", close);
+  backdrop.addEventListener("click", close);
+  document.addEventListener("keydown", e => { if (e.key === "Escape") close(); });
+
+  const updateClock = () => {
+    clock.textContent = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+  };
+  updateClock();
+  setInterval(updateClock, 1000);
+})();
+
+// ── Collapsible Filters (mobile) ───────────────────────────────
+function toggleFilters() {
+  if (window.innerWidth >= 768) return; // desktop: always open
+  const header = document.getElementById("filtersHeader");
+  const expanded = header.classList.toggle("expanded");
+  header.setAttribute("aria-expanded", expanded);
+}
+
+// ── Stats ──────────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const date = document.getElementById("filterDate").value;
+    const res  = await fetch(`/attendance/stats${date ? "?date=" + date : ""}`,
+      { headers: { "x-admin-key": adminKey } });
+    const data = await res.json();
+    if (!data.success) return;
+    const s = data.stats;
+    document.getElementById("statToday").textContent = s.totalToday;
+    document.getElementById("statTotal").textContent = s.totalStudents;
+    document.getElementById("statRate").textContent  = s.attendanceRate + "%";
+    document.getElementById("statBus").textContent   = s.byBus.length ? s.byBus[0].bus : "—";
+  } catch (_) { /* non-critical */ }
+}
+
+// ── Records ────────────────────────────────────────────────────
+async function loadRecords(page = 1) {
+  currentPage = page;
+
+  // Set loading state on both views
+  document.getElementById("tableBody").innerHTML =
+    '<tr><td colspan="11" class="loading-cell"><i class="fas fa-circle-notch spin" aria-hidden="true"></i><span style="margin-left:8px">Loading…</span></td></tr>';
+  document.getElementById("recordCards").innerHTML =
+    '<div class="loading-cell"><i class="fas fa-circle-notch spin" aria-hidden="true"></i><span style="margin-left:8px">Loading…</span></div>';
+
+  const params = buildParams(page);
+  try {
+    const res  = await fetch(`/attendance/records?${params.toString()}`,
+      { headers: { "x-admin-key": adminKey } });
+    const data = await res.json();
+
+    if (!data.success) {
+      if (res.status === 403) {
+        sessionStorage.removeItem("ritians_admin_key");
+        adminKey = "";
+        document.getElementById("mainDash").style.display    = "none";
+        document.getElementById("adminPrompt").style.display = "block";
+        return;
+      }
+      const errMsg = `<td colspan="11" style="text-align:center;color:var(--danger);padding:30px">${data.message}</td>`;
+      document.getElementById("tableBody").innerHTML   = `<tr>${errMsg}</tr>`;
+      document.getElementById("recordCards").innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-circle"></i><div class="empty-state__title">Error</div><div class="empty-state__sub">${data.message}</div></div>`;
+      return;
+    }
+
+    document.getElementById("tableCount").textContent = `${data.total} records`;
+    renderTable(data.records, (page - 1) * PAGE_SIZE);
+    renderCards(data.records, (page - 1) * PAGE_SIZE);
+    renderPagination(data.pages, page);
+    loadStats();
+  } catch (e) {
+    document.getElementById("tableBody").innerHTML =
+      '<tr><td colspan="11" style="text-align:center;color:var(--danger);padding:30px">Error loading records.</td></tr>';
+    document.getElementById("recordCards").innerHTML =
+      '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><div class="empty-state__title">Error</div><div class="empty-state__sub">Could not load records.</div></div>';
+  }
+}
+
+function buildParams(page) {
+  const params = new URLSearchParams();
+  params.set("page",  page);
+  params.set("limit", PAGE_SIZE);
+  const date      = document.getElementById("filterDate").value;
+  const sess      = document.getElementById("filterSession").value;
+  const dept      = document.getElementById("filterDept").value;
+  const year      = document.getElementById("filterYear").value;
+  const bus       = document.getElementById("filterBus").value.trim();
+  const className = document.getElementById("filterClass").value.trim();
+  if (date)      params.set("date",       date);
+  if (sess)      params.set("session",    sess);
+  if (dept)      params.set("department", dept);
+  if (year)      params.set("year",       year);
+  if (bus)       params.set("busNo",      bus);
+  if (className) params.set("className",  className);
+  return params;
+}
+
+// ── Desktop Table Renderer ─────────────────────────────────────
+function renderTable(records, offset) {
+  const body = document.getElementById("tableBody");
+  if (!records.length) {
+    body.innerHTML = `<tr><td colspan="11"><div class="empty-state">
+      <i class="fas fa-inbox"></i>
+      <div class="empty-state__title">No records found</div>
+      <div class="empty-state__sub">Try adjusting your filters</div>
+    </div></td></tr>`;
+    return;
+  }
+  body.innerHTML = records.map((r, i) => {
+    const conf = r.confidence || 0;
+    const confClass = conf > 80 ? "var(--success)" : conf > 60 ? "var(--warn)" : "var(--danger)";
+    const sessionBadge = r.session === "evening" ? "badge--evening" : "badge--morning";
+    return `<tr>
+      <td style="color:var(--text3)">${offset + i + 1}</td>
+      <td class="name-cell">${r.name || "—"}</td>
+      <td class="reg-cell">${r.regNo || "—"}</td>
+      <td>${r.department || "—"}</td>
+      <td>${r.year || "—"}</td>
+      <td style="color:var(--accent)">${r.busNo || "—"}</td>
+      <td>${r.route || "—"}</td>
+      <td><span class="badge ${sessionBadge}">${r.session || "—"}</span></td>
+      <td style="font-family:var(--font-mono);font-size:12px">${r.timestamp ? new Date(r.timestamp).toLocaleString("en-IN") : "—"}</td>
+      <td style="color:${confClass}">${conf ? conf + "%" : "—"}</td>
+      <td><span class="badge badge--present">${r.status || "present"}</span></td>
+    </tr>`;
+  }).join("");
+}
+
+// ── Mobile Card Renderer ───────────────────────────────────────
+function renderCards(records, offset) {
+  const container = document.getElementById("recordCards");
+  if (!records.length) {
+    container.innerHTML = `<div class="empty-state">
+      <i class="fas fa-inbox"></i>
+      <div class="empty-state__title">No records found</div>
+      <div class="empty-state__sub">Try adjusting your filters</div>
+    </div>`;
+    return;
+  }
+
+  container.innerHTML = records.map((r, i) => {
+    const conf = r.confidence || 0;
+    const confClass  = conf > 80 ? "conf-chip--high" : conf > 60 ? "conf-chip--medium" : "conf-chip--low";
+    const sessClass  = r.session === "evening" ? "badge--evening" : "badge--morning";
+    const timestamp  = r.timestamp ? new Date(r.timestamp).toLocaleString("en-IN", {
+      month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
+    }) : "—";
+
+    return `<div class="record-card">
+      <div class="record-card__num">#${offset + i + 1}</div>
+      <div class="record-card__top">
+        <div>
+          <div class="record-card__name">${r.name || "—"}</div>
+          <div class="record-card__reg">${r.regNo || "—"}</div>
+        </div>
+        <div class="record-card__badges">
+          <span class="badge badge--present">${r.status || "present"}</span>
+          <span class="badge ${sessClass}">${r.session || "—"}</span>
+        </div>
+      </div>
+      <div class="record-card__meta">
+        <span class="record-card__meta-item"><i class="fas fa-graduation-cap"></i>${r.department || "—"} · ${r.year || "—"}</span>
+        <span class="record-card__meta-item"><i class="fas fa-bus"></i>Bus ${r.busNo || "—"}</span>
+        ${r.route ? `<span class="record-card__meta-item"><i class="fas fa-route"></i>${r.route}</span>` : ""}
+        ${conf ? `<span class="conf-chip ${confClass}">${conf}%</span>` : ""}
+        <span class="record-card__time"><i class="fas fa-clock"></i> ${timestamp}</span>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ── Pagination ─────────────────────────────────────────────────
+function renderPagination(totalPages, current) {
+  const el = document.getElementById("paginationEl");
+  if (totalPages <= 1) { el.innerHTML = ""; return; }
+  const pages = [];
+  for (let i = Math.max(1, current - 2); i <= Math.min(totalPages, current + 2); i++) {
+    pages.push(`<button class="page-btn ${i === current ? "active" : ""}" onclick="loadRecords(${i})" aria-label="Page ${i}" ${i === current ? 'aria-current="page"' : ""}>${i}</button>`);
+  }
+  el.innerHTML = `
+    <div class="page-info">Page ${current} of ${totalPages}</div>
+    <div class="page-btns" role="group" aria-label="Pagination controls">
+      <button class="page-btn" onclick="loadRecords(${current - 1})" ${current <= 1 ? "disabled" : ""} aria-label="Previous page">‹ Prev</button>
+      ${pages.join("")}
+      <button class="page-btn" onclick="loadRecords(${current + 1})" ${current >= totalPages ? "disabled" : ""} aria-label="Next page">Next ›</button>
+    </div>`;
+}
+
+// ── Filter Actions ─────────────────────────────────────────────
+function applyFilters() { loadRecords(1); }
+
+function clearFilters() {
+  document.getElementById("filterSession").value = "";
+  document.getElementById("filterDept").value    = "";
+  document.getElementById("filterYear").value    = "";
+  document.getElementById("filterBus").value     = "";
+  document.getElementById("filterClass").value   = "";
+  setTodayDate();
+  loadRecords(1);
+}
+
+function exportCSV() {
+  const params = buildParams(1);
+  params.delete("page");
+  params.delete("limit");
+  params.set("adminKey", adminKey);
+  window.open(`/attendance/export/csv?${params.toString()}`, "_blank");
+}
+
+/* ── Export as PDF ─────────────────────────────────────────────
+   Fetches ALL filtered records (up to 5000) then generates a
+   professional jsPDF report with autoTable.
+   ─────────────────────────────────────────────────────────────*/
+async function exportPDF() {
+  const btn = document.querySelector(".btn--pdf");
+  const origHtml = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Generating…';
+  btn.disabled = true;
+
+  try {
+    // Fetch all filtered records (high limit, no pagination)
+    const params = buildParams(1);
+    params.set("limit", "5000");
+    params.delete("page");
+
+    let records = [];
+    try {
+      const res  = await fetch(`/attendance/records?${params.toString()}`,
+        { headers: { "x-admin-key": adminKey } });
+      const data = await res.json();
+      if (data.success) records = data.records || [];
+    } catch (_) {
+      // If API unavailable, export whatever is visible in table right now
+      records = _getVisibleRecords();
+    }
+
+    if (!records.length) {
+      alert("No records to export. Please apply filters first or ensure data is loaded.");
+      return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+
+    // ── Header bar ──
+    doc.setFillColor(6, 10, 20);
+    doc.rect(0, 0, 297, 297, "F");
+
+    // Accent bar at top
+    doc.setFillColor(78, 205, 196);
+    doc.rect(0, 0, 297, 8, "F");
+
+    // Title
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.setTextColor(240, 244, 255);
+    doc.text("Attendance Report", 14, 22);
+
+    // Sub info row
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(155, 170, 200);
+
+    const filterDate    = document.getElementById("filterDate").value    || "All Dates";
+    const filterDept    = document.getElementById("filterDept").value    || "All Departments";
+    const filterSession = document.getElementById("filterSession").value || "All Sessions";
+    const filterYear    = document.getElementById("filterYear").value    || "All Years";
+    const filterBus     = document.getElementById("filterBus").value.trim()   || "All Buses";
+    const filterClass   = document.getElementById("filterClass").value.trim() || "All Classes";
+    const generatedAt   = new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+
+    const metaLine1 = `Date: ${filterDate}   |   Department: ${filterDept}   |   Session: ${filterSession}   |   Year: ${filterYear}`;
+    const metaLine2 = `Bus No: ${filterBus}   |   Class: ${filterClass}   |   Total Records: ${records.length}   |   Generated: ${generatedAt}`;
+
+    doc.text(metaLine1, 14, 30);
+    doc.text(metaLine2, 14, 35);
+
+    // Institution name (right-aligned)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(78, 205, 196);
+    doc.text("Ritians Transport — RIT Chennai", 297 - 14, 22, { align: "right" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(90, 106, 138);
+    doc.text("Rajalakshmi Institute of Technology", 297 - 14, 27, { align: "right" });
+
+    // Divider line
+    doc.setDrawColor(78, 205, 196);
+    doc.setLineWidth(0.4);
+    doc.line(14, 39, 297 - 14, 39);
+
+    // Table
+    const tableColumns = [
+      { header: "#",              dataKey: "idx"        },
+      { header: "Name",           dataKey: "name"       },
+      { header: "Register No",    dataKey: "regNo"      },
+      { header: "Department",     dataKey: "department" },
+      { header: "Year",           dataKey: "year"       },
+      { header: "Class",          dataKey: "class"      },
+      { header: "Bus No",         dataKey: "busNo"      },
+      { header: "Route",          dataKey: "route"      },
+      { header: "Boarding Point", dataKey: "boarding"   },
+      { header: "Timestamp",      dataKey: "timestamp"  },
+    ];
+
+    const tableRows = records.map((r, i) => ({
+      idx:        i + 1,
+      name:       r.name        || "—",
+      regNo:      r.regNo       || "—",
+      department: r.department  || "—",
+      year:       r.year        || "—",
+      class:      r.className   || r.class || "—",
+      busNo:      r.busNo       || "—",
+      route:      r.route       || "—",
+      boarding:   r.boardingPoint || r.boarding || "—",
+      timestamp:  r.timestamp
+        ? new Date(r.timestamp).toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })
+        : "—",
+    }));
+
+    doc.autoTable({
+      columns:    tableColumns,
+      body:       tableRows,
+      startY:     43,
+      margin:     { left: 14, right: 14 },
+      styles: {
+        font:      "helvetica",
+        fontSize:  8,
+        cellPadding: 3,
+        textColor: [240, 244, 255],
+        fillColor: [12, 18, 32],
+        lineColor: [26, 37, 64],
+        lineWidth: 0.25,
+        overflow:  "ellipsize",
+      },
+      headStyles: {
+        fillColor:  [26, 37, 64],
+        textColor:  [78, 205, 196],
+        fontStyle:  "bold",
+        fontSize:   8,
+        halign:     "left",
+        lineColor:  [78, 205, 196],
+        lineWidth:  0.4,
+      },
+      alternateRowStyles: {
+        fillColor: [15, 24, 41],
+      },
+      columnStyles: {
+        idx:       { cellWidth: 9,  halign: "center", textColor: [90, 106, 138] },
+        name:      { cellWidth: 36 },
+        regNo:     { cellWidth: 28, font: "courier", fontSize: 7 },
+        department:{ cellWidth: 26 },
+        year:      { cellWidth: 18 },
+        class:     { cellWidth: 22 },
+        busNo:     { cellWidth: 18, textColor: [78, 205, 196] },
+        route:     { cellWidth: 30 },
+        boarding:  { cellWidth: 34 },
+        timestamp: { cellWidth: 38, font: "courier", fontSize: 7 },
+      },
+      didDrawPage: (hookData) => {
+        // Footer on every page
+        const pageCount = doc.internal.getNumberOfPages();
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(7);
+        doc.setTextColor(90, 106, 138);
+        doc.text(
+          `Page ${hookData.pageNumber} of ${pageCount}  |  Ritians Transport — Attendance Report  |  ${generatedAt}`,
+          14, doc.internal.pageSize.height - 6
+        );
+        // Bottom accent bar
+        doc.setFillColor(78, 205, 196);
+        doc.rect(0, doc.internal.pageSize.height - 2, 297, 2, "F");
+      },
+    });
+
+    // Save with descriptive filename
+    const safeDate = filterDate.replace(/\//g, "-");
+    doc.save(`attendance-report-${safeDate}.pdf`);
+
+  } catch (err) {
+    console.error("PDF export error:", err);
+    alert("PDF generation failed. Please ensure jsPDF is loaded and try again.\n\nError: " + err.message);
+  } finally {
+    btn.innerHTML = origHtml;
+    btn.disabled  = false;
+  }
+}
+
+/* Helper: scrape visible table rows as fallback when API unreachable */
+function _getVisibleRecords() {
+  const rows = document.querySelectorAll("#tableBody tr");
+  const records = [];
+  rows.forEach((tr, i) => {
+    const cells = tr.querySelectorAll("td");
+    if (cells.length < 9) return;
+    records.push({
+      name:       cells[1]?.textContent.trim(),
+      regNo:      cells[2]?.textContent.trim(),
+      department: cells[3]?.textContent.trim(),
+      year:       cells[4]?.textContent.trim(),
+      busNo:      cells[5]?.textContent.trim(),
+      route:      cells[6]?.textContent.trim(),
+      session:    cells[7]?.textContent.trim(),
+      timestamp:  cells[8]?.textContent.trim(),
+    });
+  });
+  return records;
+}
+</script>
+</body>
+</html>
