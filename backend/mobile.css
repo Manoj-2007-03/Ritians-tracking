@@ -287,10 +287,12 @@
   backdrop-filter: blur(4px);
   opacity: 0;
   pointer-events: none;
+  display: none;
   transition: opacity var(--transition-smooth);
 }
 
 .drawer-backdrop.visible {
+  display: block;
   opacity: 1;
   pointer-events: auto;
 }
