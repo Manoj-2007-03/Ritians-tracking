@@ -450,6 +450,134 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 
 /* ─── Mobile scroll reveal ─── */
 .stop-item:nth-child(n+2){animation-delay:calc(var(--i,0) * 40ms)}
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE.JS INJECTED ELEMENTS — drawer, backdrop, hamburger,
+   view-toggle button. Without mobile.css these render as raw
+   block elements at the bottom of the page. This block fixes that.
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Hamburger button (injected into .nav-right) ── */
+.hamburger-btn{
+  display:none; /* shown only in mobile mode via media query below */
+  flex-direction:column;align-items:center;justify-content:center;
+  gap:5px;width:38px;height:38px;border-radius:10px;
+  background:var(--bg3);border:1px solid var(--border2);
+  cursor:pointer;padding:0;transition:background 0.15s;
+}
+.hamburger-btn:hover{background:var(--bg4)}
+.hb-line{
+  display:block;width:18px;height:2px;border-radius:99px;
+  background:var(--text2);transition:all 0.25s;
+}
+.hamburger-btn.open .hb-line:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.hamburger-btn.open .hb-line:nth-child(2){opacity:0;transform:scaleX(0)}
+.hamburger-btn.open .hb-line:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+/* ── Drawer backdrop ── */
+.drawer-backdrop{
+  display:none;position:fixed;inset:0;z-index:300;
+  background:rgba(6,10,20,0.7);backdrop-filter:blur(4px);
+  opacity:0;transition:opacity 0.25s;
+}
+.drawer-backdrop.visible{opacity:1}
+
+/* ── Slide-in drawer ── */
+.mobile-drawer{
+  position:fixed;top:0;left:0;bottom:0;z-index:400;
+  width:min(300px,82vw);
+  background:var(--bg2);border-right:1px solid var(--border2);
+  box-shadow:8px 0 40px rgba(0,0,0,0.6);
+  display:flex;flex-direction:column;
+  transform:translateX(-100%);
+  transition:transform 0.3s cubic-bezier(0.32,0.72,0,1);
+  overflow:hidden;
+}
+.mobile-drawer.drawer-open{transform:translateX(0)}
+
+/* Drawer internal layout */
+.drawer-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 16px 14px;border-bottom:1px solid var(--border);
+}
+.drawer-brand{display:flex;align-items:center;gap:10px}
+.drawer-brand-icon{
+  width:34px;height:34px;border-radius:9px;
+  background:linear-gradient(135deg,var(--accent),#FF4500);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;color:#fff;box-shadow:0 0 12px var(--glow-accent);
+}
+.drawer-brand-text{font-family:var(--font-head);font-size:14px;font-weight:700}
+.drawer-close-btn{
+  width:30px;height:30px;border-radius:50%;
+  background:rgba(255,255,255,0.06);border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text2);cursor:pointer;font-size:13px;
+  transition:all 0.15s;
+}
+.drawer-close-btn:hover{background:rgba(255,255,255,0.12);color:var(--text)}
+
+.drawer-nav{
+  flex:1;padding:10px 10px;display:flex;flex-direction:column;gap:4px;
+  overflow-y:auto;
+}
+.drawer-nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:11px 14px;border-radius:10px;
+  border:none;background:transparent;
+  color:var(--text2);font-family:var(--font-body);
+  font-size:13px;font-weight:500;
+  text-decoration:none;cursor:pointer;
+  transition:background 0.15s,color 0.15s;
+  width:100%;text-align:left;
+}
+.drawer-nav-item i{width:16px;text-align:center;font-size:14px;color:var(--text3)}
+.drawer-nav-item:hover{background:var(--bg3);color:var(--text)}
+.drawer-nav-item.active{
+  background:rgba(78,205,196,0.10);color:var(--accent2);
+  border:1px solid rgba(78,205,196,0.18);
+}
+.drawer-nav-item.active i{color:var(--accent2)}
+.drawer-divider{height:1px;background:var(--border);margin:6px 4px}
+
+.drawer-footer{
+  padding:12px 14px;border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+}
+.drawer-clock{
+  font-family:var(--font-mono);font-size:11px;color:var(--text3);
+  letter-spacing:0.04em;
+}
+
+/* ── Floating view-toggle button ── */
+.view-toggle-btn{
+  position:fixed;bottom:20px;right:16px;z-index:250;
+  display:flex;align-items:center;gap:6px;
+  padding:9px 14px;border-radius:99px;
+  background:var(--bg3);border:1px solid var(--border2);
+  color:var(--text2);font-family:var(--font-body);
+  font-size:12px;font-weight:600;cursor:pointer;
+  box-shadow:0 4px 20px rgba(0,0,0,0.4);
+  transition:all 0.18s;
+}
+.view-toggle-btn i{font-size:13px;color:var(--accent3)}
+.view-toggle-btn:hover{background:var(--bg4);color:var(--text);transform:translateY(-1px)}
+.view-toggle-btn:active{transform:scale(0.96)}
+
+/* Show hamburger only in mobile view */
+@media(max-width:768px){
+  .hamburger-btn{display:flex}
+  .drawer-backdrop{display:block}
+}
+
+/* In desktop mode class, hide the hamburger even on small screens */
+html.mode-desktop .hamburger-btn{display:none}
+html.mode-desktop .view-toggle-btn{display:flex}
+html.mode-mobile  .hamburger-btn{display:flex}
+html.mode-mobile  .view-toggle-btn{display:flex}
+/* ═══════════════════════════════════════════════════════════════
+   END MOBILE FIX
+═══════════════════════════════════════════════════════════════ */
 </style>
 <!-- Auth guard: redirects to login if not logged in -->
 <script src="auth-guard.js"></script>
