@@ -16,6 +16,7 @@ const sosAlertSchema = new mongoose.Schema({
   latitude:      { type: Number, default: null },
   longitude:     { type: Number, default: null },
   locationLabel: { type: String, default: "Location not available" },
+  lastLocationAt: { type: Date, default: null },   // 👈 ADD THIS LINE HERE
 
   // Timing
   triggeredAt:   { type: Date, default: Date.now },

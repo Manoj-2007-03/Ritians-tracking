@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Live Track – Ritians SOS</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous"/>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #050810;
+    color: #EDF2FF;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    background: rgba(10,15,30,0.95);
+    border-bottom: 1px solid rgba(255,45,45,0.25);
+    z-index: 10;
+    flex-shrink: 0;
+  }
+
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .back-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
+    color: #EDF2FF;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+  .back-btn:hover { background: rgba(255,255,255,0.12); }
+
+  .student-info { display: flex; flex-direction: column; }
+  .student-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #EDF2FF;
+    letter-spacing: 0.3px;
+  }
+  .student-bus {
+    font-size: 12px;
+    color: #8899BB;
+  }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,45,45,0.15);
+    border: 1px solid rgba(255,45,45,0.35);
+    color: #FF2D2D;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .live-dot {
+    width: 7px; height: 7px;
+    background: #FF2D2D;
+    border-radius: 50%;
+    animation: pulse 1s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  /* ── MAP ── */
+  #map-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #liveMap {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+  }
+
+  /* Loading overlay */
+  #mapLoading {
+    position: absolute;
+    inset: 0;
+    background: #050810;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    z-index: 5;
+    transition: opacity 0.4s;
+  }
+  #mapLoading.hidden { opacity: 0; pointer-events: none; }
+
+  .spinner {
+    width: 48px; height: 48px;
+    border: 3px solid rgba(255,45,45,0.2);
+    border-top-color: #FF2D2D;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text { color: #8899BB; font-size: 14px; }
+
+  /* Waiting overlay (no coords yet) */
+  #waitingOverlay {
+    position: absolute;
+    inset: 0;
+    background: #050810;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    z-index: 6;
+  }
+  #waitingOverlay.hidden { display: none; }
+
+  .waiting-icon {
+    width: 64px; height: 64px;
+    background: rgba(255,45,45,0.12);
+    border: 1px solid rgba(255,45,45,0.3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #FF2D2D;
+    animation: waitpulse 1.5s ease-in-out infinite;
+  }
+  @keyframes waitpulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(255,45,45,0.4); }
+    50%      { box-shadow: 0 0 0 16px rgba(255,45,45,0); }
+  }
+  .waiting-title { font-size: 18px; font-weight: 700; }
+  .waiting-sub   { font-size: 13px; color: #8899BB; }
+
+  /* ── BOTTOM INFO BAR ── */
+  .infobar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background: rgba(10,15,30,0.97);
+    border-top: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .coord-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .coord-icon { color: #FF2D2D; font-size: 14px; }
+  .coord-val  {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    color: #00E5FF;
+    letter-spacing: 0.5px;
+  }
+  .updated-time { font-size: 11px; color: #445577; }
+
+  .gmaps-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #1A73E8;
+    color: #fff;
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .gmaps-btn:hover { background: #1557B0; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="sos-admin.html" class="back-btn">
+      <i class="fas fa-arrow-left"></i> Back
+    </a>
+    <div class="student-info">
+      <span class="student-name" id="studentName">Loading…</span>
+      <span class="student-bus" id="studentBus">Bus —</span>
+    </div>
+  </div>
+  <div class="live-badge">
+    <div class="live-dot"></div>
+    LIVE
+  </div>
+</div>
+
+<!-- MAP -->
+<div id="map-container">
+
+  <!-- Waiting for first coordinates -->
+  <div id="waitingOverlay">
+    <div class="waiting-icon"><i class="fas fa-location-crosshairs"></i></div>
+    <div class="waiting-title">Acquiring Location…</div>
+    <div class="waiting-sub">Waiting for student's device to send GPS</div>
+  </div>
+
+  <!-- Map loading spinner (shown while iframe loads) -->
+  <div id="mapLoading" class="hidden">
+    <div class="spinner"></div>
+    <div class="loading-text">Loading map…</div>
+  </div>
+
+  <iframe id="liveMap" src="" allowfullscreen></iframe>
+</div>
+
+<!-- BOTTOM INFO BAR -->
+<div class="infobar">
+  <div class="coord-display">
+    <i class="fas fa-location-dot coord-icon"></i>
+    <span class="coord-val" id="coordVal">Waiting for coordinates…</span>
+    <span class="updated-time" id="updatedTime"></span>
+  </div>
+  <a id="gmapsBtn" href="#" target="_blank" class="gmaps-btn">
+    <i class="fab fa-google"></i> Open in Google Maps
+  </a>
+</div>
+
+<script>
+  // ── Read alert info from URL params ──────────────────────────────────────────
+  const params      = new URLSearchParams(window.location.search);
+  const alertId     = params.get('id');
+  const studentName = params.get('name')  || 'Student';
+  const busId       = params.get('bus')   || 'Unknown';
+
+  document.getElementById('studentName').textContent = studentName;
+  document.getElementById('studentBus').textContent  = 'Bus ' + busId;
+
+  const API = window.location.origin;
+
+  let lastLat = null, lastLng = null;
+  let pollInterval = null;
+
+  // ── Poll live location every 3 seconds ───────────────────────────────────────
+  async function fetchLocation() {
+    if (!alertId) return;
+    try {
+      const res  = await fetch(`${API}/api/sos/location/${alertId}`);
+      const data = await res.json();
+
+      if (!data.success || !data.latitude || !data.longitude) return;
+
+      const lat = parseFloat(data.latitude);
+      const lng = parseFloat(data.longitude);
+
+      // Hide waiting overlay on first fix
+      document.getElementById('waitingOverlay').classList.add('hidden');
+
+      // Update coords text
+      document.getElementById('coordVal').textContent =
+        `${lat.toFixed(6)},  ${lng.toFixed(6)}`;
+
+      // Update Google Maps link
+      const gmapsUrl = `https://maps.google.com/?q=${lat},${lng}`;
+      document.getElementById('gmapsBtn').href = gmapsUrl;
+
+      // Update timestamp
+      const t = data.lastLocationAt ? new Date(data.lastLocationAt) : new Date();
+      document.getElementById('updatedTime').textContent =
+        '· Updated ' + t.toLocaleTimeString('en-IN', {
+          hour: '2-digit', minute: '2-digit', second: '2-digit',
+          hour12: true, timeZone: 'Asia/Kolkata'
+        });
+
+      // Reload map iframe only if moved >~10m
+      const moved = lastLat === null
+        || Math.abs(lat - lastLat) > 0.0001
+        || Math.abs(lng - lastLng) > 0.0001;
+
+      if (moved) {
+        lastLat = lat; lastLng = lng;
+        const iframe = document.getElementById('liveMap');
+        document.getElementById('mapLoading').classList.remove('hidden');
+        iframe.src = `https://maps.google.com/maps?q=${lat},${lng}&z=17&output=embed`;
+        iframe.onload = () => document.getElementById('mapLoading').classList.add('hidden');
+      }
+
+      // Stop polling if alert resolved
+      if (data.status && data.status !== 'active') {
+        clearInterval(pollInterval);
+        document.querySelector('.live-badge').innerHTML =
+          '<i class="fas fa-check" style="color:#00FF88"></i> <span style="color:#00FF88">RESOLVED</span>';
+      }
+
+    } catch(e) { /* retry silently */ }
+  }
+
+  // Start immediately then every 3 seconds
+  fetchLocation();
+  pollInterval = setInterval(fetchLocation, 3000);
+</script>
+</body>
+</html>

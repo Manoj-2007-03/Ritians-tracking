@@ -1374,6 +1374,19 @@ async function triggerSOS() {
  
     if (data.success) {
       alertId = data.alertId;
+      // Push live location every 5 seconds
+      const locationInterval = setInterval(() => {
+        navigator.geolocation.getCurrentPosition(pos => {
+          fetch(`/api/sos/location/${alertId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              latitude: pos.coords.latitude,
+              longitude: pos.coords.longitude
+            })
+          });
+        }, null, { enableHighAccuracy: true });
+      }, 5000);
       showSuccessScreen();
     } else {
       showError(data.error || 'Failed to send alert. Try again.');

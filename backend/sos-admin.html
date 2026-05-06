@@ -766,6 +766,176 @@ html, body {
   background: rgba(0,255,136,0.18);
   box-shadow: 0 0 20px var(--green-glow);
 }
+
+/* ═══════════════════════════════════════════════
+   LIVE TRACKING PANEL
+═══════════════════════════════════════════════ */
+.live-track-panel {
+  background: var(--glass);
+  border: 1px solid var(--red-border);
+  border-radius: var(--r-lg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  overflow: hidden;
+  box-shadow: 0 0 0 1px var(--red-dim), 0 8px 40px rgba(255,45,45,0.10);
+  display: none;
+}
+.live-track-panel.visible { display: block; }
+
+.track-header {
+  padding: 14px 16px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,45,45,0.04);
+}
+.track-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.track-pulse-icon {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  background: var(--red-dim);
+  border: 1px solid var(--red-border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  color: var(--red);
+  flex-shrink: 0;
+  position: relative;
+}
+.track-pulse-icon::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 14px;
+  border: 1.5px solid var(--red-border);
+  animation: avatarGlow 1.6s ease-in-out infinite;
+}
+.track-title {
+  font-family: var(--font-h);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+.track-sub {
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 2px;
+  font-family: var(--font-m);
+}
+.track-close {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--border2);
+  background: var(--bg3);
+  color: var(--text3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.18s;
+  flex-shrink: 0;
+}
+.track-close:hover { color: var(--red); border-color: var(--red-border); }
+
+/* Map container */
+.map-wrap {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  background: var(--bg2);
+}
+#liveMap {
+  width: 100%; height: 100%;
+  border: none;
+  display: block;
+}
+.map-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--bg2);
+  color: var(--text3);
+  font-size: 12px;
+  z-index: 2;
+}
+.map-loading i { color: var(--cyan); font-size: 20px; }
+.map-loading.hidden { display: none; }
+
+/* Track info bar */
+.track-info-bar {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+}
+.track-coords {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-m);
+  font-size: 11px;
+  color: var(--cyan);
+}
+.track-coords i { font-size: 10px; }
+.track-coords-val { flex: 1; word-break: break-all; }
+.track-updated {
+  font-size: 10px;
+  color: var(--text3);
+}
+
+.track-actions {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 14px;
+}
+.btn-gmaps {
+  background: linear-gradient(135deg, rgba(66,133,244,0.18), rgba(66,133,244,0.08));
+  border: 1px solid rgba(66,133,244,0.35);
+  color: #6aa7f8;
+  flex: 1;
+}
+.btn-gmaps:hover { background: rgba(66,133,244,0.25); box-shadow: 0 0 16px rgba(66,133,244,0.25); }
+.btn-gmaps i { font-size: 11px; }
+
+.btn-live-tag {
+  background: var(--red-dim);
+  border: 1px solid var(--red-border);
+  color: var(--red);
+  font-size: 10px;
+  font-family: var(--font-m);
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: var(--r-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+  cursor: default;
+  min-height: 44px;
+}
+.btn-live-tag .live-dot { width: 5px; height: 5px; }
+
+/* Live Track button on alert card */
+.btn-track {
+  background: var(--red-dim);
+  border: 1px solid var(--red-border);
+  color: var(--red);
+}
+.btn-track:hover, .btn-track:active {
+  background: rgba(255,45,45,0.20);
+  box-shadow: 0 0 16px var(--red-glow);
+  transform: scale(0.98);
+}
 </style>
 </head>
 <body>
@@ -834,6 +1004,51 @@ html, body {
     </div>
   </section>
  
+  <!-- ── LIVE TRACKING PANEL ── -->
+  <section id="liveTrackSection" aria-label="Live student tracking">
+    <div class="live-track-panel" id="liveTrackPanel">
+      <div class="track-header">
+        <div class="track-header-left">
+          <div class="track-pulse-icon"><i class="fas fa-location-crosshairs"></i></div>
+          <div>
+            <div class="track-title" id="trackStudentName">Student Name</div>
+            <div class="track-sub" id="trackBusId">Bus —</div>
+          </div>
+        </div>
+        <button class="track-close" onclick="closeLiveTrack()" aria-label="Close live track">
+          <i class="fas fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="map-wrap">
+        <div class="map-loading" id="mapLoading">
+          <i class="fas fa-circle-notch fa-spin"></i>
+          <span>Acquiring location…</span>
+        </div>
+        <iframe id="liveMap" src="" allowfullscreen loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+
+      <div class="track-info-bar">
+        <div class="track-coords">
+          <i class="fas fa-crosshairs"></i>
+          <span class="track-coords-val" id="trackCoordsVal">Waiting for coordinates…</span>
+        </div>
+        <div class="track-updated" id="trackUpdated"></div>
+      </div>
+
+      <div class="track-actions">
+        <span class="btn-live-tag">
+          <span class="live-dot" style="width:5px;height:5px;border-radius:50%;background:var(--red);box-shadow:0 0 5px var(--red);animation:livePulse 1.4s ease-in-out infinite;display:inline-block"></span>
+          LIVE
+        </span>
+        <a class="btn btn-gmaps" id="trackGmapsLink" href="#" target="_blank" rel="noopener">
+          <i class="fab fa-google"></i> Open in Google Maps
+        </a>
+      </div>
+    </div>
+  </section>
+
   <!-- Active Alerts -->
   <section aria-label="Active alerts">
     <div class="section-header">
@@ -933,7 +1148,9 @@ function renderCard(alert, isActive) {
   let resolvedByHtml = '';
   if (isActive) {
     actionsHtml = `
-      ${mapsUrl ? `<a class="btn btn-maps" href="${mapsUrl}" target="_blank" rel="noopener"><i class="fas fa-map-location-dot"></i> Open Maps</a>` : ''}
+      <button class="btn btn-track" onclick="openLiveTrack('${alert._id}','${alert.studentName}','${alert.busId}')">
+        <i class="fas fa-location-crosshairs"></i> Live Track
+      </button>
       <button class="btn btn-resolve" onclick="openResolveModal('${alert._id}')">
         <i class="fas fa-check"></i> Mark Resolved
       </button>`;
@@ -1109,6 +1326,68 @@ document.getElementById('resolveModal').addEventListener('click', function(e) {
 // ── Auto-refresh every 30 seconds ────────────────────────────────────────────
 loadAll();
 setInterval(loadActive, 30000);
+
+// ── Live Tracking ─────────────────────────────────────────────────────────────
+let liveTrackId       = null;
+let liveTrackInterval = null;
+let lastLat = null, lastLng = null;
+
+function openLiveTrack(alertId, studentName, busId) {
+  // Open fullscreen live tracking page in new tab
+  const url = `sos-live-track.html?id=${alertId}&name=${encodeURIComponent(studentName)}&bus=${encodeURIComponent(busId)}`;
+  window.open(url, '_blank');
+}
+
+function closeLiveTrack() {
+  document.getElementById('liveTrackPanel').classList.remove('visible');
+  clearInterval(liveTrackInterval);
+  liveTrackInterval = null;
+  liveTrackId = null;
+  lastLat = null; lastLng = null;
+}
+
+async function fetchLiveLocation() {
+  if (!liveTrackId) return;
+  try {
+    const res  = await fetch(`${API}/api/sos/location/${liveTrackId}`);
+    const data = await res.json();
+
+    if (!data.success || !data.latitude || !data.longitude) return;
+
+    const lat = parseFloat(data.latitude);
+    const lng = parseFloat(data.longitude);
+
+    // Update coords display
+    document.getElementById('trackCoordsVal').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+
+    // Update Google Maps link
+    const gmapsUrl = `https://maps.google.com/?q=${lat},${lng}`;
+    document.getElementById('trackGmapsLink').href = gmapsUrl;
+
+    // Update last seen time
+    const updatedAt = data.lastLocationAt ? new Date(data.lastLocationAt) : new Date();
+    document.getElementById('trackUpdated').textContent =
+      'Last updated: ' + updatedAt.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:true, timeZone:'Asia/Kolkata' });
+
+    // Only reload iframe if coords changed meaningfully (>~10m)
+    const moved = lastLat === null || Math.abs(lat - lastLat) > 0.0001 || Math.abs(lng - lastLng) > 0.0001;
+    if (moved) {
+      lastLat = lat; lastLng = lng;
+      const mapSrc = `https://maps.google.com/maps?q=${lat},${lng}&z=16&output=embed`;
+      const iframe = document.getElementById('liveMap');
+      iframe.src = mapSrc;
+      iframe.onload = () => document.getElementById('mapLoading').classList.add('hidden');
+    }
+
+    // Auto-close panel if alert resolved
+    if (data.status !== 'active') {
+      closeLiveTrack();
+      loadAll();
+    }
+  } catch(e) {
+    // Silently retry on next interval
+  }
+}
 </script>
 </body>
 </html>

@@ -213,4 +213,55 @@ router.post("/api/sos/false-alarm/:id", async (req, res) => {
   }
 });
 
+// ── POST /api/sos/location/:id ─────────────────────────────────────────────
+// Student's device keeps pushing updated GPS coords every 5 seconds
+router.post("/api/sos/location/:id", async (req, res) => {
+  try {
+    const { latitude, longitude } = req.body;
+    if (!latitude || !longitude) {
+      return res.status(400).json({ success: false, error: "Coordinates required." });
+    }
+
+    const alert = await SosAlert.findById(req.params.id);
+    if (!alert) return res.status(404).json({ success: false, error: "Alert not found." });
+    if (alert.status !== "active") return res.json({ success: false, error: "Alert no longer active." });
+
+    const lat = parseFloat(latitude);
+    const lng = parseFloat(longitude);
+
+    alert.latitude      = lat;
+    alert.longitude     = lng;
+    alert.locationLabel = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    alert.lastLocationAt = new Date();
+    await alert.save();
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error("[SOS] Location update error:", err.message);
+    return res.status(500).json({ success: false, error: "Server error." });
+  }
+});
+
+// ── GET /api/sos/location/:id ──────────────────────────────────────────────
+// Admin dashboard polls this to get the latest coordinates
+router.get("/api/sos/location/:id", async (req, res) => {
+  try {
+    const alert = await SosAlert.findById(req.params.id).select("latitude longitude locationLabel lastLocationAt status studentName busId");
+    if (!alert) return res.status(404).json({ success: false, error: "Alert not found." });
+    return res.json({
+      success:   true,
+      latitude:  alert.latitude,
+      longitude: alert.longitude,
+      locationLabel: alert.locationLabel,
+      lastLocationAt: alert.lastLocationAt,
+      status:    alert.status,
+      studentName: alert.studentName,
+      busId:     alert.busId,
+    });
+  } catch (err) {
+    console.error("[SOS] Location fetch error:", err.message);
+    return res.status(500).json({ success: false, error: "Server error." });
+  }
+});
+
 module.exports = router;
