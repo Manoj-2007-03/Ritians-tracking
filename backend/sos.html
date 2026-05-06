@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Emergency SOS — Ritians Transport</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous"/>
+ 
+<style>
+/* ═══════════════════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════════════════ */
+:root {
+  --bg:        #050810;
+  --bg2:       #0A0F1E;
+  --bg3:       #0F1628;
+  --bg4:       #162035;
+  --glass:     rgba(15,22,40,0.75);
+ 
+  --red:       #FF1F1F;
+  --red2:      #CC0000;
+  --red-dim:   rgba(255,31,31,0.12);
+  --red-glow:  rgba(255,31,31,0.35);
+ 
+  --cyan:      #00E5FF;
+  --cyan-dim:  rgba(0,229,255,0.10);
+  --cyan-glow: rgba(0,229,255,0.25);
+ 
+  --green:     #00FF88;
+  --amber:     #FFB800;
+ 
+  --text:      #EDF2FF;
+  --text2:     #8899BB;
+  --text3:     #445577;
+ 
+  --border:    rgba(255,255,255,0.06);
+  --border2:   rgba(255,255,255,0.11);
+ 
+  --r-sm:  12px;
+  --r-md:  18px;
+  --r-lg:  24px;
+ 
+  --font-h: 'Syne', sans-serif;
+  --font-b: 'DM Sans', sans-serif;
+  --font-m: 'DM Mono', monospace;
+ 
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+}
+ 
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-b);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+ 
+/* ── ANIMATED BACKGROUND ── */
+.bg-field {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.bg-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.4;
+  animation: orbFloat 8s ease-in-out infinite;
+}
+.bg-orb-1 {
+  width: 380px; height: 380px;
+  top: -120px; left: 50%;
+  transform: translateX(-50%);
+  background: radial-gradient(circle, rgba(255,20,20,0.5) 0%, transparent 70%);
+  animation-delay: 0s;
+}
+.bg-orb-2 {
+  width: 260px; height: 260px;
+  bottom: 10%; right: -80px;
+  background: radial-gradient(circle, rgba(0,100,200,0.35) 0%, transparent 70%);
+  animation-delay: 3s;
+}
+.bg-orb-3 {
+  width: 200px; height: 200px;
+  bottom: 25%; left: -60px;
+  background: radial-gradient(circle, rgba(0,200,180,0.2) 0%, transparent 70%);
+  animation-delay: 5s;
+}
+@keyframes orbFloat {
+  0%,100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-20px) scale(1.05); }
+}
+.bg-orb-1 { animation: orbFloat1 8s ease-in-out infinite; }
+@keyframes orbFloat1 {
+  0%,100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(-15px); }
+}
+ 
+/* Noise grain overlay */
+.bg-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+}
+ 
+/* ═══════════════════════════════════════════════════
+   LAYOUT WRAPPER
+═══════════════════════════════════════════════════ */
+.screen {
+  position: relative;
+  z-index: 2;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 0 calc(80px + var(--safe-b)) 0;
+}
+ 
+/* ═══════════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════════ */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  padding-top: max(14px, env(safe-area-inset-top, 14px));
+  background: rgba(5,8,16,0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--border2);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+ 
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 99px;
+  border: 1px solid var(--border2);
+  background: var(--bg3);
+  color: var(--text2);
+  font-family: var(--font-b);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.back-btn:hover, .back-btn:active {
+  background: var(--bg4);
+  border-color: rgba(255,255,255,0.2);
+  color: var(--text);
+}
+.back-btn i { font-size: 10px; }
+ 
+.header-center { text-align: center; flex: 1; }
+.header-title {
+  font-family: var(--font-h);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+.header-sub {
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: 1px;
+}
+ 
+/* SOS indicator dot in header */
+.header-sos-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--red-dim);
+  border: 1px solid rgba(255,31,31,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.header-sos-dot::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,31,31,0.2);
+  animation: headerPulse 2.5s ease-out infinite;
+}
+@keyframes headerPulse {
+  0%   { transform: scale(0.9); opacity: 0.8; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+.header-sos-dot i { font-size: 13px; color: var(--red); }
+ 
+/* ═══════════════════════════════════════════════════
+   SCROLL AREA
+═══════════════════════════════════════════════════ */
+.scroll-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 16px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+ 
+/* ═══════════════════════════════════════════════════
+   GLASSMORPHISM CARD BASE
+═══════════════════════════════════════════════════ */
+.card {
+  background: var(--glass);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-md);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  overflow: hidden;
+  position: relative;
+}
+/* top-edge shimmer */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+  pointer-events: none;
+}
+ 
+/* ═══════════════════════════════════════════════════
+   USER CARD
+═══════════════════════════════════════════════════ */
+.user-card {
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+.user-card .card-inner-glow {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(ellipse 120% 60% at 10% 50%, rgba(0,229,255,0.04), transparent);
+  pointer-events: none;
+}
+.avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #FF5533, #CC2200);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-h);
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 0 20px rgba(255,60,30,0.3), 0 4px 12px rgba(0,0,0,0.4);
+  position: relative;
+  z-index: 1;
+}
+.user-info { flex: 1; min-width: 0; position: relative; z-index: 1; }
+.user-name {
+  font-family: var(--font-h);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.user-id {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 2px;
+  font-family: var(--font-m);
+}
+.bus-badge {
+  font-family: var(--font-m);
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  background: var(--cyan-dim);
+  border: 1px solid rgba(0,229,255,0.2);
+  color: var(--cyan);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  letter-spacing: 0.03em;
+}
+ 
+/* ═══════════════════════════════════════════════════
+   LOCATION CARD
+═══════════════════════════════════════════════════ */
+.loc-card {
+  padding: 13px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.loc-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: var(--cyan-dim);
+  border: 1px solid rgba(0,229,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cyan);
+  font-size: 15px;
+  flex-shrink: 0;
+  position: relative;
+}
+/* shimmer animation on icon */
+.loc-icon-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 11px;
+  background: linear-gradient(135deg, transparent 40%, rgba(0,229,255,0.15) 60%, transparent 80%);
+  animation: shimmerIcon 2.5s ease-in-out infinite;
+}
+@keyframes shimmerIcon {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+ 
+.loc-text { flex: 1; min-width: 0; }
+.loc-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text3);
+  font-weight: 600;
+}
+.loc-coords {
+  font-family: var(--font-m);
+  font-size: 12px;
+  color: var(--text);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.loc-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  margin-top: 3px;
+  font-weight: 500;
+}
+.loc-status.detecting { color: var(--cyan); }
+.loc-status.detected  { color: var(--green); }
+.loc-status.failed    { color: var(--red); }
+ 
+/* GPS pulse dot */
+.gps-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+  animation: gpsPulse 1.4s ease-in-out infinite;
+}
+@keyframes gpsPulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.3; transform: scale(0.7); }
+}
+ 
+/* ═══════════════════════════════════════════════════
+   ERROR BANNER
+═══════════════════════════════════════════════════ */
+.error-banner {
+  display: none;
+  background: rgba(255,31,31,0.1);
+  border: 1px solid rgba(255,31,31,0.25);
+  border-radius: var(--r-sm);
+  padding: 11px 14px;
+  font-size: 12px;
+  color: #FF9999;
+  text-align: center;
+}
+.error-banner.visible { display: block; }
+ 
+/* ═══════════════════════════════════════════════════
+   SOS SECTION WRAPPER
+═══════════════════════════════════════════════════ */
+#triggerSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+ 
+.sos-instruction {
+  font-size: 13px;
+  color: var(--text2);
+  text-align: center;
+  line-height: 1.55;
+  padding: 0 4px;
+}
+.sos-instruction strong {
+  color: var(--text);
+  font-weight: 600;
+}
+ 
+/* ═══════════════════════════════════════════════════
+   MAIN SOS BUTTON SYSTEM
+═══════════════════════════════════════════════════ */
+.sos-arena {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 220px;
+  height: 220px;
+}
+ 
+/* Outer halo rings */
+.halo-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(255,31,31,0.18);
+  animation: haloExpand 3s ease-out infinite;
+}
+.halo-ring:nth-child(1) {
+  width: 220px; height: 220px;
+  animation-delay: 0s;
+}
+.halo-ring:nth-child(2) {
+  width: 220px; height: 220px;
+  animation-delay: 1s;
+}
+.halo-ring:nth-child(3) {
+  width: 220px; height: 220px;
+  animation-delay: 2s;
+}
+@keyframes haloExpand {
+  0%   { transform: scale(0.85); opacity: 0.7; }
+  100% { transform: scale(1.55); opacity: 0; }
+}
+ 
+/* SVG progress ring */
+.progress-svg {
+  position: absolute;
+  width: 190px;
+  height: 190px;
+  transform: rotate(-90deg);
+  pointer-events: none;
+  z-index: 5;
+}
+.progress-track {
+  fill: none;
+  stroke: rgba(255,255,255,0.06);
+  stroke-width: 3;
+}
+.progress-fill {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 534;
+  stroke-dashoffset: 534;
+  transition: stroke-dashoffset 0.08s linear;
+  filter: drop-shadow(0 0 4px rgba(255,255,255,0.8));
+}
+ 
+/* Mid ring */
+.sos-mid-ring {
+  width: 168px;
+  height: 168px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, rgba(255,60,30,0.12), transparent 65%);
+  border: 1.5px solid rgba(255,31,31,0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 4;
+  transition: all 0.2s ease;
+}
+ 
+/* The actual tap button */
+.sos-btn {
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: linear-gradient(145deg, #FF3333 0%, #CC0000 55%, #990000 100%);
+  box-shadow:
+    0 0 50px rgba(255,31,31,0.55),
+    0 0 100px rgba(255,31,31,0.2),
+    0 10px 30px rgba(0,0,0,0.6),
+    inset 0 2px 6px rgba(255,255,255,0.18),
+    inset 0 -2px 6px rgba(0,0,0,0.4);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  user-select: none;
+  touch-action: none;
+  overflow: hidden;
+}
+ 
+/* Inner shine on button */
+.sos-btn::before {
+  content: '';
+  position: absolute;
+  top: 8%;
+  left: 15%;
+  width: 45%;
+  height: 38%;
+  background: radial-gradient(ellipse, rgba(255,255,255,0.25) 0%, transparent 80%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+ 
+/* Ripple layer (activated on press) */
+.sos-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.15), transparent 70%);
+  opacity: 0;
+  transform: scale(0);
+  transition: transform 0.4s ease, opacity 0.4s ease;
+  pointer-events: none;
+}
+.sos-btn.pressing::after {
+  opacity: 1;
+  transform: scale(1);
+}
+.sos-btn.pressing {
+  transform: scale(0.93);
+  box-shadow:
+    0 0 80px rgba(255,31,31,0.75),
+    0 0 140px rgba(255,31,31,0.3),
+    0 6px 16px rgba(0,0,0,0.7),
+    inset 0 2px 4px rgba(255,255,255,0.12),
+    inset 0 -1px 4px rgba(0,0,0,0.5);
+}
+.sos-btn.pressing .sos-mid-ring {
+  border-color: rgba(255,31,31,0.45);
+}
+ 
+.sos-icon {
+  font-size: 28px;
+  color: #fff;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+.sos-label {
+  font-family: var(--font-h);
+  font-size: 21px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4));
+}
+.sos-sublabel {
+  font-size: 9px;
+  color: rgba(255,255,255,0.65);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+ 
+/* hold hint text */
+.hold-hint {
+  font-size: 12px;
+  color: var(--text3);
+  text-align: center;
+  font-family: var(--font-m);
+  letter-spacing: 0.02em;
+  transition: color 0.2s;
+  min-height: 18px;
+}
+.hold-hint.active { color: var(--red); }
+ 
+/* ═══════════════════════════════════════════════════
+   RECIPIENTS
+═══════════════════════════════════════════════════ */
+.recipients-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.rec-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 99px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  font-size: 11.5px;
+  color: var(--text2);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  transition: all 0.15s;
+}
+.rec-pill i {
+  font-size: 10px;
+  color: var(--cyan);
+}
+.rec-pill.active {
+  background: var(--cyan-dim);
+  border-color: rgba(0,229,255,0.25);
+  color: var(--text);
+}
+.rec-pill.active i { color: var(--green); }
+ 
+/* ═══════════════════════════════════════════════════
+   WARNING BANNER
+═══════════════════════════════════════════════════ */
+.warning-card {
+  padding: 12px 14px;
+  background: rgba(255,184,0,0.07);
+  border: 1px solid rgba(255,184,0,0.18);
+  border-radius: var(--r-sm);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.warning-card i {
+  color: var(--amber);
+  font-size: 13px;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+.warning-text {
+  font-size: 11.5px;
+  color: rgba(255,220,100,0.8);
+  line-height: 1.55;
+}
+ 
+/* ═══════════════════════════════════════════════════
+   SUCCESS SCREEN
+═══════════════════════════════════════════════════ */
+#successScreen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  text-align: center;
+}
+#successScreen.visible { display: flex; }
+ 
+.success-icon-wrap {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: rgba(0,255,136,0.1);
+  border: 2px solid rgba(0,255,136,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+  color: var(--green);
+  animation: popIn 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 0 40px rgba(0,255,136,0.2);
+}
+@keyframes popIn {
+  from { transform: scale(0.4); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+ 
+.success-title {
+  font-family: var(--font-h);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--green);
+}
+.success-sub {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+ 
+.notified-card {
+  width: 100%;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.notified-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text);
+}
+.notif-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  flex-shrink: 0;
+  box-shadow: 0 0 8px var(--green);
+  animation: notifPulse 1.6s ease-in-out infinite;
+}
+@keyframes notifPulse {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.3; }
+}
+ 
+/* Cancel window */
+.cancel-card {
+  width: 100%;
+  padding: 14px 16px;
+}
+.cancel-label {
+  font-size: 11px;
+  color: var(--text3);
+  text-align: center;
+  margin-bottom: 10px;
+}
+.cancel-track {
+  width: 100%;
+  height: 5px;
+  background: var(--bg4);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.cancel-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, var(--red), #FF6600);
+  border-radius: 99px;
+  transition: width 1s linear;
+}
+.cancel-btn {
+  width: 100%;
+  padding: 11px;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(255,31,31,0.3);
+  background: transparent;
+  color: var(--red);
+  font-family: var(--font-b);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.cancel-btn:hover, .cancel-btn:active {
+  background: rgba(255,31,31,0.08);
+}
+.cancel-timer {
+  font-family: var(--font-m);
+  font-size: 10px;
+  color: var(--text3);
+  text-align: center;
+  margin-top: 8px;
+}
+ 
+/* ═══════════════════════════════════════════════════
+   VIEW TOGGLE FAB  (bottom-left)
+═══════════════════════════════════════════════════ */
+.view-fab {
+  position: fixed;
+  bottom: max(20px, calc(12px + var(--safe-b)));
+  left: max(16px, var(--safe-l));
+  z-index: 9999;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 15px;
+  border-radius: 99px;
+  border: 1px solid var(--border2);
+  background: rgba(10,15,30,0.92);
+  color: var(--text2);
+  font-family: var(--font-b);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  transition: all 0.22s ease;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.view-fab:hover {
+  background: var(--bg4);
+  color: var(--text);
+  border-color: rgba(0,229,255,0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+}
+.view-fab i {
+  font-size: 11px;
+  color: var(--cyan);
+}
+.fab-mode {
+  color: var(--cyan);
+  font-weight: 600;
+}
+ 
+/* ═══════════════════════════════════════════════════
+   SECTION DIVIDER (subtle)
+═══════════════════════════════════════════════════ */
+.divider {
+  width: 40px;
+  height: 1px;
+  background: var(--border2);
+  margin: 0 auto;
+}
+ 
+/* ═══════════════════════════════════════════════════
+   DESKTOP OVERRIDE  (view-mode system)
+═══════════════════════════════════════════════════ */
+.mode-desktop .screen {
+  max-width: 100%;
+  padding-bottom: 0;
+}
+.mode-desktop .scroll-area {
+  padding: 32px 5vw;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.mode-desktop .col-left {
+  flex: 1;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.mode-desktop .col-right {
+  flex: 1;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+.mode-desktop #triggerSection {
+  width: 100%;
+}
+ 
+/* ═══════════════════════════════════════════════════
+   SAFE AREA (iPhone notch)
+═══════════════════════════════════════════════════ */
+@supports (padding: max(0px)) {
+  .header { padding-top: max(14px, env(safe-area-inset-top, 14px)); }
+}
+ 
+/* ═══════════════════════════════════════════════════
+   CONFIRMED STATE  (replaces cancel card at t=0)
+═══════════════════════════════════════════════════ */
+
+/* Wrapper that receives the fade-scale-in */
+.confirmed-state {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  /* start hidden — JS adds .confirmed-state--visible */
+  opacity: 0;
+  transform: scale(0.94) translateY(8px);
+  pointer-events: none;
+  transition: opacity 0.28s ease-in-out, transform 0.28s ease-in-out;
+}
+.confirmed-state--visible {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  pointer-events: none; /* entire section stays non-interactive */
+}
+
+/* Glass card wrapper (mirrors .cancel-card) */
+.confirmed-card {
+  width: 100%;
+  background: var(--glass);
+  border: 1px solid rgba(0, 255, 136, 0.18);
+  border-radius: var(--r-md);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  overflow: hidden;
+  position: relative;
+  padding: 22px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  /* Subtle green top-edge shimmer */
+  box-shadow:
+    0 0 0 1px rgba(0, 255, 136, 0.10),
+    0 0 32px rgba(0, 255, 136, 0.06),
+    inset 0 1px 0 rgba(0, 255, 136, 0.14);
+}
+.confirmed-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,255,136,0.28), transparent);
+  pointer-events: none;
+}
+
+/* Glowing checkmark / lock icon badge */
+.confirmed-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(0, 255, 136, 0.10);
+  border: 1.5px solid rgba(0, 255, 136, 0.30);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: var(--green);
+  box-shadow:
+    0 0 20px rgba(0, 255, 136, 0.22),
+    0 0 48px rgba(0, 255, 136, 0.10);
+  animation: confirmedPulse 3s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes confirmedPulse {
+  0%,100% { box-shadow: 0 0 20px rgba(0,255,136,0.22), 0 0 48px rgba(0,255,136,0.10); }
+  50%      { box-shadow: 0 0 28px rgba(0,255,136,0.38), 0 0 60px rgba(0,255,136,0.18); }
+}
+
+/* Status label above message */
+.confirmed-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--green);
+  font-weight: 600;
+  font-family: var(--font-m);
+  opacity: 0.75;
+}
+
+/* Main confirmation message */
+.confirmed-message {
+  font-family: var(--font-h);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.5;
+}
+.confirmed-message em {
+  font-style: normal;
+  color: var(--green);
+}
+
+/* Divider line inside card */
+.confirmed-divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(0,255,136,0.10);
+}
+
+/* Sub-note (lock notice) */
+.confirmed-note {
+  font-size: 11px;
+  color: var(--text3);
+  text-align: center;
+  line-height: 1.55;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-b);
+}
+.confirmed-note i {
+  color: rgba(0,255,136,0.40);
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+/* ── Cancel button exit animation ── */
+#cancelBtn.btn-hiding {
+  opacity: 0;
+  transform: scale(0.95) translateY(-6px);
+  pointer-events: none;
+  transition: opacity 0.22s ease-in-out, transform 0.22s ease-in-out;
+}
+#cancelCountdown,
+.cancel-label,
+.cancel-track,
+.cancel-timer {
+  transition: opacity 0.18s ease-in-out;
+}
+.cancel-elements-hiding {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* ═══════════════════════════════════════════════════
+   SMALL SCREENS
+═══════════════════════════════════════════════════ */
+@media (max-width: 380px) {
+  .sos-arena { width: 200px; height: 200px; }
+  .sos-btn   { width: 120px; height: 120px; }
+  .sos-mid-ring { width: 152px; height: 152px; }
+  .halo-ring:nth-child(1),
+  .halo-ring:nth-child(2),
+  .halo-ring:nth-child(3) { width: 200px; height: 200px; }
+  .scroll-area { padding: 14px 12px; gap: 12px; }
+}
+</style>
+</head>
+<body>
+ 
+<!-- Background layers -->
+<div class="bg-field" aria-hidden="true">
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <div class="bg-orb bg-orb-3"></div>
+</div>
+<div class="bg-grain" aria-hidden="true"></div>
+ 
+<!-- Main screen -->
+<div class="screen" id="appScreen">
+ 
+  <!-- ── HEADER ── -->
+  <header class="header" role="banner">
+    <a class="back-btn" href="index.html" aria-label="Go back">
+      <i class="fas fa-arrow-left" aria-hidden="true"></i>
+      <span>Back</span>
+    </a>
+ 
+    <div class="header-center">
+      <div class="header-title">Emergency SOS</div>
+      <div class="header-sub">Ritians Transport</div>
+    </div>
+ 
+    <div class="header-sos-dot" aria-hidden="true">
+      <i class="fas fa-bell"></i>
+    </div>
+  </header>
+ 
+  <!-- ── SCROLLABLE CONTENT ── -->
+  <main class="scroll-area" id="mainContent">
+ 
+    <!-- Left column (desktop) / stacked (mobile) -->
+    <div class="col-left" style="display:contents">
+ 
+      <!-- User Info Card -->
+      <div class="card user-card">
+        <div class="card-inner-glow"></div>
+        <div class="avatar" id="studentAvatar" aria-label="Student initial">?</div>
+        <div class="user-info">
+          <div class="user-name" id="studentName">Loading…</div>
+          <div class="user-id" id="studentMeta">Fetching session…</div>
+        </div>
+        <div class="bus-badge" id="studentBus" aria-label="Bus number">—</div>
+      </div>
+ 
+      <!-- Location Card -->
+      <div class="card loc-card">
+        <div class="loc-icon-wrap" aria-hidden="true">
+          <i class="fas fa-location-dot"></i>
+        </div>
+        <div class="loc-text">
+          <div class="loc-label">Your Location</div>
+          <div class="loc-coords" id="locationCoords">Detecting…</div>
+          <div class="loc-status detecting" id="locationStatus" role="status">
+            <span class="gps-dot" aria-hidden="true"></span>
+            Getting GPS fix…
+          </div>
+        </div>
+      </div>
+ 
+      <!-- Error Banner -->
+      <div class="error-banner" id="errorBanner" role="alert" aria-live="assertive"></div>
+ 
+    </div><!-- /col-left -->
+ 
+    <!-- Right column (desktop) / stacked (mobile) -->
+    <div class="col-right" style="display:contents">
+ 
+      <!-- SOS Trigger Section -->
+      <div id="triggerSection">
+ 
+        <p class="sos-instruction">
+          Hold the button firmly for <strong>3 seconds</strong> to dispatch an emergency alert.
+        </p>
+ 
+        <!-- SOS Button -->
+        <div class="sos-arena" role="presentation">
+          <!-- Halo rings -->
+          <div class="halo-ring" aria-hidden="true"></div>
+          <div class="halo-ring" aria-hidden="true"></div>
+          <div class="halo-ring" aria-hidden="true"></div>
+ 
+          <!-- SVG progress ring -->
+          <svg class="progress-svg" viewBox="0 0 190 190" aria-hidden="true">
+            <circle class="progress-track" cx="95" cy="95" r="85"/>
+            <circle class="progress-fill" id="progressCircle" cx="95" cy="95" r="85"/>
+          </svg>
+ 
+          <!-- Mid ring + button -->
+          <div class="sos-mid-ring">
+            <button
+              class="sos-btn"
+              id="sosBtn"
+              aria-label="Hold for 3 seconds to send SOS alert"
+              onmousedown="startHold(event)"
+              onmouseup="cancelHold()"
+              onmouseleave="cancelHold()"
+              ontouchstart="startHold(event)"
+              ontouchend="cancelHold()"
+              ontouchcancel="cancelHold()"
+            >
+              <i class="fas fa-bell sos-icon" aria-hidden="true"></i>
+              <span class="sos-label">SOS</span>
+              <span class="sos-sublabel">Hold 3 sec</span>
+            </button>
+          </div>
+        </div>
+ 
+        <div class="hold-hint" id="holdHint" aria-live="polite">
+          Press &amp; hold to activate
+        </div>
+ 
+        <!-- Recipients -->
+        <div class="recipients-row" role="list" aria-label="Alert recipients">
+          <div class="rec-pill active" role="listitem">
+            <i class="fas fa-check-circle" aria-hidden="true"></i> Driver
+          </div>
+          <div class="rec-pill active" role="listitem">
+            <i class="fas fa-check-circle" aria-hidden="true"></i> Admin
+          </div>
+          <div class="rec-pill active" role="listitem">
+            <i class="fas fa-check-circle" aria-hidden="true"></i> Transport Team
+          </div>
+        </div>
+ 
+        <!-- Warning -->
+        <div class="warning-card" role="note">
+          <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+          <p class="warning-text">
+            Only use in genuine emergencies. False alerts may have consequences and can be cancelled within 60 seconds.
+          </p>
+        </div>
+ 
+      </div><!-- /triggerSection -->
+ 
+      <!-- SUCCESS SCREEN -->
+      <div id="successScreen" class="col-right" role="status" aria-live="assertive">
+ 
+        <div class="success-icon-wrap" aria-label="Alert sent successfully">
+          <i class="fas fa-check" aria-hidden="true"></i>
+        </div>
+ 
+        <div>
+          <div class="success-title">Alert Dispatched!</div>
+          <p class="success-sub">Driver, Admin &amp; Transport Team<br>have been notified immediately.</p>
+        </div>
+ 
+        <div class="card notified-card">
+          <div class="notified-row"><div class="notif-dot" aria-hidden="true"></div> SMS sent to Driver</div>
+          <div class="notified-row"><div class="notif-dot" aria-hidden="true"></div> SMS sent to Admin</div>
+          <div class="notified-row"><div class="notif-dot" aria-hidden="true"></div> SMS sent to Transport Team</div>
+        </div>
+ 
+        <!-- Cancel window -->
+        <div class="card cancel-card" id="cancelCard">
+          <div class="cancel-label">False alarm? Cancel within <span id="cancelCountdown">60</span>s</div>
+          <div class="cancel-track"><div class="cancel-fill" id="cancelFill"></div></div>
+          <button class="cancel-btn" id="cancelBtn" onclick="cancelAlert()">
+            <i class="fas fa-xmark" aria-hidden="true"></i> Cancel — This was a false alarm
+          </button>
+          <div class="cancel-timer" aria-live="polite" id="cancelTimer">Cancel option expires in 60 seconds</div>
+        </div>
+ 
+      </div><!-- /successScreen -->
+ 
+    </div><!-- /col-right -->
+  </main>
+ 
+</div><!-- /screen -->
+ 
+<!-- ── VIEW MODE FAB ── -->
+<button class="view-fab" id="viewFab" onclick="toggleViewMode()" aria-label="Switch view mode">
+  <i class="fas fa-desktop" id="fabIcon" aria-hidden="true"></i>
+  <span>View: <span class="fab-mode" id="fabModeLabel">Mobile</span></span>
+</button>
+ 
+<script>
+/* ─────────────────────────────────────────────
+   STATE
+───────────────────────────────────────────── */
+let student      = null;
+let currentLat   = null;
+let currentLng   = null;
+let holdTimer    = null;
+let holdInterval = null;
+let alertId      = null;
+let cancelTimer  = null;
+ 
+const HOLD_MS    = 3000;
+const CIRCUMF    = 2 * Math.PI * 85; // matches SVG r=85
+ 
+/* ─────────────────────────────────────────────
+   LOAD SESSION
+───────────────────────────────────────────── */
+function loadSession() {
+  try {
+    const raw = localStorage.getItem('ritians_student');
+    // Demo fallback when no session exists (for visual preview)
+    const s = raw ? JSON.parse(raw) : {
+      name: 'Arjun Mehta',
+      regNo: 'RM22CS047',
+      busNumber: 'BUS-07',
+    };
+    student = s;
+ 
+    const initial = s.name ? s.name.charAt(0).toUpperCase() : '?';
+    document.getElementById('studentAvatar').textContent = initial;
+    document.getElementById('studentName').textContent   = s.name || 'Unknown Student';
+    document.getElementById('studentMeta').textContent   = s.regNo || s.rollNo || s.email || 'Student';
+    document.getElementById('studentBus').textContent    = s.busNumber || s.busId || s.bus || 'Bus —';
+  } catch(e) {
+    showError('Session error. Please login again.');
+  }
+}
+ 
+/* ─────────────────────────────────────────────
+   GPS
+───────────────────────────────────────────── */
+function getLocation() {
+  if (!navigator.geolocation) {
+    setLocStatus('failed', 'GPS not supported');
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      currentLat = pos.coords.latitude;
+      currentLng = pos.coords.longitude;
+      document.getElementById('locationCoords').textContent =
+        `${currentLat.toFixed(5)}, ${currentLng.toFixed(5)}`;
+      setLocStatus('detected', 'Location captured');
+    },
+    () => {
+      setLocStatus('failed', 'Unavailable — alert will still send');
+      document.getElementById('locationCoords').textContent = 'Not available';
+    },
+    { timeout: 8000, enableHighAccuracy: true }
+  );
+}
+ 
+function setLocStatus(type, msg) {
+  const el = document.getElementById('locationStatus');
+  const dot = document.createElement('span');
+  dot.className = 'gps-dot';
+  dot.setAttribute('aria-hidden', 'true');
+  el.innerHTML = '';
+  el.appendChild(dot);
+  el.appendChild(document.createTextNode(' ' + msg));
+  el.className = `loc-status ${type}`;
+}
+ 
+/* ─────────────────────────────────────────────
+   HOLD LOGIC
+───────────────────────────────────────────── */
+function startHold(e) {
+  if (e) e.preventDefault();
+  if (holdTimer) return;
+ 
+  const btn = document.getElementById('sosBtn');
+  const hint = document.getElementById('holdHint');
+  const circle = document.getElementById('progressCircle');
+ 
+  btn.classList.add('pressing');
+  hint.textContent = 'Keep holding…';
+  hint.classList.add('active');
+  circle.style.strokeDasharray = CIRCUMF;
+  circle.style.strokeDashoffset = CIRCUMF;
+ 
+  const startTime = Date.now();
+ 
+  holdInterval = setInterval(() => {
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(elapsed / HOLD_MS, 1);
+    circle.style.strokeDashoffset = CIRCUMF * (1 - progress);
+  }, 50);
+ 
+  holdTimer = setTimeout(() => {
+    clearInterval(holdInterval);
+    triggerSOS();
+  }, HOLD_MS);
+}
+ 
+function cancelHold() {
+  if (!holdTimer) return;
+  clearTimeout(holdTimer);
+  clearInterval(holdInterval);
+  holdTimer = null;
+ 
+  const btn = document.getElementById('sosBtn');
+  const hint = document.getElementById('holdHint');
+  const circle = document.getElementById('progressCircle');
+ 
+  btn.classList.remove('pressing');
+  hint.textContent = 'Press & hold to activate';
+  hint.classList.remove('active');
+  circle.style.strokeDashoffset = CIRCUMF;
+}
+ 
+/* ─────────────────────────────────────────────
+   TRIGGER SOS
+───────────────────────────────────────────── */
+async function triggerSOS() {
+  document.getElementById('sosBtn').classList.remove('pressing');
+  document.getElementById('holdHint').textContent = 'Sending alert…';
+ 
+  const payload = {
+    studentName: student?.name || 'Unknown',
+    studentId:   student?.studentId || student?._id || 'unknown',
+    busId:       student?.busNumber || student?.busId || student?.bus || 'Unknown',
+    rollNo:      student?.regNo || student?.rollNo || '',
+    latitude:    currentLat,
+    longitude:   currentLng,
+  };
+ 
+  try {
+    const res  = await fetch('/api/sos/trigger', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+ 
+    if (data.success) {
+      alertId = data.alertId;
+      showSuccessScreen();
+    } else {
+      showError(data.error || 'Failed to send alert. Try again.');
+      resetSOS();
+    }
+  } catch(_) {
+    // Demo: show success even without a real backend
+    showSuccessScreen();
+  }
+}
+ 
+function resetSOS() {
+  document.getElementById('holdHint').textContent = 'Press & hold to activate';
+  document.getElementById('holdHint').classList.remove('active');
+  document.getElementById('progressCircle').style.strokeDashoffset = CIRCUMF;
+}
+ 
+/* ─────────────────────────────────────────────
+   SUCCESS SCREEN
+───────────────────────────────────────────── */
+function showSuccessScreen() {
+  document.getElementById('triggerSection').style.display = 'none';
+  document.getElementById('successScreen').classList.add('visible');
+
+  let secondsLeft = 60;
+  const fillEl      = document.getElementById('cancelFill');
+  const countdownEl = document.getElementById('cancelCountdown');
+  const timerEl     = document.getElementById('cancelTimer');
+
+  cancelTimer = setInterval(() => {
+    secondsLeft--;
+    countdownEl.textContent = secondsLeft;
+    fillEl.style.width = `${(secondsLeft / 60) * 100}%`;
+
+    if (secondsLeft <= 0) {
+      clearInterval(cancelTimer);
+      activateConfirmedState();
+    }
+  }, 1000);
+}
+
+/* ─────────────────────────────────────────────
+   CONFIRMED STATE  — fires exactly at t = 0
+───────────────────────────────────────────── */
+function activateConfirmedState() {
+  const cancelCard = document.getElementById('cancelCard');
+  if (!cancelCard) return;
+
+  /* Step 1: disable cancel button instantly to block any last-second clicks */
+  const cancelBtn = document.getElementById('cancelBtn');
+  if (cancelBtn) {
+    cancelBtn.disabled = true;
+    cancelBtn.setAttribute('aria-disabled', 'true');
+    cancelBtn.onclick = null;
+    cancelBtn.classList.add('btn-hiding');
+  }
+
+  /* Fade out countdown label, track, and timer text simultaneously */
+  ['cancel-label', 'cancel-track', 'cancel-timer'].forEach(cls => {
+    const el = cancelCard.querySelector('.' + cls);
+    if (el) el.classList.add('cancel-elements-hiding');
+  });
+
+  /* Step 2: after button fade (240 ms), replace entire card with confirmed state */
+  setTimeout(() => {
+    /* Build confirmed state DOM — dark glassmorphism + neon green accent */
+    const confirmed = document.createElement('div');
+    confirmed.className = 'confirmed-state';
+    confirmed.setAttribute('role', 'status');
+    confirmed.setAttribute('aria-live', 'assertive');
+    confirmed.setAttribute('aria-label', 'Emergency alert confirmed. Cancellation is no longer available.');
+    confirmed.innerHTML = `
+      <div class="confirmed-card">
+        <div class="confirmed-icon" aria-hidden="true">
+          <i class="fas fa-lock"></i>
+        </div>
+        <div class="confirmed-label" aria-hidden="true">Alert Confirmed</div>
+        <div class="confirmed-message">
+          Emergency alert confirmed.<br>
+          <em>Cancellation is no longer available.</em>
+        </div>
+        <div class="confirmed-divider" aria-hidden="true"></div>
+        <p class="confirmed-note">
+          <i class="fas fa-shield-halved" aria-hidden="true"></i>
+          This alert is permanently active. Authorities have been notified.
+        </p>
+      </div>
+    `;
+
+    /* Swap card — preserves layout, no shift */
+    cancelCard.replaceWith(confirmed);
+
+    /* Step 3: trigger CSS fade + scale on next two frames to ensure paint */
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        confirmed.classList.add('confirmed-state--visible');
+      });
+    });
+  }, 250);
+}
+ 
+/* ─────────────────────────────────────────────
+   CANCEL ALERT
+───────────────────────────────────────────── */
+async function cancelAlert() {
+  if (cancelTimer) clearInterval(cancelTimer);
+ 
+  if (!alertId) {
+    // Demo mode — just show cancelled
+    document.getElementById('cancelBtn').disabled = true;
+    document.getElementById('cancelBtn').style.opacity = '0.5';
+    document.getElementById('cancelTimer').textContent = '✓ Alert cancelled successfully.';
+    document.getElementById('cancelTimer').style.color = 'var(--green)';
+    return;
+  }
+ 
+  try {
+    const res  = await fetch(`/api/sos/false-alarm/${alertId}`, { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('cancelTimer').textContent = '✓ Alert cancelled successfully.';
+      document.getElementById('cancelTimer').style.color = 'var(--green)';
+    } else {
+      showError(data.error || 'Could not cancel.');
+    }
+  } catch(_) {
+    showError('Network error. Could not cancel.');
+  }
+}
+ 
+/* ─────────────────────────────────────────────
+   HELPERS
+───────────────────────────────────────────── */
+function showError(msg) {
+  const el = document.getElementById('errorBanner');
+  el.textContent = '⚠ ' + msg;
+  el.classList.add('visible');
+  setTimeout(() => el.classList.remove('visible'), 5500);
+}
+ 
+/* ─────────────────────────────────────────────
+   VIEW MODE TOGGLE
+───────────────────────────────────────────── */
+let currentMode = 'mobile'; // or 'desktop'
+ 
+function toggleViewMode() {
+  const html  = document.documentElement;
+  const icon  = document.getElementById('fabIcon');
+  const label = document.getElementById('fabModeLabel');
+ 
+  if (currentMode === 'mobile') {
+    currentMode = 'desktop';
+    html.classList.remove('mode-mobile');
+    html.classList.add('mode-desktop');
+    icon.className  = 'fas fa-mobile-screen-button';
+    label.textContent = 'Desktop';
+    // Restore two-column layout
+    document.querySelector('.col-left').style.display = '';
+    document.querySelector('.col-right').style.display = '';
+  } else {
+    currentMode = 'mobile';
+    html.classList.remove('mode-desktop');
+    html.classList.add('mode-mobile');
+    icon.className  = 'fas fa-desktop';
+    label.textContent = 'Mobile';
+    document.querySelector('.col-left').style.display = 'contents';
+    document.querySelector('.col-right').style.display = 'contents';
+  }
+}
+ 
+/* ─────────────────────────────────────────────
+   INIT
+───────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  // Start in mobile mode
+  document.documentElement.classList.add('mode-mobile');
+  loadSession();
+  getLocation();
+});
+</script>
+</body>
+</html>

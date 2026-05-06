@@ -55,6 +55,7 @@ const path       = require("path");
 const mongoose   = require("mongoose");
 const authRoutes = require("./routes/auth");
 const attendanceRoutes = require("./routes/attendance.js");
+const sosRoutes = require("./routes/sos");
 
 // ── MongoDB Connection ──────────────────────────────────────────────────────
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/ritians";
@@ -144,6 +145,7 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(__dirname));
 app.use("/", attendanceRoutes);
 app.use("/", authRoutes);
+app.use("/", sosRoutes);
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "index.html")));
 
 // ── In-Memory Stores ────────────────────────────────────────────────────────

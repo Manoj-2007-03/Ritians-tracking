@@ -58,12 +58,14 @@ router.post("/login", async (req, res) => {
 
     return res.status(200).json({
       success: true, message: "Login successful!",
-      studentId:  student._id,
-      name:       student.name,
-      regNo:      student.regNo,
-      className:  student.className,
-      department: student.department,
-      year:       student.year,
+      studentId:    student._id,
+      name:         student.name,
+      regNo:        student.regNo,
+      className:    student.className,
+      department:   student.department,
+      year:         student.year,
+      busNumber:    student.busNumber    || "",   // ← FIXED
+      boardingPoint: student.boardingPoint || "",  // ← FIXED
     });
 
   } catch (err) {

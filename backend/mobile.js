@@ -35,6 +35,7 @@
   let currentMode = null; // 'mobile' | 'desktop'
   let drawerOpen  = false;
 
+
   // ── DETECT PAGE TYPE ───────────────────────────────────────
   // Used to build the correct drawer nav items per page
   function detectPage() {
@@ -156,6 +157,14 @@
         <a class="drawer-nav-item driver-ext" href="driver.html">
           <i class="fas fa-location-arrow"></i> Driver GPS
         </a>
+        <div class="drawer-divider"></div>
+        <div class="drawer-sos-wrapper">
+          <a class="drawer-sos-circle" href="sos.html" aria-label="Emergency SOS">
+            <i class="fas fa-bell"></i>
+            <span>SOS</span>
+          </a>
+          <div class="drawer-sos-label">Emergency Alert</div>
+        </div>
       `;
     } else if (page === 'tracking') {
       navItems = `
@@ -169,6 +178,14 @@
         <a class="drawer-nav-item driver-ext" href="driver.html">
           <i class="fas fa-location-arrow"></i> Driver Portal
         </a>
+        <div class="drawer-divider"></div>
+        <div class="drawer-sos-wrapper">
+          <a class="drawer-sos-circle" href="sos.html" aria-label="Emergency SOS">
+            <i class="fas fa-bell"></i>
+            <span>SOS</span>
+          </a>
+          <div class="drawer-sos-label">Emergency Alert</div>
+        </div>
       `;
     } else if (page === 'driver') {
       navItems = `
@@ -182,6 +199,14 @@
         <a class="drawer-nav-item" href="tracking.html">
           <i class="fas fa-satellite-dish"></i> Live Tracking
         </a>
+        <div class="drawer-divider"></div>
+        <div class="drawer-sos-wrapper">
+          <a class="drawer-sos-circle" href="sos.html" aria-label="Emergency SOS">
+            <i class="fas fa-bell"></i>
+            <span>SOS</span>
+          </a>
+          <div class="drawer-sos-label">Emergency Alert</div>
+        </div>
       `;
     }
 

@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>SOS Dashboard – Ritians Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous"/>
+ 
+<style>
+/* ═══════════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════════ */
+:root {
+  --bg:    #050810;
+  --bg2:   #0A0F1E;
+  --bg3:   #0F1628;
+  --bg4:   #162035;
+  --glass: rgba(15,22,40,0.78);
+ 
+  --red:        #FF2D2D;
+  --red-dim:    rgba(255,45,45,0.12);
+  --red-glow:   rgba(255,45,45,0.28);
+  --red-border: rgba(255,45,45,0.30);
+ 
+  --green:        #00FF88;
+  --green-dim:    rgba(0,255,136,0.10);
+  --green-glow:   rgba(0,255,136,0.22);
+  --green-border: rgba(0,255,136,0.28);
+ 
+  --amber:        #FFB800;
+  --amber-dim:    rgba(255,184,0,0.10);
+  --amber-glow:   rgba(255,184,0,0.20);
+  --amber-border: rgba(255,184,0,0.28);
+ 
+  --cyan:        #00E5FF;
+  --cyan-dim:    rgba(0,229,255,0.10);
+  --cyan-glow:   rgba(0,229,255,0.20);
+  --cyan-border: rgba(0,229,255,0.28);
+ 
+  --text:  #EDF2FF;
+  --text2: #8899BB;
+  --text3: #445577;
+ 
+  --border:  rgba(255,255,255,0.06);
+  --border2: rgba(255,255,255,0.11);
+ 
+  --r-sm: 12px;
+  --r-md: 18px;
+  --r-lg: 24px;
+ 
+  --font-h: 'Syne', sans-serif;
+  --font-b: 'DM Sans', sans-serif;
+  --font-m: 'DM Mono', monospace;
+ 
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+ 
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-b);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+ 
+/* ═══════════════════════════════════════════════
+   AMBIENT BACKGROUND
+═══════════════════════════════════════════════ */
+.bg-field {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.bg-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+}
+.orb-1 {
+  width: 500px; height: 500px;
+  top: -200px; left: 50%;
+  transform: translateX(-50%);
+  background: radial-gradient(circle, rgba(255,30,30,0.18) 0%, transparent 70%);
+  animation: orbDrift 10s ease-in-out infinite;
+}
+.orb-2 {
+  width: 320px; height: 320px;
+  bottom: 0; right: -100px;
+  background: radial-gradient(circle, rgba(0,80,200,0.14) 0%, transparent 70%);
+  animation: orbDrift 14s ease-in-out infinite reverse;
+}
+.orb-3 {
+  width: 240px; height: 240px;
+  top: 40%; left: -80px;
+  background: radial-gradient(circle, rgba(0,200,160,0.10) 0%, transparent 70%);
+  animation: orbDrift 12s ease-in-out infinite 3s;
+}
+@keyframes orbDrift {
+  0%, 100% { transform: translateY(0) translateX(-50%); }
+  50% { transform: translateY(-24px) translateX(-50%); }
+}
+.orb-2 { animation: orbDrift2 14s ease-in-out infinite reverse; }
+.orb-3 { animation: orbDrift3 12s ease-in-out infinite 3s; }
+@keyframes orbDrift2 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-18px)} }
+@keyframes orbDrift3 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(14px)} }
+ 
+.bg-grain {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0.022;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px;
+}
+ 
+/* ═══════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════ */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(5,8,16,0.88);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border-bottom: 1px solid var(--border2);
+  padding: max(14px, var(--safe-t)) 16px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+ 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+ 
+.back-btn {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border2);
+  background: var(--bg3);
+  color: var(--text2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+.back-btn:hover, .back-btn:active {
+  background: var(--bg4);
+  border-color: rgba(255,255,255,0.2);
+  color: var(--text);
+}
+ 
+.header-logo {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #FF3333 0%, #AA0000 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; color: #fff;
+  box-shadow: 0 0 20px var(--red-glow), 0 4px 12px rgba(0,0,0,0.4);
+  flex-shrink: 0;
+}
+ 
+.header-center {
+  flex: 1;
+  text-align: center;
+}
+.header-title {
+  font-family: var(--font-h);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+}
+.header-sub {
+  font-size: 10px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 2px;
+}
+ 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+ 
+/* Live pill */
+.live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 99px;
+  background: var(--green-dim);
+  border: 1px solid var(--green-border);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--green);
+  font-family: var(--font-m);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.live-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  animation: livePulse 1.6s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes livePulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.75); }
+}
+ 
+/* Icon button (refresh) */
+.icon-btn {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border2);
+  background: var(--bg3);
+  color: var(--text2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.icon-btn:hover, .icon-btn:active {
+  background: var(--bg4);
+  color: var(--cyan);
+  border-color: var(--cyan-border);
+}
+.fa-spin { animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+ 
+/* ═══════════════════════════════════════════════
+   PAGE WRAPPER
+═══════════════════════════════════════════════ */
+.page {
+  position: relative;
+  z-index: 2;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 20px 16px calc(32px + var(--safe-b));
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+ 
+/* ═══════════════════════════════════════════════
+   STATS GRID
+═══════════════════════════════════════════════ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+ 
+.stat-card {
+  background: var(--glass);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border2);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 16px 16px 14px;
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.stat-card:active { transform: scale(0.97); }
+ 
+/* top shimmer */
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent);
+}
+ 
+/* corner glow blob */
+.stat-card::after {
+  content: '';
+  position: absolute;
+  bottom: -30px; right: -30px;
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  filter: blur(24px);
+  pointer-events: none;
+  opacity: 0.6;
+}
+ 
+.stat-card.s-red   { border-color: var(--red-border);   box-shadow: 0 0 0 1px var(--red-dim),   inset 0 0 40px rgba(255,45,45,0.03); }
+.stat-card.s-red::after   { background: var(--red-glow); }
+.stat-card.s-green { border-color: var(--green-border); box-shadow: 0 0 0 1px var(--green-dim), inset 0 0 40px rgba(0,255,136,0.03); }
+.stat-card.s-green::after { background: var(--green-glow); }
+.stat-card.s-amber { border-color: var(--amber-border); box-shadow: 0 0 0 1px var(--amber-dim), inset 0 0 40px rgba(255,184,0,0.03); }
+.stat-card.s-amber::after { background: var(--amber-glow); }
+.stat-card.s-cyan  { border-color: var(--cyan-border);  box-shadow: 0 0 0 1px var(--cyan-dim),  inset 0 0 40px rgba(0,229,255,0.03); }
+.stat-card.s-cyan::after  { background: var(--cyan-glow); }
+ 
+.stat-icon {
+  width: 32px; height: 32px;
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.s-red   .stat-icon { background: var(--red-dim);   color: var(--red);   }
+.s-green .stat-icon { background: var(--green-dim); color: var(--green); }
+.s-amber .stat-icon { background: var(--amber-dim); color: var(--amber); }
+.s-cyan  .stat-icon { background: var(--cyan-dim);  color: var(--cyan);  }
+ 
+.stat-value {
+  font-family: var(--font-h);
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.s-red   .stat-value { color: var(--red);   }
+.s-green .stat-value { color: var(--green); }
+.s-amber .stat-value { color: var(--amber); }
+.s-cyan  .stat-value { color: var(--cyan);  }
+ 
+.stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text3);
+}
+ 
+/* ═══════════════════════════════════════════════
+   SECTION HEADER
+═══════════════════════════════════════════════ */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.section-title {
+  font-family: var(--font-h);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title i { font-size: 12px; }
+ 
+.count-badge {
+  font-family: var(--font-m);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 99px;
+  letter-spacing: 0.04em;
+}
+.badge-red   { background: var(--red-dim);   border: 1px solid var(--red-border);   color: var(--red);   }
+.badge-green { background: var(--green-dim); border: 1px solid var(--green-border); color: var(--green); }
+ 
+/* ═══════════════════════════════════════════════
+   ALERT LIST
+═══════════════════════════════════════════════ */
+.alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+ 
+/* ═══════════════════════════════════════════════
+   ALERT CARD
+═══════════════════════════════════════════════ */
+.alert-card {
+  background: var(--glass);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-lg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.alert-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.10), transparent);
+  pointer-events: none;
+}
+.alert-card.active {
+  border-color: var(--red-border);
+  box-shadow: 0 0 0 1px var(--red-dim), 0 8px 32px rgba(0,0,0,0.3);
+}
+.alert-card.resolved {
+  border-color: var(--green-border);
+  opacity: 0.85;
+}
+.alert-card.false_alarm {
+  opacity: 0.55;
+}
+.alert-card:active { transform: scale(0.99); }
+ 
+/* Card body padding */
+.card-body { padding: 16px; }
+ 
+/* ── Alert top row: avatar + info + status pill ── */
+.alert-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+ 
+.alert-avatar {
+  width: 44px; height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #FF5533, #BB2200);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-h);
+  font-size: 18px; font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+  position: relative;
+}
+/* Active glow ring around avatar */
+.alert-card.active .alert-avatar::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 17px;
+  border: 1.5px solid rgba(255,45,45,0.45);
+  animation: avatarGlow 2s ease-in-out infinite;
+}
+@keyframes avatarGlow {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+ 
+.alert-info { flex: 1; min-width: 0; }
+.alert-name {
+  font-family: var(--font-h);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+.alert-meta {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.bus-badge {
+  font-family: var(--font-m);
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: var(--cyan-dim);
+  border: 1px solid var(--cyan-border);
+  color: var(--cyan);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+ 
+/* Status pill */
+.status-pill {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 99px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.pill-active {
+  background: var(--red-dim);
+  border: 1px solid var(--red-border);
+  color: var(--red);
+}
+.pill-active-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--red);
+  box-shadow: 0 0 5px var(--red);
+  animation: livePulse 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+.pill-resolved {
+  background: var(--green-dim);
+  border: 1px solid var(--green-border);
+  color: var(--green);
+}
+.pill-false {
+  background: var(--amber-dim);
+  border: 1px solid var(--amber-border);
+  color: var(--amber);
+}
+ 
+/* ── Detail row ── */
+.alert-details {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 14px;
+  padding: 12px;
+  background: rgba(255,255,255,0.025);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+}
+.alert-detail {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.3;
+}
+.detail-icon {
+  width: 20px; height: 20px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.04);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 9px;
+  color: var(--text3);
+}
+.alert-detail a { color: var(--cyan); text-decoration: none; }
+.alert-detail a:hover { text-decoration: underline; }
+ 
+/* ── Action buttons ── */
+.alert-actions {
+  display: flex;
+  gap: 8px;
+}
+ 
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 11px 16px;
+  border-radius: var(--r-sm);
+  font-family: var(--font-b);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
+  text-decoration: none;
+  min-height: 44px;
+  flex: 1;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+.btn i { font-size: 11px; }
+ 
+.btn-maps {
+  background: var(--cyan-dim);
+  border: 1px solid var(--cyan-border);
+  color: var(--cyan);
+}
+.btn-maps:hover, .btn-maps:active {
+  background: rgba(0,229,255,0.18);
+  box-shadow: 0 0 16px var(--cyan-glow);
+  transform: scale(0.98);
+}
+ 
+.btn-resolve {
+  background: var(--green-dim);
+  border: 1px solid var(--green-border);
+  color: var(--green);
+}
+.btn-resolve:hover, .btn-resolve:active {
+  background: rgba(0,255,136,0.18);
+  box-shadow: 0 0 18px var(--green-glow);
+  transform: scale(0.98);
+}
+ 
+/* resolved-by line */
+.resolved-by {
+  font-size: 11px;
+  color: var(--text3);
+  font-family: var(--font-m);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0 0;
+}
+.resolved-by i { color: var(--green); font-size: 10px; }
+ 
+/* ═══════════════════════════════════════════════
+   EMPTY / LOADING
+═══════════════════════════════════════════════ */
+.empty-state {
+  text-align: center;
+  padding: 36px 20px;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  backdrop-filter: blur(16px);
+}
+.empty-icon {
+  width: 52px; height: 52px;
+  border-radius: 16px;
+  background: var(--bg4);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  color: var(--text3);
+  margin: 0 auto 12px;
+}
+.empty-text {
+  font-size: 13px;
+  color: var(--text3);
+  line-height: 1.5;
+}
+ 
+.loading {
+  text-align: center;
+  padding: 32px;
+  color: var(--text3);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.loading i { color: var(--cyan); }
+ 
+/* ═══════════════════════════════════════════════
+   RESOLVE MODAL
+═══════════════════════════════════════════════ */
+.modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 100;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+}
+.modal-backdrop.visible { display: flex; }
+ 
+.modal {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  padding: 8px 20px 32px;
+  width: 100%;
+  max-width: 520px;
+  position: relative;
+  animation: slideUp 0.28s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+/* drag handle */
+.modal-handle {
+  width: 36px; height: 4px;
+  border-radius: 99px;
+  background: var(--border2);
+  margin: 0 auto 20px;
+}
+.modal-title {
+  font-family: var(--font-h);
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.modal-title i { color: var(--green); font-size: 16px; }
+.modal-desc {
+  font-size: 13px;
+  color: var(--text2);
+  margin-bottom: 20px;
+  line-height: 1.55;
+}
+.field-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text3);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.modal-input {
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+  color: var(--text);
+  font-family: var(--font-b);
+  font-size: 14px;
+  margin-bottom: 14px;
+  outline: none;
+  min-height: 44px;
+  transition: border-color 0.18s;
+}
+.modal-input:focus { border-color: var(--green-border); box-shadow: 0 0 0 3px var(--green-dim); }
+.modal-input::placeholder { color: var(--text3); }
+ 
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+.btn-cancel-modal {
+  background: var(--bg4);
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  flex: 0 0 auto;
+  padding: 11px 20px;
+}
+.btn-cancel-modal:hover { background: var(--bg3); color: var(--text); }
+ 
+.btn-confirm {
+  background: var(--green-dim);
+  border: 1px solid var(--green-border);
+  color: var(--green);
+  flex: 1;
+}
+.btn-confirm:hover, .btn-confirm:active {
+  background: rgba(0,255,136,0.18);
+  box-shadow: 0 0 20px var(--green-glow);
+}
+</style>
+</head>
+<body>
+ 
+<!-- Ambient background -->
+<div class="bg-field" aria-hidden="true">
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
+</div>
+<div class="bg-grain" aria-hidden="true"></div>
+ 
+<!-- ── HEADER ── -->
+<header class="header">
+  <div class="header-left">
+    <a class="back-btn" href="index.html" aria-label="Go back">
+      <i class="fas fa-arrow-left"></i>
+    </a>
+    <div class="header-logo" aria-hidden="true">
+      <i class="fas fa-bell"></i>
+    </div>
+  </div>
+ 
+  <div class="header-center">
+    <div class="header-title">SOS Dashboard</div>
+    <div class="header-sub">Transport Admin</div>
+  </div>
+ 
+  <div class="header-right">
+    <div class="live-pill" aria-label="Live updates active">
+      <span class="live-dot" aria-hidden="true"></span>
+      Live
+    </div>
+    <button class="icon-btn" onclick="loadAll()" aria-label="Refresh data">
+      <i class="fas fa-rotate-right" id="refreshIcon"></i>
+    </button>
+  </div>
+</header>
+ 
+<!-- ── PAGE ── -->
+<main class="page" id="mainPage">
+ 
+  <!-- Stats -->
+  <section aria-label="Alert statistics">
+    <div class="stats-grid">
+      <div class="stat-card s-red" aria-label="Active alerts">
+        <div class="stat-icon"><i class="fas fa-circle-exclamation"></i></div>
+        <div class="stat-value" id="statActive">—</div>
+        <div class="stat-label">Active Alerts</div>
+      </div>
+      <div class="stat-card s-green" aria-label="Resolved alerts">
+        <div class="stat-icon"><i class="fas fa-circle-check"></i></div>
+        <div class="stat-value" id="statResolved">—</div>
+        <div class="stat-label">Resolved</div>
+      </div>
+      <div class="stat-card s-amber" aria-label="False alarms">
+        <div class="stat-icon"><i class="fas fa-triangle-exclamation"></i></div>
+        <div class="stat-value" id="statFalse">—</div>
+        <div class="stat-label">False Alarms</div>
+      </div>
+      <div class="stat-card s-cyan" aria-label="Total alerts">
+        <div class="stat-icon"><i class="fas fa-chart-bar"></i></div>
+        <div class="stat-value" id="statTotal">—</div>
+        <div class="stat-label">Total Alerts</div>
+      </div>
+    </div>
+  </section>
+ 
+  <!-- Active Alerts -->
+  <section aria-label="Active alerts">
+    <div class="section-header">
+      <div class="section-title">
+        <i class="fas fa-circle-exclamation" style="color:var(--red)"></i>
+        Active Alerts
+      </div>
+      <span class="count-badge badge-red" id="activeCount">0</span>
+    </div>
+    <div class="alert-list" id="activeList" aria-live="polite">
+      <div class="loading"><i class="fas fa-circle-notch fa-spin"></i> Loading alerts…</div>
+    </div>
+  </section>
+ 
+  <!-- Alert History -->
+  <section aria-label="Alert history">
+    <div class="section-header">
+      <div class="section-title">
+        <i class="fas fa-clock-rotate-left" style="color:var(--text3)"></i>
+        Alert History
+      </div>
+      <span class="count-badge badge-green" id="historyCount">0</span>
+    </div>
+    <div class="alert-list" id="historyList">
+      <div class="loading"><i class="fas fa-circle-notch fa-spin"></i> Loading history…</div>
+    </div>
+  </section>
+ 
+</main>
+ 
+<!-- ── RESOLVE MODAL (bottom sheet) ── -->
+<div class="modal-backdrop" id="resolveModal" role="dialog" aria-modal="true" aria-label="Resolve alert">
+  <div class="modal">
+    <div class="modal-handle" aria-hidden="true"></div>
+    <div class="modal-title">
+      <i class="fas fa-shield-check"></i>
+      Resolve Alert
+    </div>
+    <p class="modal-desc">Mark this alert as resolved. Enter your name and any resolution notes for the record.</p>
+ 
+    <div class="field-label">Resolved by</div>
+    <input class="modal-input" id="resolveByInput" placeholder="Your name (e.g. Admin Rajan)" autocomplete="name"/>
+ 
+    <div class="field-label">Resolution note <span style="opacity:0.5;font-weight:400">(optional)</span></div>
+    <input class="modal-input" id="resolveNoteInput" placeholder="e.g. Student confirmed safe, false trigger"/>
+ 
+    <div class="modal-actions">
+      <button class="btn btn-cancel-modal" onclick="closeModal()">
+        <i class="fas fa-xmark"></i> Cancel
+      </button>
+      <button class="btn btn-confirm" onclick="confirmResolve()">
+        <i class="fas fa-check"></i> Mark Resolved
+      </button>
+    </div>
+  </div>
+</div>
+ 
+<script>
+const API = window.location.origin;
+let resolveTargetId = null;
+let allHistory = [];
+ 
+// ── Time helpers ────────────────────────────────────────────────────────────
+function timeAgo(dateStr) {
+  const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+  if (diff < 60)    return `${diff}s ago`;
+  if (diff < 3600)  return `${Math.floor(diff/60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+  return new Date(dateStr).toLocaleDateString('en-IN');
+}
+ 
+function formatTime(dateStr) {
+  return new Date(dateStr).toLocaleTimeString('en-IN', {
+    hour:'2-digit', minute:'2-digit', hour12:true, timeZone:'Asia/Kolkata'
+  });
+}
+ 
+// ── Render one alert card ───────────────────────────────────────────────────
+function renderCard(alert, isActive) {
+  const initial = alert.studentName ? alert.studentName.charAt(0).toUpperCase() : '?';
+  const mapsUrl = alert.latitude && alert.longitude
+    ? `https://maps.google.com/?q=${alert.latitude},${alert.longitude}` : null;
+  const locText = alert.locationLabel || (mapsUrl ? 'View on Maps' : 'No location data');
+ 
+  // Status pill
+  let pillHtml = '';
+  if (alert.status === 'active') {
+    pillHtml = `<span class="status-pill pill-active"><span class="pill-active-dot" aria-hidden="true"></span>Active</span>`;
+  } else if (alert.status === 'resolved') {
+    pillHtml = `<span class="status-pill pill-resolved"><i class="fas fa-check" style="font-size:8px"></i> Resolved</span>`;
+  } else {
+    pillHtml = `<span class="status-pill pill-false"><i class="fas fa-ban" style="font-size:8px"></i> False Alarm</span>`;
+  }
+ 
+  // Actions
+  let actionsHtml = '';
+  let resolvedByHtml = '';
+  if (isActive) {
+    actionsHtml = `
+      ${mapsUrl ? `<a class="btn btn-maps" href="${mapsUrl}" target="_blank" rel="noopener"><i class="fas fa-map-location-dot"></i> Open Maps</a>` : ''}
+      <button class="btn btn-resolve" onclick="openResolveModal('${alert._id}')">
+        <i class="fas fa-check"></i> Mark Resolved
+      </button>`;
+  } else {
+    if (mapsUrl) {
+      actionsHtml = `<a class="btn btn-maps" href="${mapsUrl}" target="_blank" rel="noopener"><i class="fas fa-map-location-dot"></i> View Location</a>`;
+    }
+    if (alert.resolvedBy) {
+      resolvedByHtml = `
+        <div class="resolved-by">
+          <i class="fas fa-circle-check"></i>
+          Resolved by ${alert.resolvedBy} · ${formatTime(alert.resolvedAt)}
+        </div>`;
+    }
+  }
+ 
+  return `
+    <div class="alert-card ${alert.status}" id="card-${alert._id}">
+      <div class="card-body">
+        <div class="alert-top">
+          <div class="alert-avatar" aria-hidden="true">${initial}</div>
+          <div class="alert-info">
+            <div class="alert-name">${alert.studentName}</div>
+            <div class="alert-meta">
+              <span>${alert.rollNo || 'Student'}</span>
+              <span class="bus-badge"><i class="fas fa-bus" style="font-size:8px"></i> ${alert.busId}</span>
+            </div>
+          </div>
+          ${pillHtml}
+        </div>
+ 
+        <div class="alert-details">
+          <div class="alert-detail">
+            <div class="detail-icon"><i class="fas fa-clock"></i></div>
+            <span>${timeAgo(alert.triggeredAt)} &middot; ${formatTime(alert.triggeredAt)}</span>
+          </div>
+          <div class="alert-detail">
+            <div class="detail-icon"><i class="fas fa-location-dot"></i></div>
+            <span>${mapsUrl
+              ? `<a href="${mapsUrl}" target="_blank" rel="noopener">${locText}</a>`
+              : locText}</span>
+          </div>
+          <div class="alert-detail">
+            <div class="detail-icon"><i class="fas fa-message"></i></div>
+            <span>${alert.smsSent ? 'SMS sent successfully' : 'SMS not sent'}</span>
+          </div>
+        </div>
+ 
+        ${actionsHtml ? `<div class="alert-actions">${actionsHtml}</div>` : ''}
+        ${resolvedByHtml}
+      </div>
+    </div>`;
+}
+ 
+// ── Load all data ────────────────────────────────────────────────────────────
+async function loadAll() {
+  document.getElementById('refreshIcon').classList.add('fa-spin');
+  await Promise.all([loadActive(), loadHistory()]);
+  document.getElementById('refreshIcon').classList.remove('fa-spin');
+}
+ 
+async function loadActive() {
+  try {
+    const res  = await fetch(`${API}/api/sos/active`);
+    const data = await res.json();
+    const list  = document.getElementById('activeList');
+    const count = data.alerts?.length || 0;
+    document.getElementById('activeCount').textContent = count;
+    document.getElementById('statActive').textContent  = count;
+ 
+    if (!data.alerts || count === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon"><i class="fas fa-shield-halved"></i></div>
+          <div class="empty-text">No active alerts right now</div>
+        </div>`;
+    } else {
+      list.innerHTML = data.alerts.map(a => renderCard(a, true)).join('');
+    }
+  } catch(e) {
+    document.getElementById('activeList').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon"><i class="fas fa-wifi"></i></div>
+        <div class="empty-text">Could not load alerts.<br>Check server connection.</div>
+      </div>`;
+  }
+}
+ 
+async function loadHistory() {
+  try {
+    const res  = await fetch(`${API}/api/sos/history`);
+    const data = await res.json();
+    allHistory = data.alerts || [];
+    const list = document.getElementById('historyList');
+ 
+    const resolved    = allHistory.filter(a => a.status === 'resolved').length;
+    const falseAlarms = allHistory.filter(a => a.status === 'false_alarm').length;
+    const total       = allHistory.length;
+ 
+    document.getElementById('statResolved').textContent = resolved;
+    document.getElementById('statFalse').textContent    = falseAlarms;
+    document.getElementById('statTotal').textContent    = total;
+    document.getElementById('historyCount').textContent = total;
+ 
+    const past = allHistory.filter(a => a.status !== 'active');
+    if (past.length === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon"><i class="fas fa-clock-rotate-left"></i></div>
+          <div class="empty-text">No past alerts yet</div>
+        </div>`;
+    } else {
+      list.innerHTML = past.map(a => renderCard(a, false)).join('');
+    }
+  } catch(e) {
+    document.getElementById('historyList').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon"><i class="fas fa-wifi"></i></div>
+        <div class="empty-text">Could not load history.</div>
+      </div>`;
+  }
+}
+ 
+// ── Resolve Modal ────────────────────────────────────────────────────────────
+function openResolveModal(id) {
+  resolveTargetId = id;
+  document.getElementById('resolveModal').classList.add('visible');
+  setTimeout(() => document.getElementById('resolveByInput').focus(), 320);
+}
+ 
+function closeModal() {
+  document.getElementById('resolveModal').classList.remove('visible');
+  resolveTargetId = null;
+  document.getElementById('resolveByInput').value  = '';
+  document.getElementById('resolveNoteInput').value = '';
+}
+ 
+async function confirmResolve() {
+  if (!resolveTargetId) return;
+  const resolvedBy = document.getElementById('resolveByInput').value.trim() || 'Admin';
+  const note       = document.getElementById('resolveNoteInput').value.trim();
+ 
+  const btn = document.querySelector('.btn-confirm');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Resolving…';
+ 
+  try {
+    const res  = await fetch(`${API}/api/sos/resolve/${resolveTargetId}`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ resolvedBy, note }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      closeModal();
+      await loadAll();
+    } else {
+      alert('Could not resolve alert. Try again.');
+    }
+  } catch(e) {
+    alert('Could not resolve alert. Try again.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-check"></i> Mark Resolved';
+  }
+}
+ 
+// Close modal on backdrop click
+document.getElementById('resolveModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+ 
+// ── Auto-refresh every 30 seconds ────────────────────────────────────────────
+loadAll();
+setInterval(loadActive, 30000);
+</script>
+</body>
+</html>
