@@ -4,309 +4,525 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>Live Track – Ritians SOS</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous"/>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: #050810;
-    color: #EDF2FF;
-    height: 100vh;
-    width: 100vw;
+  :root {
+    --red:       #FF3535;
+    --red-dim:   rgba(255,53,53,0.18);
+    --red-glow:  rgba(255,53,53,0.45);
+    --green:     #00D97E;
+    --green-dim: rgba(0,217,126,0.18);
+    --blue:      #3B8EFF;
+    --blue-dim:  rgba(59,142,255,0.18);
+    --bg:        #070B14;
+    --surface:   rgba(12,18,32,0.92);
+    --glass:     rgba(255,255,255,0.05);
+    --border:    rgba(255,255,255,0.08);
+    --text:      #EEF2FF;
+    --muted:     #8895B3;
+    --radius:    20px;
+    --font:      'Sora', sans-serif;
+    --mono:      'JetBrains Mono', monospace;
+  }
+
+  html, body {
+    width:100%; height:100%;
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
+    -webkit-font-smoothing: antialiased;
   }
 
-  /* ── TOP BAR ── */
+  /* ── FULL-SCREEN MAP ─────────────────────── */
+  #map-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+  }
+  #liveMap {
+    width:100%; height:100%;
+    border:none; display:block;
+  }
+
+  /* dark vignette over map edges */
+  #map-layer::after {
+    content:'';
+    position:absolute; inset:0;
+    background:
+      radial-gradient(ellipse 120% 40% at 50% 0%,   rgba(7,11,20,.85) 0%, transparent 100%),
+      radial-gradient(ellipse 120% 45% at 50% 100%,  rgba(7,11,20,.9)  0%, transparent 100%);
+    pointer-events:none;
+    z-index:1;
+  }
+
+  /* ── OVERLAYS ────────────────────────────── */
+  #waitingOverlay, #mapLoading {
+    position:fixed; inset:0; z-index:20;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    gap:18px; background: var(--bg);
+    transition: opacity .5s ease;
+  }
+  #mapLoading { background: rgba(7,11,20,.7); backdrop-filter:blur(6px); }
+  #waitingOverlay.hidden, #mapLoading.hidden { opacity:0; pointer-events:none; }
+
+  .wait-ring {
+    width:80px; height:80px;
+    border-radius:50%;
+    border:1.5px solid var(--red-dim);
+    display:flex; align-items:center; justify-content:center;
+    position:relative;
+    animation: ringpulse 2s ease-in-out infinite;
+  }
+  .wait-ring::before {
+    content:'';
+    position:absolute; inset:-12px;
+    border-radius:50%;
+    border:1px solid rgba(255,53,53,.12);
+    animation: ringpulse 2s ease-in-out infinite .4s;
+  }
+  .wait-ring i { color:var(--red); font-size:26px; }
+  @keyframes ringpulse {
+    0%,100% { box-shadow:0 0 0 0 var(--red-glow); }
+    50%      { box-shadow:0 0 0 18px transparent; }
+  }
+  .wait-title { font-size:17px; font-weight:600; }
+  .wait-sub   { font-size:13px; color:var(--muted); }
+
+  .spinner {
+    width:42px; height:42px;
+    border:2.5px solid rgba(255,53,53,.15);
+    border-top-color:var(--red);
+    border-radius:50%;
+    animation:spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* ── TOP HEADER ──────────────────────────── */
   .topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 20px;
-    background: rgba(10,15,30,0.95);
-    border-bottom: 1px solid rgba(255,45,45,0.25);
-    z-index: 10;
-    flex-shrink: 0;
+    position:fixed; top:0; left:0; right:0;
+    z-index:30;
+    padding:env(safe-area-inset-top,0px) 16px 0;
   }
-
-  .topbar-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+  .topbar-inner {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background: var(--surface);
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:10px 14px;
+    margin-top:10px;
+    gap:12px;
   }
 
   .back-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.10);
-    color: #EDF2FF;
-    padding: 8px 14px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 13px;
-    font-family: 'DM Sans', sans-serif;
-    text-decoration: none;
-    transition: background 0.2s;
+    width:38px; height:38px;
+    border-radius:12px;
+    background:var(--glass);
+    border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--text); font-size:14px;
+    text-decoration:none; cursor:pointer;
+    flex-shrink:0;
+    transition: background .2s;
   }
-  .back-btn:hover { background: rgba(255,255,255,0.12); }
+  .back-btn:hover { background:rgba(255,255,255,.1); }
 
-  .student-info { display: flex; flex-direction: column; }
-  .student-name {
-    font-size: 16px;
-    font-weight: 700;
-    color: #EDF2FF;
-    letter-spacing: 0.3px;
+  .header-center { flex:1; display:flex; flex-direction:column; align-items:center; }
+  .header-name {
+    font-size:15px; font-weight:700;
+    letter-spacing:.2px;
   }
-  .student-bus {
-    font-size: 12px;
-    color: #8899BB;
+  .header-sub {
+    display:flex; align-items:center; gap:5px;
+    font-size:11px; color:var(--muted); margin-top:1px;
   }
+  .track-dot {
+    width:5px; height:5px;
+    border-radius:50%; background:var(--green);
+    animation: blink 1.2s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
 
   .live-badge {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(255,45,45,0.15);
-    border: 1px solid rgba(255,45,45,0.35);
-    color: #FF2D2D;
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 1px;
+    display:flex; align-items:center; gap:5px;
+    background:var(--red-dim);
+    border:1px solid rgba(255,53,53,.3);
+    border-radius:20px;
+    padding:5px 12px;
+    flex-shrink:0;
   }
-  .live-dot {
-    width: 7px; height: 7px;
-    background: #FF2D2D;
-    border-radius: 50%;
-    animation: pulse 1s infinite;
+  .live-pulse {
+    width:7px; height:7px;
+    border-radius:50%; background:var(--red);
+    animation:livepulse 1s ease-in-out infinite;
   }
-  @keyframes pulse {
-    0%,100% { opacity: 1; transform: scale(1); }
-    50%      { opacity: 0.4; transform: scale(0.7); }
+  @keyframes livepulse {
+    0%,100%{opacity:1;transform:scale(1)}
+    50%{opacity:.35;transform:scale(.65)}
+  }
+  .live-badge span {
+    font-size:10px; font-weight:700;
+    letter-spacing:1.5px; color:var(--red);
   }
 
-  /* ── MAP ── */
-  #map-container {
-    flex: 1;
-    position: relative;
-    overflow: hidden;
+  /* ── BOTTOM SHEET ────────────────────────── */
+  .sheet {
+    position:fixed; bottom:0; left:0; right:0;
+    z-index:30;
+    padding:0 12px calc(env(safe-area-inset-bottom,0px) + 10px);
+  }
+  .sheet-inner {
+    background: var(--surface);
+    backdrop-filter: blur(24px) saturate(1.5);
+    -webkit-backdrop-filter: blur(24px) saturate(1.5);
+    border:1px solid var(--border);
+    border-radius: var(--radius);
+    overflow:hidden;
+    transition: transform .4s cubic-bezier(.34,1.56,.64,1);
   }
 
-  #liveMap {
-    width: 100%;
-    height: 100%;
-    border: none;
-    display: block;
+  /* drag handle */
+  .sheet-handle {
+    display:flex; justify-content:center;
+    padding:12px 0 6px;
+    cursor:grab;
+  }
+  .sheet-handle::after {
+    content:'';
+    width:36px; height:3.5px;
+    border-radius:4px;
+    background:rgba(255,255,255,.18);
   }
 
-  /* Loading overlay */
-  #mapLoading {
-    position: absolute;
-    inset: 0;
-    background: #050810;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    z-index: 5;
-    transition: opacity 0.4s;
+  /* SOS STATUS ROW */
+  .sos-status-row {
+    display:flex; align-items:center; gap:10px;
+    padding:4px 18px 14px;
+    border-bottom:1px solid var(--border);
   }
-  #mapLoading.hidden { opacity: 0; pointer-events: none; }
+  .sos-icon-wrap {
+    width:42px; height:42px; border-radius:14px;
+    background:var(--red-dim);
+    border:1px solid rgba(255,53,53,.25);
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+    animation:sosbreathe 2s ease-in-out infinite;
+  }
+  @keyframes sosbreathe {
+    0%,100%{box-shadow:0 0 0 0 var(--red-glow)}
+    50%{box-shadow:0 0 0 8px transparent}
+  }
+  .sos-icon-wrap i { color:var(--red); font-size:18px; }
+  .sos-label { flex:1; }
+  .sos-title { font-size:14px; font-weight:700; color:var(--red); }
+  .sos-subtitle { font-size:11px; color:var(--muted); margin-top:1px; }
+  .signal-wrap { display:flex; align-items:center; gap:3px; }
+  .signal-bar {
+    width:3px; border-radius:2px;
+    background:var(--green);
+  }
+  .signal-bar:nth-child(1){height:6px}
+  .signal-bar:nth-child(2){height:9px}
+  .signal-bar:nth-child(3){height:12px}
+  .signal-bar:nth-child(4){height:15px; opacity:.35;}
 
-  .spinner {
-    width: 48px; height: 48px;
-    border: 3px solid rgba(255,45,45,0.2);
-    border-top-color: #FF2D2D;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+  /* COORD ROW */
+  .coord-row {
+    display:flex; align-items:center;
+    justify-content:space-between;
+    padding:11px 18px;
+    border-bottom:1px solid var(--border);
+    gap:10px;
   }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .loading-text { color: #8899BB; font-size: 14px; }
-
-  /* Waiting overlay (no coords yet) */
-  #waitingOverlay {
-    position: absolute;
-    inset: 0;
-    background: #050810;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    z-index: 6;
+  .coord-left { display:flex; align-items:center; gap:8px; }
+  .coord-left i { color:var(--red); font-size:13px; }
+  .coord-val {
+    font-family:var(--mono);
+    font-size:12.5px; color:#7DDFFF;
+    letter-spacing:.4px;
   }
-  #waitingOverlay.hidden { display: none; }
-
-  .waiting-icon {
-    width: 64px; height: 64px;
-    background: rgba(255,45,45,0.12);
-    border: 1px solid rgba(255,45,45,0.3);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    color: #FF2D2D;
-    animation: waitpulse 1.5s ease-in-out infinite;
-  }
-  @keyframes waitpulse {
-    0%,100% { box-shadow: 0 0 0 0 rgba(255,45,45,0.4); }
-    50%      { box-shadow: 0 0 0 16px rgba(255,45,45,0); }
-  }
-  .waiting-title { font-size: 18px; font-weight: 700; }
-  .waiting-sub   { font-size: 13px; color: #8899BB; }
-
-  /* ── BOTTOM INFO BAR ── */
-  .infobar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 20px;
-    background: rgba(10,15,30,0.97);
-    border-top: 1px solid rgba(255,255,255,0.07);
-    flex-shrink: 0;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .coord-display {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .coord-icon { color: #FF2D2D; font-size: 14px; }
-  .coord-val  {
-    font-family: 'DM Mono', monospace;
-    font-size: 14px;
-    color: #00E5FF;
-    letter-spacing: 0.5px;
-  }
-  .updated-time { font-size: 11px; color: #445577; }
+  .coord-time { font-size:10px; color:var(--muted); }
 
   .gmaps-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: #1A73E8;
-    color: #fff;
-    padding: 9px 18px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    text-decoration: none;
-    border: none;
-    cursor: pointer;
-    transition: background 0.2s;
-    white-space: nowrap;
+    display:flex; align-items:center; gap:6px;
+    background:var(--blue-dim);
+    border:1px solid rgba(59,142,255,.3);
+    color:var(--blue);
+    padding:7px 14px; border-radius:10px;
+    font-size:12px; font-weight:600;
+    text-decoration:none; white-space:nowrap;
+    transition:background .2s;
+    flex-shrink:0;
   }
-  .gmaps-btn:hover { background: #1557B0; }
+  .gmaps-btn:hover { background:rgba(59,142,255,.28); }
+
+  /* ACTION BUTTONS */
+  .action-row {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    padding:14px 18px;
+    border-bottom:1px solid var(--border);
+  }
+  .action-btn {
+    display:flex; flex-direction:column;
+    align-items:center; gap:7px;
+    padding:14px 8px;
+    border-radius:16px;
+    border:none; cursor:pointer;
+    font-family:var(--font);
+    font-size:12px; font-weight:600;
+    color:#fff;
+    transition:transform .15s, filter .15s;
+    position:relative; overflow:hidden;
+  }
+  .action-btn:active { transform:scale(.95); filter:brightness(.9); }
+  .action-btn i { font-size:22px; }
+
+  .btn-driver {
+    background:linear-gradient(145deg, #00C96A, #009E52);
+    box-shadow:0 6px 24px rgba(0,201,106,.25);
+  }
+  .btn-admin {
+    background:linear-gradient(145deg, #3B8EFF, #1A6CE0);
+    box-shadow:0 6px 24px rgba(59,142,255,.25);
+  }
+  .btn-label { font-size:11px; font-weight:600; letter-spacing:.2px; }
+
+  /* SOS STOP BUTTON */
+  .sos-stop-wrap { padding:4px 18px 18px; }
+  .sos-stop-btn {
+    width:100%;
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    padding:16px;
+    border-radius:16px;
+    border:none; cursor:pointer;
+    font-family:var(--font); font-size:14px; font-weight:700;
+    color:#fff; letter-spacing:.3px;
+    background:linear-gradient(145deg, #FF2D2D, #CC1A1A);
+    box-shadow:0 6px 28px rgba(255,45,45,.35);
+    animation:stopbreathe 3s ease-in-out infinite;
+    transition:transform .15s, filter .15s;
+  }
+  .sos-stop-btn:active { transform:scale(.97); filter:brightness(.88); }
+  @keyframes stopbreathe {
+    0%,100%{box-shadow:0 6px 28px rgba(255,45,45,.35)}
+    50%{box-shadow:0 6px 36px rgba(255,45,45,.65)}
+  }
+
+  /* CONFIRMATION MODAL */
+  #confirmModal {
+    position:fixed; inset:0; z-index:50;
+    background:rgba(7,11,20,.7);
+    backdrop-filter:blur(8px);
+    display:flex; align-items:flex-end;
+    padding:16px;
+    transition:opacity .25s;
+  }
+  #confirmModal.hidden { opacity:0; pointer-events:none; }
+
+  .modal-card {
+    background:rgba(16,22,40,.98);
+    border:1px solid var(--border);
+    border-radius:24px;
+    padding:26px 22px 22px;
+    width:100%;
+    max-width:420px; margin:0 auto;
+    display:flex; flex-direction:column; gap:16px;
+    transform:translateY(0);
+  }
+  .modal-icon {
+    width:56px; height:56px; border-radius:18px;
+    background:var(--red-dim); border:1px solid rgba(255,53,53,.3);
+    display:flex; align-items:center; justify-content:center;
+    font-size:24px; color:var(--red); margin:0 auto;
+  }
+  .modal-title { font-size:17px; font-weight:700; text-align:center; }
+  .modal-body  { font-size:13px; color:var(--muted); text-align:center; line-height:1.6; }
+  .modal-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .modal-cancel {
+    padding:14px; border-radius:13px;
+    background:var(--glass); border:1px solid var(--border);
+    color:var(--text); font-family:var(--font);
+    font-size:14px; font-weight:600; cursor:pointer;
+    transition:background .2s;
+  }
+  .modal-cancel:hover { background:rgba(255,255,255,.1); }
+  .modal-confirm {
+    padding:14px; border-radius:13px;
+    background:var(--red); border:none;
+    color:#fff; font-family:var(--font);
+    font-size:14px; font-weight:700; cursor:pointer;
+    box-shadow:0 4px 16px rgba(255,53,53,.35);
+    transition:filter .2s;
+  }
+  .modal-confirm:hover { filter:brightness(1.1); }
+
+  /* RESOLVED BADGE */
+  .resolved-badge {
+    display:flex; align-items:center; gap:6px;
+    background:rgba(0,217,126,.15); border:1px solid rgba(0,217,126,.3);
+    border-radius:20px; padding:5px 13px; flex-shrink:0;
+  }
+  .resolved-badge i { color:var(--green); font-size:12px; }
+  .resolved-badge span { font-size:10px; font-weight:700; letter-spacing:1.2px; color:var(--green); }
 </style>
 </head>
 <body>
 
-<!-- TOP BAR -->
-<div class="topbar">
-  <div class="topbar-left">
-    <a href="sos-admin.html" class="back-btn">
-      <i class="fas fa-arrow-left"></i> Back
-    </a>
-    <div class="student-info">
-      <span class="student-name" id="studentName">Loading…</span>
-      <span class="student-bus" id="studentBus">Bus —</span>
-    </div>
-  </div>
-  <div class="live-badge">
-    <div class="live-dot"></div>
-    LIVE
-  </div>
-</div>
-
-<!-- MAP -->
-<div id="map-container">
-
-  <!-- Waiting for first coordinates -->
-  <div id="waitingOverlay">
-    <div class="waiting-icon"><i class="fas fa-location-crosshairs"></i></div>
-    <div class="waiting-title">Acquiring Location…</div>
-    <div class="waiting-sub">Waiting for student's device to send GPS</div>
-  </div>
-
-  <!-- Map loading spinner (shown while iframe loads) -->
-  <div id="mapLoading" class="hidden">
-    <div class="spinner"></div>
-    <div class="loading-text">Loading map…</div>
-  </div>
-
+<!-- FULL-SCREEN MAP -->
+<div id="map-layer">
   <iframe id="liveMap" src="" allowfullscreen></iframe>
 </div>
 
-<!-- BOTTOM INFO BAR -->
-<div class="infobar">
-  <div class="coord-display">
-    <i class="fas fa-location-dot coord-icon"></i>
-    <span class="coord-val" id="coordVal">Waiting for coordinates…</span>
-    <span class="updated-time" id="updatedTime"></span>
+<!-- WAITING FOR GPS -->
+<div id="waitingOverlay">
+  <div class="wait-ring"><i class="fas fa-location-crosshairs"></i></div>
+  <div class="wait-title">Acquiring Location…</div>
+  <div class="wait-sub">Waiting for student's GPS signal</div>
+</div>
+
+<!-- MAP LOADING SPINNER -->
+<div id="mapLoading" class="hidden">
+  <div class="spinner"></div>
+</div>
+
+<!-- TOP HEADER -->
+<div class="topbar">
+  <div class="topbar-inner">
+    <a href="sos-admin.html" class="back-btn" aria-label="Back">
+      <i class="fas fa-arrow-left"></i>
+    </a>
+    <div class="header-center">
+      <div class="header-name" id="studentName">Loading…</div>
+      <div class="header-sub">
+        <div class="track-dot"></div>
+        <span id="studentBus">Bus —</span>
+        <span>· Live Tracking</span>
+      </div>
+    </div>
+    <div class="live-badge" id="liveBadge">
+      <div class="live-pulse"></div>
+      <span>LIVE</span>
+    </div>
   </div>
-  <a id="gmapsBtn" href="#" target="_blank" class="gmaps-btn">
-    <i class="fab fa-google"></i> Open in Google Maps
-  </a>
+</div>
+
+<!-- BOTTOM SHEET -->
+<div class="sheet">
+  <div class="sheet-inner">
+    <div class="sheet-handle"></div>
+
+    <!-- SOS STATUS -->
+    <div class="sos-status-row">
+      <div class="sos-icon-wrap">
+        <i class="fas fa-triangle-exclamation"></i>
+      </div>
+      <div class="sos-label">
+        <div class="sos-title">SOS Triggered</div>
+        <div class="sos-subtitle">Emergency response active</div>
+      </div>
+      <div class="signal-wrap" title="Signal strength">
+        <div class="signal-bar"></div>
+        <div class="signal-bar"></div>
+        <div class="signal-bar"></div>
+        <div class="signal-bar"></div>
+      </div>
+    </div>
+
+    <!-- COORDINATES + GMAPS -->
+    <div class="coord-row">
+      <div class="coord-left">
+        <i class="fas fa-location-dot"></i>
+        <div>
+          <div class="coord-val" id="coordVal">Waiting for coordinates…</div>
+          <div class="coord-time" id="updatedTime">—</div>
+        </div>
+      </div>
+      <a id="gmapsBtn" href="#" target="_blank" class="gmaps-btn">
+        <i class="fab fa-google"></i> Maps
+      </a>
+    </div>
+
+    <!-- CALL BUTTONS -->
+    <div class="action-row">
+      <button class="action-btn btn-driver" onclick="callDriver()">
+        <i class="fas fa-phone"></i>
+        <span class="btn-label">Call Driver</span>
+      </button>
+      <button class="action-btn btn-admin" onclick="callAdmin()">
+        <i class="fas fa-shield-halved"></i>
+        <span class="btn-label">Call Admin</span>
+      </button>
+    </div>
+
+    <!-- STOP SOS -->
+    <div class="sos-stop-wrap">
+      <button class="sos-stop-btn" onclick="showConfirm()">
+        <i class="fas fa-circle-xmark"></i>
+        Stop SOS Alert
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div id="confirmModal" class="hidden">
+  <div class="modal-card">
+    <div class="modal-icon"><i class="fas fa-circle-stop"></i></div>
+    <div class="modal-title">Stop SOS Alert?</div>
+    <div class="modal-body">Are you sure you want to end the emergency alert? This will notify all responders that the situation is resolved.</div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="hideConfirm()">Cancel</button>
+      <button class="modal-confirm" onclick="stopSOS()">Yes, Stop SOS</button>
+    </div>
+  </div>
 </div>
 
 <script>
-  // ── Read alert info from URL params ──────────────────────────────────────────
   const params      = new URLSearchParams(window.location.search);
   const alertId     = params.get('id');
-  const studentName = params.get('name')  || 'Student';
-  const busId       = params.get('bus')   || 'Unknown';
+  const studentName = params.get('name') || 'Student';
+  const busId       = params.get('bus')  || 'Unknown';
 
   document.getElementById('studentName').textContent = studentName;
   document.getElementById('studentBus').textContent  = 'Bus ' + busId;
 
   const API = window.location.origin;
-
   let lastLat = null, lastLng = null;
   let pollInterval = null;
 
-  // ── Poll live location every 3 seconds ───────────────────────────────────────
   async function fetchLocation() {
     if (!alertId) return;
     try {
       const res  = await fetch(`${API}/api/sos/location/${alertId}`);
       const data = await res.json();
-
       if (!data.success || !data.latitude || !data.longitude) return;
 
       const lat = parseFloat(data.latitude);
       const lng = parseFloat(data.longitude);
 
-      // Hide waiting overlay on first fix
       document.getElementById('waitingOverlay').classList.add('hidden');
+      document.getElementById('coordVal').textContent = `${lat.toFixed(6)},  ${lng.toFixed(6)}`;
 
-      // Update coords text
-      document.getElementById('coordVal').textContent =
-        `${lat.toFixed(6)},  ${lng.toFixed(6)}`;
-
-      // Update Google Maps link
       const gmapsUrl = `https://maps.google.com/?q=${lat},${lng}`;
       document.getElementById('gmapsBtn').href = gmapsUrl;
 
-      // Update timestamp
       const t = data.lastLocationAt ? new Date(data.lastLocationAt) : new Date();
       document.getElementById('updatedTime').textContent =
-        '· Updated ' + t.toLocaleTimeString('en-IN', {
-          hour: '2-digit', minute: '2-digit', second: '2-digit',
-          hour12: true, timeZone: 'Asia/Kolkata'
+        'Updated ' + t.toLocaleTimeString('en-IN', {
+          hour:'2-digit', minute:'2-digit', second:'2-digit',
+          hour12:true, timeZone:'Asia/Kolkata'
         });
 
-      // Reload map iframe only if moved >~10m
       const moved = lastLat === null
         || Math.abs(lat - lastLat) > 0.0001
         || Math.abs(lng - lastLng) > 0.0001;
@@ -319,19 +535,39 @@
         iframe.onload = () => document.getElementById('mapLoading').classList.add('hidden');
       }
 
-      // Stop polling if alert resolved
       if (data.status && data.status !== 'active') {
         clearInterval(pollInterval);
-        document.querySelector('.live-badge').innerHTML =
-          '<i class="fas fa-check" style="color:#00FF88"></i> <span style="color:#00FF88">RESOLVED</span>';
+        const badge = document.getElementById('liveBadge');
+        badge.className = 'resolved-badge';
+        badge.innerHTML = '<i class="fas fa-check"></i><span>RESOLVED</span>';
       }
-
-    } catch(e) { /* retry silently */ }
+    } catch(e) {}
   }
 
-  // Start immediately then every 3 seconds
   fetchLocation();
   pollInterval = setInterval(fetchLocation, 3000);
+
+  function showConfirm() {
+    document.getElementById('confirmModal').classList.remove('hidden');
+  }
+  function hideConfirm() {
+    document.getElementById('confirmModal').classList.add('hidden');
+  }
+  async function stopSOS() {
+    hideConfirm();
+    if (!alertId) return;
+    try {
+      await fetch(`${API}/api/sos/resolve/${alertId}`, { method:'POST' });
+    } catch(e) {}
+  }
+  function callDriver() {
+    const tel = document.getElementById('driverTel')?.value;
+    if (tel) window.location.href = 'tel:' + tel;
+  }
+  function callAdmin() {
+    const tel = document.getElementById('adminTel')?.value;
+    if (tel) window.location.href = 'tel:' + tel;
+  }
 </script>
 </body>
 </html>
