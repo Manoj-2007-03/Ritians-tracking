@@ -17,6 +17,7 @@
   --green:     #00D97E;
   --blue:      #3B8EFF;
   --blue-mid:  rgba(59,142,255,0.18);
+  --amber:     #FFB800;
   --bg:        #070B14;
   --surface:   rgba(10,15,28,0.94);
   --glass:     rgba(255,255,255,0.055);
@@ -40,17 +41,15 @@ html, body {
   user-select: none;
 }
 
-/* ── MAP (Leaflet owns this div) ── */
+/* ── MAP ── */
 #map {
   position: fixed;
   inset: 0;
   z-index: 0;
   background: #0a0f1e;
-  /* Leaflet sets touch-action internally — do NOT override here */
 }
 
-/* Leaflet zoom controls — reposition so they don't clash with header */
-.leaflet-top.leaflet-left { top: calc(var(--safe-top) + 80px); left: 14px; }
+.leaflet-top.leaflet-left { top: calc(var(--safe-top) + 86px); left: 14px; }
 .leaflet-control-zoom {
   border: 1px solid var(--border-hi) !important;
   border-radius: 12px !important;
@@ -70,18 +69,33 @@ html, body {
 .leaflet-control-zoom a:hover { background: rgba(255,255,255,.12) !important; }
 .leaflet-control-attribution { display: none !important; }
 
-/* Pulsing emergency marker */
+/* ── SOS MARKER ── */
 @keyframes markerPulse {
-  0%   { transform: scale(1);   opacity: 1; }
-  50%  { transform: scale(1.6); opacity: 0; }
-  100% { transform: scale(1);   opacity: 0; }
+  0%   { transform: scale(1);    opacity: 1; }
+  60%  { transform: scale(1.75); opacity: 0; }
+  100% { transform: scale(1.75); opacity: 0; }
+}
+@keyframes markerPulse2 {
+  0%   { transform: scale(1);    opacity: .6; }
+  60%  { transform: scale(2.2);  opacity: 0; }
+  100% { transform: scale(2.2);  opacity: 0; }
 }
 .sos-marker-outer {
-  width: 50px; height: 50px;
+  width: 52px; height: 52px;
   border-radius: 50%;
   background: rgba(255,53,53,0.18);
-  border: 1.5px solid rgba(255,53,53,0.5);
-  animation: markerPulse 1.8s ease-out infinite;
+  border: 1.5px solid rgba(255,53,53,0.45);
+  animation: markerPulse 2s ease-out infinite;
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+}
+.sos-marker-outer2 {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid rgba(255,53,53,0.2);
+  animation: markerPulse2 2s ease-out infinite .4s;
   position: absolute;
   top: 50%; left: 50%;
   transform: translate(-50%,-50%);
@@ -91,13 +105,16 @@ html, body {
   border-radius: 50%;
   background: #FF3535;
   border: 2.5px solid #fff;
-  box-shadow: 0 0 0 4px rgba(255,53,53,0.4), 0 4px 12px rgba(255,53,53,0.6);
+  box-shadow: 0 0 0 4px rgba(255,53,53,0.4), 0 4px 12px rgba(255,53,53,0.7);
   position: absolute;
   top: 50%; left: 50%;
   transform: translate(-50%,-50%);
 }
 
-/* Vignette — pointer-events:none so map touch passes through */
+/* Accuracy circle (Leaflet circle layer, styled via CSS) */
+.accuracy-circle { stroke: rgba(59,142,255,0.5); fill: rgba(59,142,255,0.08); }
+
+/* ── VIGNETTE ── */
 #map-vignette {
   position: fixed; inset: 0; z-index: 1; pointer-events: none;
   background:
@@ -110,7 +127,7 @@ html, body {
   transition: background .4s ease;
 }
 
-/* ── OVERLAYS ── */
+/* ── WAITING OVERLAY ── */
 #waitingOverlay {
   position: fixed; inset: 0; z-index: 20;
   display: flex; flex-direction: column;
@@ -119,7 +136,6 @@ html, body {
   transition: opacity .5s ease;
 }
 #waitingOverlay.hidden { opacity: 0; pointer-events: none; }
-
 .wait-ring {
   width: 80px; height: 80px; border-radius: 50%;
   border: 1.5px solid var(--red-mid);
@@ -177,10 +193,14 @@ html, body {
   animation: blink 1.2s ease-in-out infinite;
 }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
-.live-badge {
+
+/* LIVE badge variants */
+.live-badge, .resolved-badge, .reconnecting-badge {
   display: flex; align-items: center; gap: 5px;
-  background: var(--red-mid); border: 1px solid rgba(255,53,53,.32);
   border-radius: 20px; padding: 5px 12px; flex-shrink: 0;
+}
+.live-badge {
+  background: var(--red-mid); border: 1px solid rgba(255,53,53,.32);
 }
 .live-pulse {
   width: 7px; height: 7px; border-radius: 50%; background: var(--red);
@@ -188,15 +208,41 @@ html, body {
 }
 @keyframes livepulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.6)} }
 .live-badge span { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: var(--red); }
+
 .resolved-badge {
-  display: flex; align-items: center; gap: 6px;
   background: rgba(0,217,126,.14); border: 1px solid rgba(0,217,126,.3);
-  border-radius: 20px; padding: 5px 13px; flex-shrink: 0;
 }
 .resolved-badge i { color: var(--green); font-size: 11px; }
 .resolved-badge span { font-size: 10px; font-weight: 700; letter-spacing: 1.2px; color: var(--green); }
 
-/* ── FAB ── */
+.reconnecting-badge {
+  background: rgba(255,184,0,.14); border: 1px solid rgba(255,184,0,.3);
+}
+.reconnecting-badge i { color: var(--amber); font-size: 10px; animation: spin .9s linear infinite; }
+.reconnecting-badge span { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--amber); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── CONNECTION STATUS BAR ── */
+#connBar {
+  position: fixed; top: calc(var(--safe-top) + 74px); left: 14px; right: 14px;
+  z-index: 39; pointer-events: none;
+  transition: opacity .3s, transform .3s;
+  opacity: 0; transform: translateY(-6px);
+}
+#connBar.visible { opacity: 1; transform: translateY(0); }
+.conn-bar-inner {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(10,15,28,.96); border: 1px solid var(--border-hi);
+  border-radius: 10px; padding: 7px 13px;
+  backdrop-filter: blur(16px);
+  font-size: 11px; color: var(--muted);
+}
+.conn-bar-inner i { font-size: 10px; }
+.conn-bar-inner.warn  { border-color: rgba(255,184,0,.4); color: var(--amber); }
+.conn-bar-inner.error { border-color: rgba(255,53,53,.4);  color: var(--red); }
+.conn-bar-inner.ok    { border-color: rgba(0,217,126,.3);  color: var(--green); }
+
+/* ── FAB RECENTER ── */
 #fab-recenter {
   position: fixed; right: 16px; z-index: 35;
   width: 44px; height: 44px; border-radius: 14px;
@@ -217,8 +263,6 @@ html, body {
 #sheet-wrap {
   position: fixed; left: 0; right: 0; bottom: 0;
   z-index: 35;
-  /* pointer-events:none on wrap means map behind is tappable everywhere
-     except where #sheet itself has pointer-events:all */
   pointer-events: none;
 }
 #sheet {
@@ -235,12 +279,10 @@ html, body {
   will-change: transform;
 }
 
-/* DRAG HANDLE — only zone that initiates sheet drag */
 #drag-zone {
   display: flex; justify-content: center; align-items: center;
   padding: 13px 0 9px;
   cursor: ns-resize;
-  /* Critical: tell browser WE own vertical gestures here only */
   touch-action: none;
 }
 .handle-pill {
@@ -273,12 +315,16 @@ html, body {
 .sos-label { flex: 1; }
 .sos-title    { font-size: 14px; font-weight: 700; color: var(--red); }
 .sos-subtitle { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+/* Signal bars with live animation */
 .signal-wrap { display: flex; align-items: flex-end; gap: 3px; }
-.signal-bar  { width: 3px; border-radius: 2px; background: var(--green); }
+.signal-bar  { width: 3px; border-radius: 2px; background: var(--green); transition: opacity .4s; }
 .signal-bar:nth-child(1){ height: 6px; }
 .signal-bar:nth-child(2){ height: 9px; }
 .signal-bar:nth-child(3){ height: 12px; }
-.signal-bar:nth-child(4){ height: 15px; opacity: .3; }
+.signal-bar:nth-child(4){ height: 15px; }
+.signal-bar.weak { opacity: .25; }
+
 .chevron-up {
   font-size: 11px; color: var(--muted); margin-left: 6px;
   transition: transform .35s cubic-bezier(.34,1.28,.64,1);
@@ -290,6 +336,7 @@ html, body {
   transition: max-height .42s cubic-bezier(.4,0,.2,1), opacity .3s ease;
 }
 
+/* Coord row */
 .coord-row {
   display: flex; align-items: center; justify-content: space-between;
   padding: 11px 18px; border-bottom: 1px solid var(--border); gap: 10px;
@@ -309,6 +356,20 @@ html, body {
 }
 .gmaps-btn:hover { background: rgba(59,142,255,.3); }
 
+/* Stats row */
+.stats-row {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 1px; border-bottom: 1px solid var(--border);
+}
+.stat-cell {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 10px 6px; gap: 2px;
+}
+.stat-cell:not(:last-child) { border-right: 1px solid var(--border); }
+.stat-val  { font-family: var(--mono); font-size: 13px; color: var(--text); font-weight: 500; }
+.stat-lbl  { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
+
+/* Action row */
 .action-row {
   display: grid; grid-template-columns: 1fr 1fr;
   gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--border);
@@ -318,7 +379,6 @@ html, body {
   padding: 14px 8px; border-radius: 16px; border: none; cursor: pointer;
   font-family: var(--font); font-size: 12px; font-weight: 600; color: #fff;
   transition: transform .15s, filter .15s;
-  position: relative; overflow: hidden;
 }
 .action-btn:active { transform: scale(.95); filter: brightness(.88); }
 .action-btn i { font-size: 22px; }
@@ -331,6 +391,7 @@ html, body {
   box-shadow: 0 6px 22px rgba(59,142,255,.28);
 }
 
+/* Stop SOS */
 .sos-stop-wrap { padding: 4px 18px 18px; }
 .sos-stop-btn {
   width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
@@ -389,23 +450,36 @@ html, body {
   transition: filter .2s;
 }
 .modal-confirm:hover { filter: brightness(1.1); }
+
+/* ── ADMIN COUNT TOAST ── */
+#adminToast {
+  position: fixed; bottom: calc(var(--safe-bot) + 240px); left: 50%; transform: translateX(-50%);
+  z-index: 50; pointer-events: none;
+  background: rgba(10,15,28,.96); border: 1px solid var(--border-hi);
+  border-radius: 12px; padding: 8px 14px;
+  font-size: 12px; color: var(--muted);
+  display: flex; align-items: center; gap: 7px;
+  opacity: 0; transition: opacity .4s;
+  white-space: nowrap;
+}
+#adminToast.visible { opacity: 1; }
+#adminToast i { color: var(--blue); }
 </style>
 </head>
 <body>
 
-<!-- LEAFLET MAP — rendered directly in DOM, no iframe, single-finger pan works natively -->
 <div id="map"></div>
 <div id="map-vignette"></div>
 <div id="map-dim"></div>
 
-<!-- WAITING OVERLAY -->
+<!-- WAITING -->
 <div id="waitingOverlay">
   <div class="wait-ring"><i class="fas fa-location-crosshairs"></i></div>
   <div class="wait-title">Acquiring Location…</div>
-  <div class="wait-sub">Waiting for student's GPS signal</div>
+  <div class="wait-sub" id="waitSub">Connecting to student's device</div>
 </div>
 
-<!-- TOP HEADER -->
+<!-- HEADER -->
 <div id="topbar">
   <div class="topbar-inner">
     <a href="sos-admin.html" class="back-btn" aria-label="Back">
@@ -426,32 +500,42 @@ html, body {
   </div>
 </div>
 
+<!-- CONNECTION STATUS BAR -->
+<div id="connBar">
+  <div class="conn-bar-inner" id="connBarInner">
+    <i class="fas fa-circle-notch fa-spin"></i>
+    <span id="connBarText">Connecting…</span>
+  </div>
+</div>
+
 <!-- FAB -->
 <button id="fab-recenter" aria-label="Recenter map">
   <i class="fas fa-location-crosshairs"></i>
 </button>
 
+<!-- ADMIN COUNT TOAST -->
+<div id="adminToast"><i class="fas fa-shield-halved"></i><span id="adminToastText">1 admin watching</span></div>
+
 <!-- BOTTOM SHEET -->
 <div id="sheet-wrap">
   <div id="sheet">
-
-    <!-- ONLY this zone starts sheet dragging -->
     <div id="drag-zone" aria-label="Drag to resize panel">
       <div class="handle-pill"></div>
     </div>
 
-    <!-- Tapping peek-row cycles sheet states -->
     <div id="peek-row">
       <div class="sos-icon-wrap">
         <i class="fas fa-triangle-exclamation"></i>
       </div>
       <div class="sos-label">
         <div class="sos-title">SOS Triggered</div>
-        <div class="sos-subtitle">Emergency response active</div>
+        <div class="sos-subtitle" id="peekSub">Emergency response active</div>
       </div>
-      <div class="signal-wrap">
-        <div class="signal-bar"></div><div class="signal-bar"></div>
-        <div class="signal-bar"></div><div class="signal-bar"></div>
+      <div class="signal-wrap" id="signalBars">
+        <div class="signal-bar weak"></div>
+        <div class="signal-bar weak"></div>
+        <div class="signal-bar weak"></div>
+        <div class="signal-bar weak"></div>
       </div>
       <i class="fas fa-chevron-up chevron-up" id="peekChevron"></i>
     </div>
@@ -468,6 +552,22 @@ html, body {
         <a id="gmapsBtn" href="#" target="_blank" class="gmaps-btn">
           <i class="fab fa-google"></i> Maps
         </a>
+      </div>
+
+      <!-- Live stats row -->
+      <div class="stats-row">
+        <div class="stat-cell">
+          <div class="stat-val" id="statUpdates">0</div>
+          <div class="stat-lbl">Updates</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-val" id="statAccuracy">—</div>
+          <div class="stat-lbl">Accuracy</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-val" id="statLatency">—</div>
+          <div class="stat-lbl">Latency</div>
+        </div>
       </div>
 
       <div class="action-row">
@@ -505,35 +605,48 @@ html, body {
   </div>
 </div>
 
-<!-- Leaflet JS -->
+<!-- Leaflet -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" crossorigin="anonymous"></script>
+<!-- Socket.IO client -->
+<script src="/socket.io/socket.io.js"></script>
+
 <script>
-/* ═══════════════════════════════════════════════════════
-   MAP — Leaflet, dark tile layer, custom SOS marker
-   Single-finger pan works natively because Leaflet renders
-   directly in the DOM (no cross-origin iframe sandbox).
-═══════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════════
+   RITIANS SOS — LIVE TRACK (Admin View)
+   Architecture: Socket.IO room-based push, smooth marker interpolation,
+   GPS trail visualization, intelligent reconnection, signal quality UI.
+═══════════════════════════════════════════════════════════════════════ */
+
+// ── URL PARAMS ────────────────────────────────────────────────────────
+const urlP        = new URLSearchParams(window.location.search);
+const alertId     = urlP.get('id');
+const studentName = urlP.get('name') || 'Student';
+const busId       = urlP.get('bus')  || 'Unknown';
+
+document.getElementById('studentName').textContent = studentName;
+document.getElementById('studentBus').textContent  = 'Bus ' + busId;
+
+// ── MAP SETUP ─────────────────────────────────────────────────────────
 const map = L.map('map', {
-  center: [20.5937, 78.9629],   // India centre — replaced on first GPS fix
+  center: [20.5937, 78.9629],
   zoom: 5,
   zoomControl: true,
   attributionControl: false,
-  /* These Leaflet options ensure single-finger pan: */
   dragging: true,
   tap: true,
   touchZoom: true,
   bounceAtZoomLimits: false,
 });
 
-/* Dark map tile — CartoDB Dark Matter, free, no API key */
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
   maxZoom: 19,
   subdomains: 'abcd',
 }).addTo(map);
 
-/* Custom SOS marker using a DOM div */
+// ── MARKER & LAYERS ───────────────────────────────────────────────────
 const markerHtml = `
-  <div style="position:relative;width:50px;height:50px;">
+  <div style="position:relative;width:52px;height:52px;">
+    <div class="sos-marker-outer2"></div>
     <div class="sos-marker-outer"></div>
     <div class="sos-marker-inner"></div>
   </div>`;
@@ -541,27 +654,405 @@ const markerHtml = `
 const sosIcon = L.divIcon({
   html: markerHtml,
   className: '',
-  iconSize: [50, 50],
-  iconAnchor: [25, 25],
+  iconSize: [52, 52],
+  iconAnchor: [26, 26],
 });
 
-let sosMarker = null;
+let sosMarker      = null;
+let accuracyCircle = null;
+let trailPolyline  = null;
+const trailPoints  = [];   // [{lat, lng}] history for path visualization
+const MAX_TRAIL    = 80;   // max GPS breadcrumbs kept
 
-function placeMarker(lat, lng) {
-  if (sosMarker) {
-    sosMarker.setLatLng([lat, lng]);
-  } else {
+// ── INTERPOLATION ENGINE ──────────────────────────────────────────────
+// Smoothly animates marker between GPS updates — no abrupt jumps
+let interpTarget   = null;   // {lat, lng}
+let interpCurrent  = null;   // {lat, lng}
+let interpFrame    = null;
+const INTERP_SPEED = 0.12;   // 0.0–1.0; higher = snappier
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+function animateMarker() {
+  if (!interpCurrent || !interpTarget || !sosMarker) {
+    interpFrame = null;
+    return;
+  }
+
+  const dlat = Math.abs(interpTarget.lat - interpCurrent.lat);
+  const dlng = Math.abs(interpTarget.lng - interpCurrent.lng);
+  const done  = dlat < 0.000001 && dlng < 0.000001;
+
+  if (done) {
+    interpCurrent = { ...interpTarget };
+    interpFrame = null;
+    return;
+  }
+
+  interpCurrent.lat = lerp(interpCurrent.lat, interpTarget.lat, INTERP_SPEED);
+  interpCurrent.lng = lerp(interpCurrent.lng, interpTarget.lng, INTERP_SPEED);
+
+  sosMarker.setLatLng([interpCurrent.lat, interpCurrent.lng]);
+  if (accuracyCircle) accuracyCircle.setLatLng([interpCurrent.lat, interpCurrent.lng]);
+
+  interpFrame = requestAnimationFrame(animateMarker);
+}
+
+function updateMarkerTarget(lat, lng) {
+  if (!sosMarker) {
     sosMarker = L.marker([lat, lng], { icon: sosIcon }).addTo(map);
+    interpCurrent = { lat, lng };
+    interpTarget  = { lat, lng };
+    return;
+  }
+  interpTarget = { lat, lng };
+  if (!interpFrame) {
+    interpFrame = requestAnimationFrame(animateMarker);
   }
 }
 
-function recenterMap(lat, lng) {
-  map.setView([lat, lng], 17, { animate: true, duration: 0.6 });
+function updateAccuracyCircle(lat, lng, accuracy) {
+  if (!accuracy || accuracy > 500) {
+    if (accuracyCircle) { map.removeLayer(accuracyCircle); accuracyCircle = null; }
+    return;
+  }
+  if (!accuracyCircle) {
+    accuracyCircle = L.circle([lat, lng], {
+      radius: accuracy,
+      className: 'accuracy-circle',
+      weight: 1,
+    }).addTo(map);
+  } else {
+    accuracyCircle.setLatLng([lat, lng]).setRadius(accuracy);
+  }
 }
 
-/* ═══════════════════════════════════════════════════════
-   SHEET STATE ENGINE  (PEEK=0 | MID=1 | EXP=2)
-═══════════════════════════════════════════════════════ */
+function addTrailPoint(lat, lng) {
+  trailPoints.push([lat, lng]);
+  if (trailPoints.length > MAX_TRAIL) trailPoints.shift();
+
+  if (!trailPolyline) {
+    trailPolyline = L.polyline(trailPoints, {
+      color: 'rgba(255,53,53,0.5)',
+      weight: 2.5,
+      dashArray: '4 6',
+      lineCap: 'round',
+      lineJoin: 'round',
+    }).addTo(map);
+  } else {
+    trailPolyline.setLatLngs(trailPoints);
+  }
+}
+
+let userPanned = false;
+map.on('dragstart', () => { userPanned = true; });
+
+function recenterMap(lat, lng) {
+  if (userPanned) return;
+  map.setView([lat, lng], Math.max(map.getZoom(), 17), { animate: true, duration: 0.6 });
+}
+
+document.getElementById('fab-recenter').addEventListener('click', () => {
+  if (interpCurrent) {
+    userPanned = false;
+    map.setView([interpCurrent.lat, interpCurrent.lng], 18, { animate: true, duration: 0.6 });
+  }
+});
+
+// ── SIGNAL QUALITY UI ─────────────────────────────────────────────────
+function setSignalBars(level) {
+  // level 0–4
+  const bars = document.querySelectorAll('.signal-bar');
+  bars.forEach((b, i) => {
+    b.classList.toggle('weak', i >= level);
+    b.style.background = level >= 3 ? 'var(--green)' : level >= 2 ? 'var(--amber)' : 'var(--red)';
+  });
+}
+
+function accuracyToSignal(accuracy) {
+  if (!accuracy) return 1;
+  if (accuracy < 10)  return 4;
+  if (accuracy < 25)  return 3;
+  if (accuracy < 60)  return 2;
+  if (accuracy < 150) return 1;
+  return 0;
+}
+
+// ── STATS TRACKING ────────────────────────────────────────────────────
+let updateCount   = 0;
+let lastSeq       = -1;
+let connectTime   = null;
+let lastUpdateTs  = null;
+
+function updateStats(seq, accuracy) {
+  updateCount++;
+  document.getElementById('statUpdates').textContent = updateCount;
+  document.getElementById('statAccuracy').textContent = accuracy ? Math.round(accuracy) + 'm' : '—';
+
+  if (connectTime && lastUpdateTs) {
+    const latency = Date.now() - lastUpdateTs;
+    document.getElementById('statLatency').textContent = latency < 1000 ? latency + 'ms' : (latency/1000).toFixed(1) + 's';
+  }
+}
+
+// ── CONNECTION STATUS UI ──────────────────────────────────────────────
+function showConnBar(type, msg) {
+  const bar   = document.getElementById('connBar');
+  const inner = document.getElementById('connBarInner');
+  const text  = document.getElementById('connBarText');
+  inner.className = 'conn-bar-inner ' + type;
+  text.textContent = msg;
+  bar.classList.add('visible');
+  if (type === 'ok') {
+    setTimeout(() => bar.classList.remove('visible'), 2500);
+  }
+}
+
+function hideConnBar() {
+  document.getElementById('connBar').classList.remove('visible');
+}
+
+function setBadge(type) {
+  const badge = document.getElementById('liveBadge');
+  if (type === 'live') {
+    badge.className = 'live-badge';
+    badge.innerHTML = '<div class="live-pulse"></div><span>LIVE</span>';
+  } else if (type === 'resolved') {
+    badge.className = 'resolved-badge';
+    badge.innerHTML = '<i class="fas fa-check"></i><span>RESOLVED</span>';
+  } else if (type === 'reconnecting') {
+    badge.className = 'reconnecting-badge';
+    badge.innerHTML = '<i class="fas fa-circle-notch"></i><span>RECONNECTING</span>';
+  }
+}
+
+// ── ADMIN COUNT TOAST ─────────────────────────────────────────────────
+function showAdminToast(count) {
+  const toast = document.getElementById('adminToast');
+  document.getElementById('adminToastText').textContent =
+    count === 1 ? '1 admin watching' : `${count} admins watching`;
+  toast.classList.add('visible');
+  clearTimeout(toast._hide);
+  toast._hide = setTimeout(() => toast.classList.remove('visible'), 3000);
+}
+
+// ── SOCKET.IO ENGINE ──────────────────────────────────────────────────
+const API = window.location.origin;
+let socket = null;
+let lastLat = null, lastLng = null;
+let pingInterval = null;
+let staleTimer   = null;
+
+// Stale detection: if no update in 10s, show warning
+function resetStaleTimer() {
+  clearTimeout(staleTimer);
+  staleTimer = setTimeout(() => {
+    showConnBar('warn', 'No update received in 10 seconds — checking connection…');
+    setSignalBars(0);
+  }, 10000);
+}
+
+function connectSocket() {
+  if (!alertId) return;
+
+  // Try Socket.IO first; fall back to REST polling if unavailable
+  try {
+    socket = io(API, {
+      transports: ['websocket', 'polling'],
+      reconnectionDelay:     1000,
+      reconnectionDelayMax:  5000,
+      reconnectionAttempts:  Infinity,
+      timeout: 8000,
+    });
+  } catch(e) {
+    console.warn('[SOS] Socket.IO not available, falling back to REST polling');
+    startRestFallback();
+    return;
+  }
+
+  // ── Connected ──
+  socket.on('connect', () => {
+    connectTime = Date.now();
+    document.getElementById('waitSub').textContent = 'Socket connected — joining emergency room';
+    showConnBar('ok', '✓ Real-time connection established');
+    setBadge('live');
+
+    socket.emit('sos:join', { alertId, role: 'admin' });
+    resetStaleTimer();
+
+    // Heartbeat — keeps connection alive through proxies/firewalls
+    clearInterval(pingInterval);
+    pingInterval = setInterval(() => {
+      socket.emit('sos:ping', { alertId });
+    }, 8000);
+  });
+
+  // ── Location update received from student ──
+  socket.on('sos:location_update', (data) => {
+    const { latitude, longitude, accuracy, heading, speed, timestamp, seq } = data;
+    if (latitude == null || longitude == null) return;
+
+    lastUpdateTs = Date.now();
+    resetStaleTimer();
+
+    const lat = parseFloat(latitude);
+    const lng = parseFloat(longitude);
+
+    // Dismiss waiting overlay
+    document.getElementById('waitingOverlay').classList.add('hidden');
+
+    // Update coord display
+    document.getElementById('coordVal').textContent = `${lat.toFixed(6)},  ${lng.toFixed(6)}`;
+    document.getElementById('gmapsBtn').href = `https://maps.google.com/?q=${lat},${lng}`;
+
+    const t = timestamp ? new Date(timestamp) : new Date();
+    document.getElementById('updatedTime').textContent =
+      'Updated ' + t.toLocaleTimeString('en-IN', {
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: true, timeZone: 'Asia/Kolkata'
+      });
+
+    // Check for meaningful movement (>2m)
+    const moved = lastLat === null
+      || Math.abs(lat - lastLat) > 0.000018
+      || Math.abs(lng - lastLng) > 0.000018;
+
+    if (moved) {
+      addTrailPoint(lat, lng);
+      lastLat = lat;
+      lastLng = lng;
+    }
+
+    // Smooth animated marker update
+    updateMarkerTarget(lat, lng);
+    updateAccuracyCircle(lat, lng, accuracy);
+    recenterMap(lat, lng);
+
+    // Signal quality
+    setSignalBars(accuracyToSignal(accuracy));
+
+    // Update stats
+    updateStats(seq, accuracy);
+
+    // Peek subtitle
+    if (speed && speed > 0) {
+      const kph = (speed * 3.6).toFixed(1);
+      document.getElementById('peekSub').textContent = `Moving at ${kph} km/h`;
+    } else {
+      document.getElementById('peekSub').textContent = 'Emergency response active';
+    }
+  });
+
+  // ── SOS resolved ──
+  socket.on('sos:resolved', () => {
+    setBadge('resolved');
+    setSignalBars(0);
+    clearInterval(pingInterval);
+    clearTimeout(staleTimer);
+    document.getElementById('peekSub').textContent = 'Emergency resolved';
+    showConnBar('ok', '✓ SOS alert has been resolved');
+    socket.disconnect();
+  });
+
+  // ── Admin count update ──
+  socket.on('sos:admin_count', ({ count }) => {
+    showAdminToast(count);
+  });
+
+  // ── Disconnect ──
+  socket.on('disconnect', (reason) => {
+    setBadge('reconnecting');
+    setSignalBars(0);
+    clearInterval(pingInterval);
+    showConnBar('error', 'Connection lost — reconnecting…');
+  });
+
+  // ── Reconnect attempt ──
+  socket.on('reconnect_attempt', (n) => {
+    showConnBar('warn', `Reconnecting… attempt ${n}`);
+  });
+
+  // ── Reconnected ──
+  socket.on('reconnect', () => {
+    setBadge('live');
+    showConnBar('ok', '✓ Reconnected — resuming live tracking');
+    socket.emit('sos:join', { alertId, role: 'admin' });
+    resetStaleTimer();
+    clearInterval(pingInterval);
+    pingInterval = setInterval(() => socket.emit('sos:ping', { alertId }), 8000);
+  });
+
+  // ── Error ──
+  socket.io.on('error', () => {
+    showConnBar('warn', 'Connection error — retrying…');
+    setBadge('reconnecting');
+  });
+}
+
+// ── REST FALLBACK ─────────────────────────────────────────────────────
+// Used only if Socket.IO is unavailable (older deployment)
+let pollInterval = null;
+let restFallbackActive = false;
+
+async function fetchLocationREST() {
+  if (!alertId) return;
+  try {
+    const res  = await fetch(`${API}/api/sos/location/${alertId}`);
+    const data = await res.json();
+    if (!data.success || data.latitude == null) return;
+
+    const lat = parseFloat(data.latitude);
+    const lng = parseFloat(data.longitude);
+    lastUpdateTs = Date.now();
+
+    document.getElementById('waitingOverlay').classList.add('hidden');
+    document.getElementById('coordVal').textContent = `${lat.toFixed(6)},  ${lng.toFixed(6)}`;
+    document.getElementById('gmapsBtn').href = `https://maps.google.com/?q=${lat},${lng}`;
+
+    const t = data.lastLocationAt ? new Date(data.lastLocationAt) : new Date();
+    document.getElementById('updatedTime').textContent =
+      'Updated ' + t.toLocaleTimeString('en-IN', {
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: true, timeZone: 'Asia/Kolkata'
+      });
+
+    const moved = lastLat === null
+      || Math.abs(lat - lastLat) > 0.000018
+      || Math.abs(lng - lastLng) > 0.000018;
+
+    if (moved) {
+      addTrailPoint(lat, lng);
+      lastLat = lat;
+      lastLng = lng;
+    }
+
+    updateMarkerTarget(lat, lng);
+    recenterMap(lat, lng);
+    updateCount++;
+    document.getElementById('statUpdates').textContent = updateCount;
+
+    if (data.status && data.status !== 'active') {
+      clearInterval(pollInterval);
+      setBadge('resolved');
+    }
+  } catch(e) {}
+}
+
+function startRestFallback() {
+  restFallbackActive = true;
+  showConnBar('warn', 'Using REST fallback (2.5s polling)');
+  fetchLocationREST();
+  pollInterval = setInterval(fetchLocationREST, 2500);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────
+if (alertId) {
+  connectSocket();
+} else {
+  document.getElementById('waitSub').textContent = 'Invalid alert ID in URL';
+}
+
+// ── SHEET ENGINE ──────────────────────────────────────────────────────
 const sheet     = document.getElementById('sheet');
 const sheetBody = document.getElementById('sheet-body');
 const dragZone  = document.getElementById('drag-zone');
@@ -595,13 +1086,10 @@ function applyY(y, animated) {
   sheet.style.transform = `translateY(${y}px)`;
   syncFab(y);
   syncDim(y);
-  /* Invalidate map size when sheet moves so tiles fill correctly */
   map.invalidateSize({ animate: false });
 }
 
-function syncFab(y) {
-  fabBtn.style.bottom = (window.innerHeight - y + 14) + 'px';
-}
+function syncFab(y) { fabBtn.style.bottom = (window.innerHeight - y + 14) + 'px'; }
 
 function syncDim(y) {
   const lo = snapY(S.EXP), hi = snapY(S.MID);
@@ -617,91 +1105,57 @@ function snap(s, animated = true) {
     sheetBody.style.maxHeight = '0px';
     sheetBody.style.opacity = '0';
   } else {
-    sheetBody.style.maxHeight = '600px';
+    sheetBody.style.maxHeight = '700px';
     sheetBody.style.opacity = '1';
   }
 }
 
-/* ═══════════════════════════════════════════════════════
-   GESTURE ENGINE
-   KEY INSIGHT: touch-action:none is set ONLY on #drag-zone.
-   The map div has no touch-action override — Leaflet gets
-   100% of touch events on the map and handles single-finger
-   pan natively. The sheet gesture fires ONLY when the
-   touchstart originates inside #drag-zone.
-═══════════════════════════════════════════════════════ */
-let dragging     = false;
-let startCY      = 0;
-let startSY      = 0;
-let velBuf       = [];
-let lastTY       = 0;
-let lastTT       = 0;
+let dragging = false, startCY = 0, startSY = 0, velBuf = [], lastTY = 0, lastTT = 0;
 
 function onDragStart(cy) {
-  dragging = true;
-  startCY  = cy;
-  startSY  = getLiveY();
-  lastTY   = cy;
-  lastTT   = performance.now();
-  velBuf   = [];
+  dragging = true; startCY = cy; startSY = getLiveY();
+  lastTY = cy; lastTT = performance.now(); velBuf = [];
   sheet.style.transition = 'none';
 }
 
 function onDragMove(cy) {
   if (!dragging) return;
   const now = performance.now();
-  const dt  = Math.max(now - lastTT, 1);
-  velBuf.push((cy - lastTY) / dt);
+  velBuf.push((cy - lastTY) / Math.max(now - lastTT, 1));
   if (velBuf.length > 6) velBuf.shift();
   lastTY = cy; lastTT = now;
-
   let ny = startSY + (cy - startCY);
   const lo = snapY(S.EXP), hi = snapY(S.PEEK);
-  if (ny < lo) ny = lo - (lo - ny) * 0.26;  // rubber-band top
-  if (ny > hi) ny = hi + (ny - hi) * 0.26;  // rubber-band bottom
-
+  if (ny < lo) ny = lo - (lo - ny) * 0.26;
+  if (ny > hi) ny = hi + (ny - hi) * 0.26;
   sheet.style.transform = `translateY(${ny}px)`;
-  syncFab(ny);
-  syncDim(ny);
+  syncFab(ny); syncDim(ny);
 }
 
 function onDragEnd() {
   if (!dragging) return;
   dragging = false;
-
-  const avg = velBuf.length ? velBuf.reduce((a,b)=>a+b,0)/velBuf.length : 0;
-  const cy  = getLiveY();
-
-  /* Velocity flick — fast swipe overrides position */
-  if (avg > 0.65) { snap(sheetState === S.EXP ? S.MID : S.PEEK); return; }
-  if (avg < -0.65){ snap(sheetState === S.PEEK ? S.MID : S.EXP); return; }
-
-  /* Nearest snap point */
+  const avg = velBuf.length ? velBuf.reduce((a,b) => a+b, 0) / velBuf.length : 0;
+  if (avg > 0.65)  { snap(sheetState === S.EXP ? S.MID : S.PEEK); return; }
+  if (avg < -0.65) { snap(sheetState === S.PEEK ? S.MID : S.EXP); return; }
   const best = [S.PEEK, S.MID, S.EXP]
-    .map(s => ({ s, d: Math.abs(cy - snapY(s)) }))
+    .map(s => ({ s, d: Math.abs(getLiveY() - snapY(s)) }))
     .sort((a,b) => a.d - b.d)[0];
   snap(best.s);
 }
 
-/* ── Attach drag-zone touch/mouse listeners ── */
 dragZone.addEventListener('touchstart', e => {
-  e.stopPropagation();           // don't let Leaflet see this touch
+  e.stopPropagation();
   onDragStart(e.touches[0].clientY);
 }, { passive: true });
 
-/* Listen on window so finger can move freely during drag */
 window.addEventListener('touchmove', e => {
-  if (!dragging) return;
-  onDragMove(e.touches[0].clientY);
-  /* NOTE: we deliberately do NOT call e.preventDefault() here.
-     Leaflet's own touchmove won't fire if dragging=true because
-     Leaflet never received the touchstart (we stopPropagation'd it). */
+  if (dragging) onDragMove(e.touches[0].clientY);
 }, { passive: true });
 
 window.addEventListener('touchend', () => { if (dragging) onDragEnd(); }, { passive: true });
 window.addEventListener('touchcancel', () => { if (dragging) onDragEnd(); }, { passive: true });
 
-/* Mouse fallback for desktop testing */
 dragZone.addEventListener('mousedown', e => {
   e.preventDefault();
   onDragStart(e.clientY);
@@ -711,16 +1165,14 @@ dragZone.addEventListener('mousedown', e => {
   window.addEventListener('mouseup', up);
 });
 
-/* Peek row tap — cycles up then down */
 peekRow.addEventListener('click', () => {
-  if (sheetState === S.PEEK)    snap(S.MID);
+  if (sheetState === S.PEEK)     snap(S.MID);
   else if (sheetState === S.MID) snap(S.EXP);
-  else                           snap(S.MID);
+  else                            snap(S.MID);
 });
 
-/* Init */
 function initSheet() {
-  sheetBody.style.maxHeight = '600px';
+  sheetBody.style.maxHeight = '700px';
   sheetBody.style.opacity   = '1';
   sheetBody.style.transition = 'max-height .42s cubic-bezier(.4,0,.2,1), opacity .3s ease';
   snap(S.MID, false);
@@ -728,84 +1180,31 @@ function initSheet() {
 requestAnimationFrame(() => requestAnimationFrame(initSheet));
 window.addEventListener('resize', () => snap(sheetState, false));
 
-/* ═══════════════════════════════════════════════════════
-   URL PARAMS & LIVE TRACKING
-═══════════════════════════════════════════════════════ */
-const urlP        = new URLSearchParams(window.location.search);
-const alertId     = urlP.get('id');
-const studentName = urlP.get('name') || 'Student';
-const busId       = urlP.get('bus')  || 'Unknown';
-
-document.getElementById('studentName').textContent = studentName;
-document.getElementById('studentBus').textContent  = 'Bus ' + busId;
-
-const API = window.location.origin;
-let lastLat = null, lastLng = null, pollInterval = null;
-
-async function fetchLocation() {
-  if (!alertId) return;
-  try {
-    const res  = await fetch(`${API}/api/sos/location/${alertId}`);
-    const data = await res.json();
-    if (!data.success || !data.latitude || !data.longitude) return;
-
-    const lat = parseFloat(data.latitude);
-    const lng = parseFloat(data.longitude);
-
-    document.getElementById('waitingOverlay').classList.add('hidden');
-    document.getElementById('coordVal').textContent = `${lat.toFixed(6)},  ${lng.toFixed(6)}`;
-    document.getElementById('gmapsBtn').href = `https://maps.google.com/?q=${lat},${lng}`;
-
-    const t = data.lastLocationAt ? new Date(data.lastLocationAt) : new Date();
-    document.getElementById('updatedTime').textContent =
-      'Updated ' + t.toLocaleTimeString('en-IN', {
-        hour: '2-digit', minute: '2-digit', second: '2-digit',
-        hour12: true, timeZone: 'Asia/Kolkata'
-      });
-
-    const moved = lastLat === null
-      || Math.abs(lat - lastLat) > 0.0001
-      || Math.abs(lng - lastLng) > 0.0001;
-
-    if (moved) {
-      lastLat = lat; lastLng = lng;
-      placeMarker(lat, lng);
-      recenterMap(lat, lng);
-    }
-
-    if (data.status && data.status !== 'active') {
-      clearInterval(pollInterval);
-      const badge = document.getElementById('liveBadge');
-      badge.className = 'resolved-badge';
-      badge.innerHTML = '<i class="fas fa-check"></i><span>RESOLVED</span>';
-    }
-  } catch(e) {}
-}
-
-fetchLocation();
-pollInterval = setInterval(fetchLocation, 3000);
-
-/* FAB — recenter to last known position */
-fabBtn.addEventListener('click', () => {
-  if (lastLat !== null) recenterMap(lastLat, lastLng);
-});
-
-/* Modal & actions */
+// ── MODAL & ACTIONS ───────────────────────────────────────────────────
 function showConfirm() { document.getElementById('confirmModal').classList.remove('hidden'); }
 function hideConfirm() { document.getElementById('confirmModal').classList.add('hidden'); }
+
 async function stopSOS() {
   hideConfirm();
   if (!alertId) return;
-  try { await fetch(`${API}/api/sos/resolve/${alertId}`, { method: 'POST' }); } catch(e) {}
+  if (socket && socket.connected) {
+    socket.emit('sos:resolve', { alertId });
+  }
+  try {
+    await fetch(`${API}/api/sos/resolve/${alertId}`, { method: 'POST' });
+  } catch(e) {}
 }
-function callDriver() {
-  const tel = document.getElementById('driverTel')?.value;
-  if (tel) window.location.href = 'tel:' + tel;
-}
-function callAdmin() {
-  const tel = document.getElementById('adminTel')?.value;
-  if (tel) window.location.href = 'tel:' + tel;
-}
+
+function callDriver() { /* hook up phone number from alert data */ }
+function callAdmin()  { /* hook up admin contact */ }
+
+// ── CLEANUP ON UNLOAD ─────────────────────────────────────────────────
+window.addEventListener('beforeunload', () => {
+  clearInterval(pingInterval);
+  clearTimeout(staleTimer);
+  clearInterval(pollInterval);
+  if (socket) socket.disconnect();
+});
 </script>
 </body>
 </html>
