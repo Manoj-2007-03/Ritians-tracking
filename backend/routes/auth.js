@@ -12,7 +12,7 @@ const router  = express.Router();
 // ── POST /signup ──────────────────────────────────────────────
 router.post("/signup", async (req, res) => {
   try {
-    const { name, regNo, className, department, year, password } = req.body;
+    const { name, regNo, className, department, year, password, busNumber, boardingPoint } = req.body;
 
     if (!name || !regNo || !className || !department || !year || !password)
       return res.status(400).json({ success: false, message: "All fields are required." });
@@ -26,12 +26,13 @@ router.post("/signup", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    await new Student({
+     await new Student({
       name, regNo: regNo.toUpperCase(),
       className, department, year,
       password: hashedPassword,
+      busNumber: busNumber || "",
+      boardingPoint: boardingPoint || "",
     }).save();
-
     return res.status(201).json({ success: true, message: "Signup successful! Please log in." });
 
   } catch (err) {
