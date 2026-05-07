@@ -1079,6 +1079,47 @@ html, body {
  
 </main>
  
+<!-- ── AUDIO UNLOCK BANNER ── -->
+<div id="_sirenUnlockBanner" style="
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+  background:rgba(255,184,0,0.13);border:1px solid rgba(255,184,0,0.35);
+  color:#FFB800;border-radius:12px;padding:10px 18px;font-size:12px;
+  font-weight:600;z-index:999;display:flex;align-items:center;gap:8px;
+  backdrop-filter:blur(12px);white-space:nowrap;pointer-events:none;">
+  <i class="fas fa-volume-high"></i> Click anywhere once to enable siren alerts
+</div>
+
+<!-- ── SOS ALERT BANNER ── -->
+<div id="_sosBanner" style="
+  display:none;position:fixed;top:0;left:0;right:0;z-index:9999;
+  background:linear-gradient(135deg,rgba(255,20,20,0.97),rgba(150,0,0,0.97));
+  border-bottom:2px solid #FF2D2D;padding:14px 20px;
+  align-items:center;justify-content:space-between;gap:12px;
+  backdrop-filter:blur(20px);box-shadow:0 4px 40px rgba(255,45,45,0.5);
+  animation:_bannerIn 0.3s ease;">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span style="font-size:22px;animation:_blink 0.6s ease-in-out infinite;">🚨</span>
+    <div>
+      <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#fff;letter-spacing:0.04em;">
+        NEW SOS ALERT RECEIVED!
+      </div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.8);margin-top:2px;">
+        Check active alerts immediately — student needs help
+      </div>
+    </div>
+  </div>
+  <button onclick="document.getElementById('_sosBanner').style.display='none'" style="
+    background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);
+    color:#fff;border-radius:8px;padding:6px 14px;font-size:12px;
+    font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;">
+    ✕ Dismiss
+  </button>
+</div>
+<style>
+@keyframes _bannerIn{from{transform:translateY(-100%);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes _blink{0%,100%{opacity:1}50%{opacity:0.3}}
+</style>
+
 <!-- ── RESOLVE MODAL (bottom sheet) ── -->
 <div class="modal-backdrop" id="resolveModal" role="dialog" aria-modal="true" aria-label="Resolve alert">
   <div class="modal">
@@ -1323,6 +1364,137 @@ document.getElementById('resolveModal').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
 });
  
+// ══════════════════════════════════════════════════════════════
+//  PANIC SIREN PATCH — full volume, 3 seconds, panic tone only
+// ══════════════════════════════════════════════════════════════
+
+let _sirenCtx      = null;
+let _audioUnlocked = false;
+let _prevActiveCount = -1;   // -1 = first load, skip siren on initial page open
+
+// ── 1. Unlock audio on first user interaction ─────────────────
+function _unlockAudio() {
+  if (_audioUnlocked) return;
+  try {
+    _sirenCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // Play a silent buffer to fully unlock
+    const buf = _sirenCtx.createBuffer(1, 1, 22050);
+    const src = _sirenCtx.createBufferSource();
+    src.buffer = buf;
+    src.connect(_sirenCtx.destination);
+    src.start(0);
+    _audioUnlocked = true;
+    // Hide the unlock banner
+    const banner = document.getElementById('_sirenUnlockBanner');
+    if (banner) banner.style.display = 'none';
+  } catch(e) {}
+}
+document.addEventListener('click',     _unlockAudio, { once: true });
+document.addEventListener('touchstart', _unlockAudio, { once: true });
+document.addEventListener('keydown',   _unlockAudio, { once: true });
+
+// ── 2. Panic Button Tone — 1400Hz→500Hz, 3 seconds, 100% vol ─
+function _playPanicSiren() {
+  try {
+    if (!_sirenCtx) {
+      _sirenCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (_sirenCtx.state === 'suspended') _sirenCtx.resume();
+
+    const dur = 3;
+    const gain = _sirenCtx.createGain();
+    gain.gain.setValueAtTime(1.0, _sirenCtx.currentTime); // FULL VOLUME
+    gain.connect(_sirenCtx.destination);
+
+    const osc = _sirenCtx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.connect(gain);
+
+    const now = _sirenCtx.currentTime;
+    const cycles = Math.ceil(dur / 0.4);
+    for (let i = 0; i < cycles; i++) {
+      const t = now + i * 0.4;
+      osc.frequency.setValueAtTime(1400, t);
+      osc.frequency.exponentialRampToValueAtTime(500, t + 0.35);
+      gain.gain.setValueAtTime(1.0, t);
+      gain.gain.setValueAtTime(0.35, t + 0.35);
+    }
+    osc.start(now);
+    osc.stop(now + dur);
+
+    // Flash page title
+    _flashTitle();
+
+    // Show red SOS banner
+    _showSosBanner();
+
+  } catch(e) {
+    console.warn('Siren error:', e);
+  }
+}
+
+// ── 3. Flash tab title ────────────────────────────────────────
+let _flashInterval = null;
+function _flashTitle() {
+  clearInterval(_flashInterval);
+  const orig = 'SOS Dashboard – Ritians Admin';
+  let on = true;
+  _flashInterval = setInterval(() => {
+    document.title = on ? '🚨 NEW SOS ALERT!' : orig;
+    on = !on;
+  }, 800);
+  setTimeout(() => {
+    clearInterval(_flashInterval);
+    document.title = orig;
+  }, 15000); // stop flashing after 15s
+}
+
+// ── 4. Red banner ─────────────────────────────────────────────
+function _showSosBanner() {
+  const b = document.getElementById('_sosBanner');
+  if (!b) return;
+  b.style.display = 'flex';
+  // Auto-hide after 12 seconds
+  setTimeout(() => { b.style.display = 'none'; }, 12000);
+}
+
+// ── 5. Patched loadActive — detects NEW alerts ────────────────
+const _origLoadActive = loadActive;
+async function loadActive() {
+  try {
+    const res  = await fetch(`${API}/api/sos/active`);
+    const data = await res.json();
+    const count = data.alerts?.length || 0;
+
+    document.getElementById('activeCount').textContent = count;
+    document.getElementById('statActive').textContent  = count;
+
+    const list = document.getElementById('activeList');
+    if (!data.alerts || count === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon"><i class="fas fa-shield-halved"></i></div>
+          <div class="empty-text">No active alerts right now</div>
+        </div>`;
+    } else {
+      list.innerHTML = data.alerts.map(a => renderCard(a, true)).join('');
+    }
+
+    // 🔊 Fire siren only when count INCREASES (not on first load)
+    if (_prevActiveCount >= 0 && count > _prevActiveCount) {
+      _playPanicSiren();
+    }
+    _prevActiveCount = count;
+
+  } catch(e) {
+    document.getElementById('activeList').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon"><i class="fas fa-wifi"></i></div>
+        <div class="empty-text">Could not load alerts.<br>Check server connection.</div>
+      </div>`;
+  }
+}
+
 // ── Auto-refresh every 30 seconds ────────────────────────────────────────────
 loadAll();
 setInterval(loadActive, 30000);
