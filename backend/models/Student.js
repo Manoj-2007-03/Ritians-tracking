@@ -6,14 +6,17 @@
 
 const mongoose = require("mongoose");
 
+
 const studentSchema = new mongoose.Schema(
   {
-    name:       { type: String, required: true, trim: true },
-    regNo:      { type: String, required: true, unique: true, trim: true, uppercase: true },
-    className:  { type: String, required: true, trim: true },
-    department: { type: String, required: true, trim: true },
-    year:       { type: String, required: true, trim: true },
-    password:   { type: String, required: true },
+    name:          { type: String, required: true, trim: true },
+    regNo:         { type: String, required: true, unique: true, trim: true, uppercase: true },
+    className:     { type: String, required: true, trim: true },
+    department:    { type: String, required: true, trim: true },
+    year:          { type: String, required: true, trim: true },
+    password:      { type: String, required: true },
+    busNumber:     { type: String, default: "" },
+    boardingPoint: { type: String, default: "" },
   },
   { timestamps: true }
 );
