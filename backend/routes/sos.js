@@ -53,13 +53,9 @@ async function sendSosSmS(alert) {
   });
 
   const message =
-    `🚨 EMERGENCY ALERT — Ritians Transport\n` +
-    `Student: ${alert.studentName}\n` +
-    `Bus: ${alert.busId}\n` +
-    `📍 Location: ${mapsLink}\n` +
-    `🕐 Time: ${triggeredTime}\n` +
-    `Please respond immediately.`;
-
+    `🚨SOS! ${alert.studentName}, Bus:${alert.busId}, ` +
+    `${triggeredTime}. ` +
+    `${mapsLink}`;
   const sentTo = [];
   let lastError = null;
 
