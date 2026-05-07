@@ -1231,13 +1231,15 @@ html, body {
 /* ─────────────────────────────────────────────
    STATE
 ───────────────────────────────────────────── */
-let student      = null;
-let currentLat   = null;
-let currentLng   = null;
-let holdTimer    = null;
-let holdInterval = null;
-let alertId      = null;
-let cancelTimer  = null;
+let student          = null;
+let currentLat       = null;
+let currentLng       = null;
+let holdTimer        = null;
+let holdInterval     = null;
+let alertId          = null;
+let cancelTimer      = null;
+let sosFiring        = false;   // prevents double-trigger
+let locationInterval = null;    // cleared on cancel/resolve
  
 const HOLD_MS    = 3000;
 const CIRCUMF    = 2 * Math.PI * 85; // matches SVG r=85
@@ -1248,14 +1250,19 @@ const CIRCUMF    = 2 * Math.PI * 85; // matches SVG r=85
 function loadSession() {
   try {
     const raw = localStorage.getItem('ritians_student');
-    // Demo fallback when no session exists (for visual preview)
-    const s = raw ? JSON.parse(raw) : {
-      name: 'Arjun Mehta',
-      regNo: 'RM22CS047',
-      busNumber: 'BUS-07',
-    };
+    if (!raw) {
+      // No real session — show warning, disable SOS button
+      showError('Not logged in. Please login before using SOS.');
+      const btn = document.getElementById('sosBtn');
+      if (btn) { btn.style.opacity = '0.4'; btn.style.pointerEvents = 'none'; }
+      document.getElementById('studentName').textContent = 'Not logged in';
+      document.getElementById('studentMeta').textContent = 'Please login first';
+      document.getElementById('studentBus').textContent  = '—';
+      return;
+    }
+    const s = JSON.parse(raw);
     student = s;
- 
+
     const initial = s.name ? s.name.charAt(0).toUpperCase() : '?';
     document.getElementById('studentAvatar').textContent = initial;
     document.getElementById('studentName').textContent   = s.name || 'Unknown Student';
@@ -1352,6 +1359,10 @@ function cancelHold() {
    TRIGGER SOS
 ───────────────────────────────────────────── */
 async function triggerSOS() {
+  if (sosFiring) return;          // block double-trigger
+  if (!student) { showError('Not logged in. Please login first.'); return; }
+  sosFiring = true;
+
   document.getElementById('sosBtn').classList.remove('pressing');
   document.getElementById('holdHint').textContent = 'Sending alert…';
  
@@ -1375,7 +1386,7 @@ async function triggerSOS() {
     if (data.success) {
       alertId = data.alertId;
       // Push live location every 5 seconds
-      const locationInterval = setInterval(() => {
+      locationInterval = setInterval(() => {
         navigator.geolocation.getCurrentPosition(pos => {
           fetch(`/api/sos/location/${alertId}`, {
             method: 'POST',
@@ -1391,10 +1402,12 @@ async function triggerSOS() {
     } else {
       showError(data.error || 'Failed to send alert. Try again.');
       resetSOS();
+      sosFiring = false;
     }
   } catch(_) {
-    // Demo: show success even without a real backend
-    showSuccessScreen();
+    showError('Network error. Check connection and try again.');
+    resetSOS();
+    sosFiring = false;
   }
 }
  
@@ -1493,6 +1506,8 @@ function activateConfirmedState() {
 ───────────────────────────────────────────── */
 async function cancelAlert() {
   if (cancelTimer) clearInterval(cancelTimer);
+  if (locationInterval) { clearInterval(locationInterval); locationInterval = null; }
+  sosFiring = false;
  
   if (!alertId) {
     // Demo mode — just show cancelled

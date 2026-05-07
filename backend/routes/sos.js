@@ -91,7 +91,21 @@ router.post("/api/sos/trigger", async (req, res) => {
       return res.status(400).json({ success: false, error: "Student info required." });
     }
 
-    // Build location label
+    // ── Duplicate guard: block same student triggering again within 2 minutes ──
+    const recentAlert = await SosAlert.findOne({
+      studentId: studentId,
+      status: "active",
+      triggeredAt: { $gt: new Date(Date.now() - 2 * 60 * 1000) }
+    });
+    if (recentAlert) {
+      console.log(`[SOS] Duplicate blocked for ${studentName} — alert already active (${recentAlert._id})`);
+      return res.json({
+        success: true,
+        alertId: recentAlert._id,
+        smsSent: false,
+        message: "Alert already active. No duplicate SMS sent.",
+      });
+    }
     let locationLabel = "Location not available";
     if (latitude && longitude) {
       locationLabel = `${parseFloat(latitude).toFixed(4)}, ${parseFloat(longitude).toFixed(4)}`;
