@@ -7,396 +7,374 @@
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous"/>
 <style>
-  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
-  :root {
-    --red:       #FF3535;
-    --red-dim:   rgba(255,53,53,0.18);
-    --red-glow:  rgba(255,53,53,0.45);
-    --green:     #00D97E;
-    --green-dim: rgba(0,217,126,0.18);
-    --blue:      #3B8EFF;
-    --blue-dim:  rgba(59,142,255,0.18);
-    --bg:        #070B14;
-    --surface:   rgba(12,18,32,0.92);
-    --glass:     rgba(255,255,255,0.05);
-    --border:    rgba(255,255,255,0.08);
-    --text:      #EEF2FF;
-    --muted:     #8895B3;
-    --radius:    20px;
-    --font:      'Sora', sans-serif;
-    --mono:      'JetBrains Mono', monospace;
-  }
+:root {
+  --red:       #FF3535;
+  --red-mid:   rgba(255,53,53,0.22);
+  --red-glow:  rgba(255,53,53,0.50);
+  --green:     #00D97E;
+  --blue:      #3B8EFF;
+  --blue-mid:  rgba(59,142,255,0.18);
+  --bg:        #070B14;
+  --surface:   rgba(10,15,28,0.94);
+  --glass:     rgba(255,255,255,0.055);
+  --border:    rgba(255,255,255,0.09);
+  --border-hi: rgba(255,255,255,0.15);
+  --text:      #EEF2FF;
+  --muted:     #7D8DAD;
+  --font:      'Sora', sans-serif;
+  --mono:      'JetBrains Mono', monospace;
+  --safe-top:  env(safe-area-inset-top, 0px);
+  --safe-bot:  env(safe-area-inset-bottom, 0px);
+}
 
-  html, body {
-    width:100%; height:100%;
-    font-family: var(--font);
-    background: var(--bg);
-    color: var(--text);
-    overflow: hidden;
-    -webkit-font-smoothing: antialiased;
-  }
+html, body {
+  width:100%; height:100%;
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
 
-  /* ── FULL-SCREEN MAP ─────────────────────── */
-  #map-layer {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-  }
-  #liveMap {
-    width:100%; height:100%;
-    border:none; display:block;
-  }
+/* MAP */
+#map-layer {
+  position:fixed; inset:0; z-index:0;
+}
+#liveMap {
+  width:100%; height:100%; border:none; display:block;
+}
+#map-vignette {
+  position:fixed; inset:0; z-index:1; pointer-events:none;
+  background:
+    radial-gradient(ellipse 130% 38% at 50% 0%,   rgba(7,11,20,.88) 0%, transparent 100%),
+    radial-gradient(ellipse 130% 42% at 50% 100%,  rgba(7,11,20,.92) 0%, transparent 100%);
+  transition: background .4s ease;
+}
+#map-dim {
+  position:fixed; inset:0; z-index:2; pointer-events:none;
+  background: rgba(7,11,20,0);
+  transition: background .4s ease;
+}
 
-  /* dark vignette over map edges */
-  #map-layer::after {
-    content:'';
-    position:absolute; inset:0;
-    background:
-      radial-gradient(ellipse 120% 40% at 50% 0%,   rgba(7,11,20,.85) 0%, transparent 100%),
-      radial-gradient(ellipse 120% 45% at 50% 100%,  rgba(7,11,20,.9)  0%, transparent 100%);
-    pointer-events:none;
-    z-index:1;
-  }
+/* OVERLAYS */
+#waitingOverlay, #mapLoading {
+  position:fixed; inset:0; z-index:20;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:18px; background: var(--bg);
+  transition: opacity .5s ease;
+}
+#mapLoading {
+  background: rgba(7,11,20,.65);
+  backdrop-filter: blur(8px);
+}
+#waitingOverlay.hidden, #mapLoading.hidden {
+  opacity:0; pointer-events:none;
+}
+.wait-ring {
+  width:80px; height:80px; border-radius:50%;
+  border:1.5px solid var(--red-mid);
+  display:flex; align-items:center; justify-content:center;
+  position:relative;
+  animation: ringpulse 2.2s ease-in-out infinite;
+}
+.wait-ring::before {
+  content:''; position:absolute; inset:-14px;
+  border-radius:50%;
+  border:1px solid rgba(255,53,53,.1);
+  animation: ringpulse 2.2s ease-in-out infinite .5s;
+}
+.wait-ring i { color:var(--red); font-size:26px; }
+@keyframes ringpulse {
+  0%,100% { box-shadow:0 0 0 0 var(--red-glow); }
+  50%      { box-shadow:0 0 0 20px transparent; }
+}
+.wait-title { font-size:17px; font-weight:600; }
+.wait-sub   { font-size:13px; color:var(--muted); }
+.spinner {
+  width:42px; height:42px;
+  border:2.5px solid rgba(255,53,53,.15);
+  border-top-color:var(--red);
+  border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
 
-  /* ── OVERLAYS ────────────────────────────── */
-  #waitingOverlay, #mapLoading {
-    position:fixed; inset:0; z-index:20;
-    display:flex; flex-direction:column;
-    align-items:center; justify-content:center;
-    gap:18px; background: var(--bg);
-    transition: opacity .5s ease;
-  }
-  #mapLoading { background: rgba(7,11,20,.7); backdrop-filter:blur(6px); }
-  #waitingOverlay.hidden, #mapLoading.hidden { opacity:0; pointer-events:none; }
+/* TOP HEADER */
+#topbar {
+  position:fixed; top:0; left:0; right:0; z-index:40;
+  padding:calc(var(--safe-top) + 10px) 14px 0;
+  pointer-events:none;
+}
+.topbar-inner {
+  display:flex; align-items:center; justify-content:space-between;
+  background: var(--surface);
+  backdrop-filter: blur(22px) saturate(1.6);
+  -webkit-backdrop-filter: blur(22px) saturate(1.6);
+  border:1px solid var(--border-hi);
+  border-radius:18px;
+  padding:10px 14px; gap:12px;
+  pointer-events:all;
+  box-shadow:0 8px 32px rgba(0,0,0,.45), 0 1px 0 rgba(255,255,255,.05) inset;
+}
+.back-btn {
+  width:38px; height:38px; border-radius:12px;
+  background:var(--glass); border:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  color:var(--text); font-size:14px; text-decoration:none;
+  cursor:pointer; flex-shrink:0; transition:background .2s;
+}
+.back-btn:hover { background:rgba(255,255,255,.12); }
+.header-center { flex:1; display:flex; flex-direction:column; align-items:center; }
+.header-name { font-size:15px; font-weight:700; letter-spacing:.2px; }
+.header-sub {
+  display:flex; align-items:center; gap:5px;
+  font-size:11px; color:var(--muted); margin-top:2px;
+}
+.track-dot {
+  width:5px; height:5px; border-radius:50%; background:var(--green);
+  animation:blink 1.2s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+.live-badge {
+  display:flex; align-items:center; gap:5px;
+  background:var(--red-mid); border:1px solid rgba(255,53,53,.32);
+  border-radius:20px; padding:5px 12px; flex-shrink:0;
+}
+.live-pulse {
+  width:7px; height:7px; border-radius:50%; background:var(--red);
+  animation:livepulse 1s ease-in-out infinite;
+}
+@keyframes livepulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.6)} }
+.live-badge span { font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--red); }
+.resolved-badge {
+  display:flex; align-items:center; gap:6px;
+  background:rgba(0,217,126,.14); border:1px solid rgba(0,217,126,.3);
+  border-radius:20px; padding:5px 13px; flex-shrink:0;
+}
+.resolved-badge i { color:var(--green); font-size:11px; }
+.resolved-badge span { font-size:10px; font-weight:700; letter-spacing:1.2px; color:var(--green); }
 
-  .wait-ring {
-    width:80px; height:80px;
-    border-radius:50%;
-    border:1.5px solid var(--red-dim);
-    display:flex; align-items:center; justify-content:center;
-    position:relative;
-    animation: ringpulse 2s ease-in-out infinite;
-  }
-  .wait-ring::before {
-    content:'';
-    position:absolute; inset:-12px;
-    border-radius:50%;
-    border:1px solid rgba(255,53,53,.12);
-    animation: ringpulse 2s ease-in-out infinite .4s;
-  }
-  .wait-ring i { color:var(--red); font-size:26px; }
-  @keyframes ringpulse {
-    0%,100% { box-shadow:0 0 0 0 var(--red-glow); }
-    50%      { box-shadow:0 0 0 18px transparent; }
-  }
-  .wait-title { font-size:17px; font-weight:600; }
-  .wait-sub   { font-size:13px; color:var(--muted); }
+/* FAB */
+#fab-recenter {
+  position:fixed; right:16px; z-index:35;
+  width:44px; height:44px; border-radius:14px;
+  background:var(--surface);
+  backdrop-filter:blur(18px);
+  border:1px solid var(--border-hi);
+  display:flex; align-items:center; justify-content:center;
+  color:var(--text); font-size:16px; cursor:pointer;
+  box-shadow:0 4px 18px rgba(0,0,0,.45);
+  transition:background .2s, bottom .42s cubic-bezier(.34,1.28,.64,1);
+  bottom:200px; /* overridden by JS */
+}
+#fab-recenter:hover { background:rgba(255,255,255,.12); }
 
-  .spinner {
-    width:42px; height:42px;
-    border:2.5px solid rgba(255,53,53,.15);
-    border-top-color:var(--red);
-    border-radius:50%;
-    animation:spin .7s linear infinite;
-  }
-  @keyframes spin { to { transform:rotate(360deg); } }
+/* BOTTOM SHEET */
+#sheet-wrap {
+  position:fixed; left:0; right:0; bottom:0;
+  z-index:35; pointer-events:none;
+}
+#sheet {
+  width:100%;
+  background:var(--surface);
+  backdrop-filter:blur(28px) saturate(1.6);
+  -webkit-backdrop-filter:blur(28px) saturate(1.6);
+  border:1px solid var(--border-hi);
+  border-bottom:none;
+  border-radius:22px 22px 0 0;
+  overflow:hidden;
+  pointer-events:all;
+  box-shadow:0 -4px 40px rgba(0,0,0,.55), 0 1px 0 rgba(255,255,255,.04) inset;
+  will-change:transform;
+}
 
-  /* ── TOP HEADER ──────────────────────────── */
-  .topbar {
-    position:fixed; top:0; left:0; right:0;
-    z-index:30;
-    padding:env(safe-area-inset-top,0px) 16px 0;
-  }
-  .topbar-inner {
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    background: var(--surface);
-    backdrop-filter: blur(20px) saturate(1.4);
-    -webkit-backdrop-filter: blur(20px) saturate(1.4);
-    border:1px solid var(--border);
-    border-radius:18px;
-    padding:10px 14px;
-    margin-top:10px;
-    gap:12px;
-  }
+/* DRAG ZONE — sole initiator of sheet gesture */
+#drag-zone {
+  display:flex; justify-content:center; align-items:center;
+  padding:13px 0 9px;
+  cursor:ns-resize;
+  touch-action:none;
+}
+.handle-pill {
+  width:38px; height:4px; border-radius:4px;
+  background:rgba(255,255,255,.2);
+  transition:background .2s, width .2s;
+}
+#drag-zone:hover .handle-pill { background:rgba(255,255,255,.38); width:46px; }
 
-  .back-btn {
-    width:38px; height:38px;
-    border-radius:12px;
-    background:var(--glass);
-    border:1px solid var(--border);
-    display:flex; align-items:center; justify-content:center;
-    color:var(--text); font-size:14px;
-    text-decoration:none; cursor:pointer;
-    flex-shrink:0;
-    transition: background .2s;
-  }
-  .back-btn:hover { background:rgba(255,255,255,.1); }
+/* PEEK ROW */
+#peek-row {
+  display:flex; align-items:center; gap:10px;
+  padding:4px 18px 14px;
+  border-bottom:1px solid var(--border);
+  cursor:pointer;
+}
+.sos-icon-wrap {
+  width:42px; height:42px; border-radius:14px;
+  background:var(--red-mid); border:1px solid rgba(255,53,53,.26);
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+  animation:sosbreathe 2.4s ease-in-out infinite;
+}
+@keyframes sosbreathe {
+  0%,100% { box-shadow:0 0 0 0 var(--red-glow); }
+  50%      { box-shadow:0 0 0 9px transparent; }
+}
+.sos-icon-wrap i { color:var(--red); font-size:18px; }
+.sos-label { flex:1; }
+.sos-title   { font-size:14px; font-weight:700; color:var(--red); }
+.sos-subtitle{ font-size:11px; color:var(--muted); margin-top:1px; }
+.signal-wrap { display:flex; align-items:flex-end; gap:3px; }
+.signal-bar  { width:3px; border-radius:2px; background:var(--green); }
+.signal-bar:nth-child(1){ height:6px; }
+.signal-bar:nth-child(2){ height:9px; }
+.signal-bar:nth-child(3){ height:12px; }
+.signal-bar:nth-child(4){ height:15px; opacity:.3; }
+.chevron-up {
+  font-size:11px; color:var(--muted); margin-left:6px;
+  transition:transform .35s cubic-bezier(.34,1.28,.64,1);
+}
 
-  .header-center { flex:1; display:flex; flex-direction:column; align-items:center; }
-  .header-name {
-    font-size:15px; font-weight:700;
-    letter-spacing:.2px;
-  }
-  .header-sub {
-    display:flex; align-items:center; gap:5px;
-    font-size:11px; color:var(--muted); margin-top:1px;
-  }
-  .track-dot {
-    width:5px; height:5px;
-    border-radius:50%; background:var(--green);
-    animation: blink 1.2s ease-in-out infinite;
-  }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+/* SHEET BODY */
+#sheet-body {
+  overflow:hidden;
+  transition:max-height .42s cubic-bezier(.4,0,.2,1), opacity .3s ease;
+}
 
-  .live-badge {
-    display:flex; align-items:center; gap:5px;
-    background:var(--red-dim);
-    border:1px solid rgba(255,53,53,.3);
-    border-radius:20px;
-    padding:5px 12px;
-    flex-shrink:0;
-  }
-  .live-pulse {
-    width:7px; height:7px;
-    border-radius:50%; background:var(--red);
-    animation:livepulse 1s ease-in-out infinite;
-  }
-  @keyframes livepulse {
-    0%,100%{opacity:1;transform:scale(1)}
-    50%{opacity:.35;transform:scale(.65)}
-  }
-  .live-badge span {
-    font-size:10px; font-weight:700;
-    letter-spacing:1.5px; color:var(--red);
-  }
+/* COORD ROW */
+.coord-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:11px 18px; border-bottom:1px solid var(--border); gap:10px;
+}
+.coord-left { display:flex; align-items:center; gap:8px; }
+.coord-left i { color:var(--red); font-size:13px; }
+.coord-val {
+  font-family:var(--mono); font-size:12.5px; color:#7DDFFF; letter-spacing:.4px;
+}
+.coord-time { font-size:10px; color:var(--muted); margin-top:1px; }
+.gmaps-btn {
+  display:flex; align-items:center; gap:6px;
+  background:var(--blue-mid); border:1px solid rgba(59,142,255,.3);
+  color:var(--blue); padding:7px 14px; border-radius:10px;
+  font-size:12px; font-weight:600; text-decoration:none; white-space:nowrap;
+  transition:background .2s; flex-shrink:0;
+}
+.gmaps-btn:hover { background:rgba(59,142,255,.3); }
 
-  /* ── BOTTOM SHEET ────────────────────────── */
-  .sheet {
-    position:fixed; bottom:0; left:0; right:0;
-    z-index:30;
-    padding:0 12px calc(env(safe-area-inset-bottom,0px) + 10px);
-  }
-  .sheet-inner {
-    background: var(--surface);
-    backdrop-filter: blur(24px) saturate(1.5);
-    -webkit-backdrop-filter: blur(24px) saturate(1.5);
-    border:1px solid var(--border);
-    border-radius: var(--radius);
-    overflow:hidden;
-    transition: transform .4s cubic-bezier(.34,1.56,.64,1);
-  }
+/* ACTION BUTTONS */
+.action-row {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:10px; padding:14px 18px; border-bottom:1px solid var(--border);
+}
+.action-btn {
+  display:flex; flex-direction:column; align-items:center; gap:7px;
+  padding:14px 8px; border-radius:16px; border:none; cursor:pointer;
+  font-family:var(--font); font-size:12px; font-weight:600; color:#fff;
+  transition:transform .15s, filter .15s;
+  position:relative; overflow:hidden;
+}
+.action-btn::after {
+  content:''; position:absolute; inset:0;
+  background:rgba(255,255,255,0); transition:background .15s;
+}
+.action-btn:active::after { background:rgba(255,255,255,.12); }
+.action-btn:active { transform:scale(.95); }
+.action-btn i { font-size:22px; }
+.btn-driver {
+  background:linear-gradient(145deg,#00C96A,#008F4C);
+  box-shadow:0 6px 22px rgba(0,201,106,.28);
+}
+.btn-admin {
+  background:linear-gradient(145deg,#3B8EFF,#1A6CE0);
+  box-shadow:0 6px 22px rgba(59,142,255,.28);
+}
 
-  /* drag handle */
-  .sheet-handle {
-    display:flex; justify-content:center;
-    padding:12px 0 6px;
-    cursor:grab;
-  }
-  .sheet-handle::after {
-    content:'';
-    width:36px; height:3.5px;
-    border-radius:4px;
-    background:rgba(255,255,255,.18);
-  }
+/* STOP SOS */
+.sos-stop-wrap { padding:4px 18px 18px; }
+.sos-stop-btn {
+  width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
+  padding:16px; border-radius:16px; border:none; cursor:pointer;
+  font-family:var(--font); font-size:14px; font-weight:700; color:#fff; letter-spacing:.3px;
+  background:linear-gradient(145deg,#FF2D2D,#C41A1A);
+  box-shadow:0 6px 28px rgba(255,45,45,.4);
+  animation:stopbreathe 3s ease-in-out infinite;
+  transition:transform .15s, filter .15s;
+}
+.sos-stop-btn:active { transform:scale(.97); filter:brightness(.88); }
+@keyframes stopbreathe {
+  0%,100%{ box-shadow:0 6px 28px rgba(255,45,45,.35); }
+  50%    { box-shadow:0 8px 38px rgba(255,45,45,.65); }
+}
+.safe-spacer { height:var(--safe-bot); }
 
-  /* SOS STATUS ROW */
-  .sos-status-row {
-    display:flex; align-items:center; gap:10px;
-    padding:4px 18px 14px;
-    border-bottom:1px solid var(--border);
-  }
-  .sos-icon-wrap {
-    width:42px; height:42px; border-radius:14px;
-    background:var(--red-dim);
-    border:1px solid rgba(255,53,53,.25);
-    display:flex; align-items:center; justify-content:center;
-    flex-shrink:0;
-    animation:sosbreathe 2s ease-in-out infinite;
-  }
-  @keyframes sosbreathe {
-    0%,100%{box-shadow:0 0 0 0 var(--red-glow)}
-    50%{box-shadow:0 0 0 8px transparent}
-  }
-  .sos-icon-wrap i { color:var(--red); font-size:18px; }
-  .sos-label { flex:1; }
-  .sos-title { font-size:14px; font-weight:700; color:var(--red); }
-  .sos-subtitle { font-size:11px; color:var(--muted); margin-top:1px; }
-  .signal-wrap { display:flex; align-items:center; gap:3px; }
-  .signal-bar {
-    width:3px; border-radius:2px;
-    background:var(--green);
-  }
-  .signal-bar:nth-child(1){height:6px}
-  .signal-bar:nth-child(2){height:9px}
-  .signal-bar:nth-child(3){height:12px}
-  .signal-bar:nth-child(4){height:15px; opacity:.35;}
-
-  /* COORD ROW */
-  .coord-row {
-    display:flex; align-items:center;
-    justify-content:space-between;
-    padding:11px 18px;
-    border-bottom:1px solid var(--border);
-    gap:10px;
-  }
-  .coord-left { display:flex; align-items:center; gap:8px; }
-  .coord-left i { color:var(--red); font-size:13px; }
-  .coord-val {
-    font-family:var(--mono);
-    font-size:12.5px; color:#7DDFFF;
-    letter-spacing:.4px;
-  }
-  .coord-time { font-size:10px; color:var(--muted); }
-
-  .gmaps-btn {
-    display:flex; align-items:center; gap:6px;
-    background:var(--blue-dim);
-    border:1px solid rgba(59,142,255,.3);
-    color:var(--blue);
-    padding:7px 14px; border-radius:10px;
-    font-size:12px; font-weight:600;
-    text-decoration:none; white-space:nowrap;
-    transition:background .2s;
-    flex-shrink:0;
-  }
-  .gmaps-btn:hover { background:rgba(59,142,255,.28); }
-
-  /* ACTION BUTTONS */
-  .action-row {
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:10px;
-    padding:14px 18px;
-    border-bottom:1px solid var(--border);
-  }
-  .action-btn {
-    display:flex; flex-direction:column;
-    align-items:center; gap:7px;
-    padding:14px 8px;
-    border-radius:16px;
-    border:none; cursor:pointer;
-    font-family:var(--font);
-    font-size:12px; font-weight:600;
-    color:#fff;
-    transition:transform .15s, filter .15s;
-    position:relative; overflow:hidden;
-  }
-  .action-btn:active { transform:scale(.95); filter:brightness(.9); }
-  .action-btn i { font-size:22px; }
-
-  .btn-driver {
-    background:linear-gradient(145deg, #00C96A, #009E52);
-    box-shadow:0 6px 24px rgba(0,201,106,.25);
-  }
-  .btn-admin {
-    background:linear-gradient(145deg, #3B8EFF, #1A6CE0);
-    box-shadow:0 6px 24px rgba(59,142,255,.25);
-  }
-  .btn-label { font-size:11px; font-weight:600; letter-spacing:.2px; }
-
-  /* SOS STOP BUTTON */
-  .sos-stop-wrap { padding:4px 18px 18px; }
-  .sos-stop-btn {
-    width:100%;
-    display:flex; align-items:center; justify-content:center; gap:10px;
-    padding:16px;
-    border-radius:16px;
-    border:none; cursor:pointer;
-    font-family:var(--font); font-size:14px; font-weight:700;
-    color:#fff; letter-spacing:.3px;
-    background:linear-gradient(145deg, #FF2D2D, #CC1A1A);
-    box-shadow:0 6px 28px rgba(255,45,45,.35);
-    animation:stopbreathe 3s ease-in-out infinite;
-    transition:transform .15s, filter .15s;
-  }
-  .sos-stop-btn:active { transform:scale(.97); filter:brightness(.88); }
-  @keyframes stopbreathe {
-    0%,100%{box-shadow:0 6px 28px rgba(255,45,45,.35)}
-    50%{box-shadow:0 6px 36px rgba(255,45,45,.65)}
-  }
-
-  /* CONFIRMATION MODAL */
-  #confirmModal {
-    position:fixed; inset:0; z-index:50;
-    background:rgba(7,11,20,.7);
-    backdrop-filter:blur(8px);
-    display:flex; align-items:flex-end;
-    padding:16px;
-    transition:opacity .25s;
-  }
-  #confirmModal.hidden { opacity:0; pointer-events:none; }
-
-  .modal-card {
-    background:rgba(16,22,40,.98);
-    border:1px solid var(--border);
-    border-radius:24px;
-    padding:26px 22px 22px;
-    width:100%;
-    max-width:420px; margin:0 auto;
-    display:flex; flex-direction:column; gap:16px;
-    transform:translateY(0);
-  }
-  .modal-icon {
-    width:56px; height:56px; border-radius:18px;
-    background:var(--red-dim); border:1px solid rgba(255,53,53,.3);
-    display:flex; align-items:center; justify-content:center;
-    font-size:24px; color:var(--red); margin:0 auto;
-  }
-  .modal-title { font-size:17px; font-weight:700; text-align:center; }
-  .modal-body  { font-size:13px; color:var(--muted); text-align:center; line-height:1.6; }
-  .modal-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  .modal-cancel {
-    padding:14px; border-radius:13px;
-    background:var(--glass); border:1px solid var(--border);
-    color:var(--text); font-family:var(--font);
-    font-size:14px; font-weight:600; cursor:pointer;
-    transition:background .2s;
-  }
-  .modal-cancel:hover { background:rgba(255,255,255,.1); }
-  .modal-confirm {
-    padding:14px; border-radius:13px;
-    background:var(--red); border:none;
-    color:#fff; font-family:var(--font);
-    font-size:14px; font-weight:700; cursor:pointer;
-    box-shadow:0 4px 16px rgba(255,53,53,.35);
-    transition:filter .2s;
-  }
-  .modal-confirm:hover { filter:brightness(1.1); }
-
-  /* RESOLVED BADGE */
-  .resolved-badge {
-    display:flex; align-items:center; gap:6px;
-    background:rgba(0,217,126,.15); border:1px solid rgba(0,217,126,.3);
-    border-radius:20px; padding:5px 13px; flex-shrink:0;
-  }
-  .resolved-badge i { color:var(--green); font-size:12px; }
-  .resolved-badge span { font-size:10px; font-weight:700; letter-spacing:1.2px; color:var(--green); }
+/* CONFIRM MODAL */
+#confirmModal {
+  position:fixed; inset:0; z-index:60;
+  background:rgba(7,11,20,.72);
+  backdrop-filter:blur(10px);
+  display:flex; align-items:flex-end; padding:14px;
+  transition:opacity .25s;
+}
+#confirmModal.hidden { opacity:0; pointer-events:none; }
+.modal-card {
+  background:rgba(14,20,38,.98);
+  border:1px solid var(--border-hi); border-radius:24px;
+  padding:26px 22px 20px;
+  width:100%; max-width:440px; margin:0 auto;
+  display:flex; flex-direction:column; gap:15px;
+  box-shadow:0 -4px 40px rgba(0,0,0,.6);
+}
+.modal-icon {
+  width:56px; height:56px; border-radius:18px;
+  background:var(--red-mid); border:1px solid rgba(255,53,53,.3);
+  display:flex; align-items:center; justify-content:center;
+  font-size:24px; color:var(--red); margin:0 auto;
+}
+.modal-title { font-size:17px; font-weight:700; text-align:center; }
+.modal-body  { font-size:13px; color:var(--muted); text-align:center; line-height:1.65; }
+.modal-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.modal-cancel {
+  padding:14px; border-radius:13px;
+  background:var(--glass); border:1px solid var(--border);
+  color:var(--text); font-family:var(--font); font-size:14px; font-weight:600;
+  cursor:pointer; transition:background .2s;
+}
+.modal-cancel:hover { background:rgba(255,255,255,.1); }
+.modal-confirm {
+  padding:14px; border-radius:13px;
+  background:var(--red); border:none; color:#fff;
+  font-family:var(--font); font-size:14px; font-weight:700;
+  cursor:pointer; box-shadow:0 4px 16px rgba(255,53,53,.4);
+  transition:filter .2s;
+}
+.modal-confirm:hover { filter:brightness(1.1); }
 </style>
 </head>
 <body>
 
-<!-- FULL-SCREEN MAP -->
+<!-- MAP -->
 <div id="map-layer">
   <iframe id="liveMap" src="" allowfullscreen></iframe>
 </div>
+<div id="map-vignette"></div>
+<div id="map-dim"></div>
 
-<!-- WAITING FOR GPS -->
+<!-- OVERLAYS -->
 <div id="waitingOverlay">
   <div class="wait-ring"><i class="fas fa-location-crosshairs"></i></div>
   <div class="wait-title">Acquiring Location…</div>
   <div class="wait-sub">Waiting for student's GPS signal</div>
 </div>
-
-<!-- MAP LOADING SPINNER -->
 <div id="mapLoading" class="hidden">
   <div class="spinner"></div>
 </div>
 
 <!-- TOP HEADER -->
-<div class="topbar">
+<div id="topbar">
   <div class="topbar-inner">
     <a href="sos-admin.html" class="back-btn" aria-label="Back">
       <i class="fas fa-arrow-left"></i>
@@ -416,13 +394,18 @@
   </div>
 </div>
 
-<!-- BOTTOM SHEET -->
-<div class="sheet">
-  <div class="sheet-inner">
-    <div class="sheet-handle"></div>
+<!-- FAB -->
+<button id="fab-recenter" aria-label="Recenter map">
+  <i class="fas fa-location-crosshairs"></i>
+</button>
 
-    <!-- SOS STATUS -->
-    <div class="sos-status-row">
+<!-- BOTTOM SHEET -->
+<div id="sheet-wrap">
+  <div id="sheet">
+    <div id="drag-zone">
+      <div class="handle-pill"></div>
+    </div>
+    <div id="peek-row">
       <div class="sos-icon-wrap">
         <i class="fas fa-triangle-exclamation"></i>
       </div>
@@ -430,46 +413,42 @@
         <div class="sos-title">SOS Triggered</div>
         <div class="sos-subtitle">Emergency response active</div>
       </div>
-      <div class="signal-wrap" title="Signal strength">
-        <div class="signal-bar"></div>
-        <div class="signal-bar"></div>
-        <div class="signal-bar"></div>
-        <div class="signal-bar"></div>
+      <div class="signal-wrap">
+        <div class="signal-bar"></div><div class="signal-bar"></div>
+        <div class="signal-bar"></div><div class="signal-bar"></div>
       </div>
+      <i class="fas fa-chevron-up chevron-up" id="peekChevron"></i>
     </div>
-
-    <!-- COORDINATES + GMAPS -->
-    <div class="coord-row">
-      <div class="coord-left">
-        <i class="fas fa-location-dot"></i>
-        <div>
-          <div class="coord-val" id="coordVal">Waiting for coordinates…</div>
-          <div class="coord-time" id="updatedTime">—</div>
+    <div id="sheet-body">
+      <div class="coord-row">
+        <div class="coord-left">
+          <i class="fas fa-location-dot"></i>
+          <div>
+            <div class="coord-val" id="coordVal">Waiting for coordinates…</div>
+            <div class="coord-time" id="updatedTime">—</div>
+          </div>
         </div>
+        <a id="gmapsBtn" href="#" target="_blank" class="gmaps-btn">
+          <i class="fab fa-google"></i> Maps
+        </a>
       </div>
-      <a id="gmapsBtn" href="#" target="_blank" class="gmaps-btn">
-        <i class="fab fa-google"></i> Maps
-      </a>
-    </div>
-
-    <!-- CALL BUTTONS -->
-    <div class="action-row">
-      <button class="action-btn btn-driver" onclick="callDriver()">
-        <i class="fas fa-phone"></i>
-        <span class="btn-label">Call Driver</span>
-      </button>
-      <button class="action-btn btn-admin" onclick="callAdmin()">
-        <i class="fas fa-shield-halved"></i>
-        <span class="btn-label">Call Admin</span>
-      </button>
-    </div>
-
-    <!-- STOP SOS -->
-    <div class="sos-stop-wrap">
-      <button class="sos-stop-btn" onclick="showConfirm()">
-        <i class="fas fa-circle-xmark"></i>
-        Stop SOS Alert
-      </button>
+      <div class="action-row">
+        <button class="action-btn btn-driver" onclick="callDriver()">
+          <i class="fas fa-phone"></i>
+          <span>Call Driver</span>
+        </button>
+        <button class="action-btn btn-admin" onclick="callAdmin()">
+          <i class="fas fa-shield-halved"></i>
+          <span>Call Admin</span>
+        </button>
+      </div>
+      <div class="sos-stop-wrap">
+        <button class="sos-stop-btn" onclick="showConfirm()">
+          <i class="fas fa-circle-xmark"></i>
+          Stop SOS Alert
+        </button>
+      </div>
+      <div class="safe-spacer"></div>
     </div>
   </div>
 </div>
@@ -479,7 +458,7 @@
   <div class="modal-card">
     <div class="modal-icon"><i class="fas fa-circle-stop"></i></div>
     <div class="modal-title">Stop SOS Alert?</div>
-    <div class="modal-body">Are you sure you want to end the emergency alert? This will notify all responders that the situation is resolved.</div>
+    <div class="modal-body">Are you sure you want to end the emergency alert? All responders will be notified the situation is resolved.</div>
     <div class="modal-actions">
       <button class="modal-cancel" onclick="hideConfirm()">Cancel</button>
       <button class="modal-confirm" onclick="stopSOS()">Yes, Stop SOS</button>
@@ -488,86 +467,268 @@
 </div>
 
 <script>
-  const params      = new URLSearchParams(window.location.search);
-  const alertId     = params.get('id');
-  const studentName = params.get('name') || 'Student';
-  const busId       = params.get('bus')  || 'Unknown';
+/* ═════════════════════════════════════════════════
+   SHEET STATE ENGINE
+   State 0 = PEEK  |  State 1 = MID  |  State 2 = EXP
+═════════════════════════════════════════════════ */
+const sheet     = document.getElementById('sheet');
+const sheetBody = document.getElementById('sheet-body');
+const dragZone  = document.getElementById('drag-zone');
+const peekRow   = document.getElementById('peek-row');
+const peekChev  = document.getElementById('peekChevron');
+const fabBtn    = document.getElementById('fab-recenter');
+const mapDim    = document.getElementById('map-dim');
 
-  document.getElementById('studentName').textContent = studentName;
-  document.getElementById('studentBus').textContent  = 'Bus ' + busId;
+const S = { PEEK:0, MID:1, EXP:2 };
+let state = S.MID;
 
-  const API = window.location.origin;
-  let lastLat = null, lastLng = null;
-  let pollInterval = null;
+/* ── Snap geometry ── */
+function peekH()  { return dragZone.offsetHeight + peekRow.offsetHeight; }
+function fullH()  { return sheet.scrollHeight; }
+function expH()   { return Math.min(window.innerHeight * 0.78, fullH()); }
 
-  async function fetchLocation() {
-    if (!alertId) return;
-    try {
-      const res  = await fetch(`${API}/api/sos/location/${alertId}`);
-      const data = await res.json();
-      if (!data.success || !data.latitude || !data.longitude) return;
+function snapY(s) {
+  const wh = window.innerHeight;
+  if (s === S.PEEK) return wh - peekH();
+  if (s === S.MID)  return wh - fullH();
+  if (s === S.EXP)  return wh - expH();
+}
 
-      const lat = parseFloat(data.latitude);
-      const lng = parseFloat(data.longitude);
+/* ── Apply Y with optional spring animation ── */
+function applyY(y, anim) {
+  const lo = snapY(S.EXP), hi = snapY(S.PEEK);
+  y = Math.max(lo, Math.min(hi, y));
+  sheet.style.transition = anim
+    ? 'transform .42s cubic-bezier(.34,1.28,.64,1)'
+    : 'none';
+  sheet.style.transform = `translateY(${y}px)`;
+  syncFab(y);
+  syncDim(y);
+}
 
-      document.getElementById('waitingOverlay').classList.add('hidden');
-      document.getElementById('coordVal').textContent = `${lat.toFixed(6)},  ${lng.toFixed(6)}`;
+function syncFab(y) {
+  const visible = window.innerHeight - y;
+  fabBtn.style.bottom = (visible + 14) + 'px';
+}
 
-      const gmapsUrl = `https://maps.google.com/?q=${lat},${lng}`;
-      document.getElementById('gmapsBtn').href = gmapsUrl;
+function syncDim(y) {
+  const lo = snapY(S.EXP), hi = snapY(S.MID);
+  const ratio = hi === lo ? 0 : Math.max(0, Math.min(1, (hi - y) / (hi - lo)));
+  mapDim.style.background = `rgba(7,11,20,${(ratio * 0.24).toFixed(3)})`;
+}
 
-      const t = data.lastLocationAt ? new Date(data.lastLocationAt) : new Date();
-      document.getElementById('updatedTime').textContent =
-        'Updated ' + t.toLocaleTimeString('en-IN', {
-          hour:'2-digit', minute:'2-digit', second:'2-digit',
-          hour12:true, timeZone:'Asia/Kolkata'
-        });
+/* ── Snap to a named state ── */
+function snap(s, anim = true) {
+  state = s;
+  applyY(snapY(s), anim);
 
-      const moved = lastLat === null
-        || Math.abs(lat - lastLat) > 0.0001
-        || Math.abs(lng - lastLng) > 0.0001;
+  // Chevron
+  peekChev.style.transform = s === S.PEEK ? 'rotate(0deg)' : 'rotate(180deg)';
 
-      if (moved) {
-        lastLat = lat; lastLng = lng;
-        const iframe = document.getElementById('liveMap');
-        document.getElementById('mapLoading').classList.remove('hidden');
-        iframe.src = `https://maps.google.com/maps?q=${lat},${lng}&z=17&output=embed`;
-        iframe.onload = () => document.getElementById('mapLoading').classList.add('hidden');
-      }
+  // Body visibility
+  if (s === S.PEEK) {
+    sheetBody.style.maxHeight = '0px';
+    sheetBody.style.opacity   = '0';
+  } else {
+    sheetBody.style.maxHeight = '600px';
+    sheetBody.style.opacity   = '1';
+  }
+}
 
-      if (data.status && data.status !== 'active') {
-        clearInterval(pollInterval);
-        const badge = document.getElementById('liveBadge');
-        badge.className = 'resolved-badge';
-        badge.innerHTML = '<i class="fas fa-check"></i><span>RESOLVED</span>';
-      }
-    } catch(e) {}
+/* ═════════════════════════════════════════════════
+   GESTURE ENGINE — DRAG-ZONE ONLY
+   The map iframe is never touched by our listeners.
+═════════════════════════════════════════════════ */
+let dragging     = false;
+let startClientY = 0;
+let startY       = 0;
+let velHistory   = [];
+let lastTY       = 0;
+let lastTT       = 0;
+
+function liveY() {
+  const m = new DOMMatrix(getComputedStyle(sheet).transform);
+  return m.m42;
+}
+
+function dragStart(cy) {
+  dragging     = true;
+  startClientY = cy;
+  startY       = liveY();
+  lastTY       = cy;
+  lastTT       = performance.now();
+  velHistory   = [];
+  sheet.style.transition = 'none';
+}
+
+function dragMove(cy) {
+  if (!dragging) return;
+  const now = performance.now();
+  const dt  = now - lastTT || 1;
+  velHistory.push((cy - lastTY) / dt);
+  if (velHistory.length > 6) velHistory.shift();
+  lastTY = cy; lastTT = now;
+
+  let ny = startY + (cy - startClientY);
+  const lo = snapY(S.EXP), hi = snapY(S.PEEK);
+  if (ny < lo) ny = lo - (lo - ny) * 0.28;
+  if (ny > hi) ny = hi + (ny - hi) * 0.28;
+
+  sheet.style.transform = `translateY(${ny}px)`;
+  syncFab(ny);
+  syncDim(ny);
+}
+
+function dragEnd() {
+  if (!dragging) return;
+  dragging = false;
+
+  const avg = velHistory.length
+    ? velHistory.reduce((a,b)=>a+b,0)/velHistory.length : 0;
+  const cy = liveY();
+
+  // Velocity-based flick
+  if (avg > 0.7) {
+    snap(state === S.EXP ? S.MID : S.PEEK); return;
+  }
+  if (avg < -0.7) {
+    snap(state === S.PEEK ? S.MID : S.EXP); return;
   }
 
-  fetchLocation();
-  pollInterval = setInterval(fetchLocation, 3000);
+  // Proximity snap
+  const candidates = [S.PEEK, S.MID, S.EXP].map(s => ({s, d:Math.abs(cy-snapY(s))}));
+  candidates.sort((a,b)=>a.d-b.d);
+  snap(candidates[0].s);
+}
 
-  function showConfirm() {
-    document.getElementById('confirmModal').classList.remove('hidden');
-  }
-  function hideConfirm() {
-    document.getElementById('confirmModal').classList.add('hidden');
-  }
-  async function stopSOS() {
-    hideConfirm();
-    if (!alertId) return;
-    try {
-      await fetch(`${API}/api/sos/resolve/${alertId}`, { method:'POST' });
-    } catch(e) {}
-  }
-  function callDriver() {
-    const tel = document.getElementById('driverTel')?.value;
-    if (tel) window.location.href = 'tel:' + tel;
-  }
-  function callAdmin() {
-    const tel = document.getElementById('adminTel')?.value;
-    if (tel) window.location.href = 'tel:' + tel;
-  }
+/* Touch — drag-zone only */
+dragZone.addEventListener('touchstart', e => {
+  e.stopPropagation();
+  dragStart(e.touches[0].clientY);
+}, {passive:true});
+
+document.addEventListener('touchmove', e => {
+  if (!dragging) return;
+  e.stopPropagation();
+  dragMove(e.touches[0].clientY);
+}, {passive:true});
+
+document.addEventListener('touchend', e => {
+  if (!dragging) return;
+  dragEnd();
+}, {passive:true});
+
+/* Mouse (desktop testing) */
+dragZone.addEventListener('mousedown', e => {
+  e.preventDefault();
+  dragStart(e.clientY);
+  const mv = ev => dragMove(ev.clientY);
+  const up = () => { dragEnd(); window.removeEventListener('mousemove',mv); window.removeEventListener('mouseup',up); };
+  window.addEventListener('mousemove', mv);
+  window.addEventListener('mouseup', up);
+});
+
+/* Peek row tap — cycles states */
+peekRow.addEventListener('click', () => {
+  if (state === S.PEEK) snap(S.MID);
+  else if (state === S.MID) snap(S.EXP);
+  else snap(S.MID);
+});
+
+/* ── Init ── */
+function init() {
+  sheetBody.style.maxHeight = '600px';
+  sheetBody.style.opacity   = '1';
+  sheetBody.style.transition = 'max-height .42s cubic-bezier(.4,0,.2,1), opacity .3s ease';
+  snap(S.MID, false);
+}
+requestAnimationFrame(() => requestAnimationFrame(init));
+window.addEventListener('resize', () => snap(state, false));
+
+/* ═════════════════════════════════════════════════
+   URL PARAMS & LIVE TRACKING
+═════════════════════════════════════════════════ */
+const params      = new URLSearchParams(window.location.search);
+const alertId     = params.get('id');
+const studentName = params.get('name') || 'Student';
+const busId       = params.get('bus')  || 'Unknown';
+
+document.getElementById('studentName').textContent = studentName;
+document.getElementById('studentBus').textContent  = 'Bus ' + busId;
+
+const API = window.location.origin;
+let lastLat = null, lastLng = null, pollInterval = null;
+
+async function fetchLocation() {
+  if (!alertId) return;
+  try {
+    const res  = await fetch(`${API}/api/sos/location/${alertId}`);
+    const data = await res.json();
+    if (!data.success || !data.latitude || !data.longitude) return;
+
+    const lat = parseFloat(data.latitude);
+    const lng = parseFloat(data.longitude);
+
+    document.getElementById('waitingOverlay').classList.add('hidden');
+    document.getElementById('coordVal').textContent = `${lat.toFixed(6)},  ${lng.toFixed(6)}`;
+    document.getElementById('gmapsBtn').href = `https://maps.google.com/?q=${lat},${lng}`;
+
+    const t = data.lastLocationAt ? new Date(data.lastLocationAt) : new Date();
+    document.getElementById('updatedTime').textContent =
+      'Updated ' + t.toLocaleTimeString('en-IN', {
+        hour:'2-digit', minute:'2-digit', second:'2-digit',
+        hour12:true, timeZone:'Asia/Kolkata'
+      });
+
+    const moved = lastLat === null
+      || Math.abs(lat-lastLat) > 0.0001
+      || Math.abs(lng-lastLng) > 0.0001;
+
+    if (moved) {
+      lastLat = lat; lastLng = lng;
+      const iframe = document.getElementById('liveMap');
+      document.getElementById('mapLoading').classList.remove('hidden');
+      iframe.src = `https://maps.google.com/maps?q=${lat},${lng}&z=17&output=embed`;
+      iframe.onload = () => document.getElementById('mapLoading').classList.add('hidden');
+    }
+
+    if (data.status && data.status !== 'active') {
+      clearInterval(pollInterval);
+      const badge = document.getElementById('liveBadge');
+      badge.className = 'resolved-badge';
+      badge.innerHTML = '<i class="fas fa-check"></i><span>RESOLVED</span>';
+    }
+  } catch(e) {}
+}
+
+fetchLocation();
+pollInterval = setInterval(fetchLocation, 3000);
+
+/* FAB */
+fabBtn.addEventListener('click', () => {
+  if (lastLat === null) return;
+  const iframe = document.getElementById('liveMap');
+  document.getElementById('mapLoading').classList.remove('hidden');
+  iframe.src = `https://maps.google.com/maps?q=${lastLat},${lastLng}&z=17&output=embed`;
+  iframe.onload = () => document.getElementById('mapLoading').classList.add('hidden');
+});
+
+/* Modal & Actions */
+function showConfirm() { document.getElementById('confirmModal').classList.remove('hidden'); }
+function hideConfirm() { document.getElementById('confirmModal').classList.add('hidden'); }
+async function stopSOS() {
+  hideConfirm();
+  if (!alertId) return;
+  try { await fetch(`${API}/api/sos/resolve/${alertId}`, {method:'POST'}); } catch(e) {}
+}
+function callDriver() {
+  const tel = document.getElementById('driverTel')?.value;
+  if (tel) window.location.href = 'tel:' + tel;
+}
+function callAdmin() {
+  const tel = document.getElementById('adminTel')?.value;
+  if (tel) window.location.href = 'tel:' + tel;
+}
 </script>
 </body>
 </html>
