@@ -1180,7 +1180,7 @@ html, body {
         <div class="warning-card" role="note">
           <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
           <p class="warning-text">
-            Only use in genuine emergencies. False alerts may have consequences and can be cancelled within 60 seconds.
+            Only use in genuine emergencies. False alerts may have consequences and can be cancelled within 30 seconds.
           </p>
         </div>
  
@@ -1206,12 +1206,12 @@ html, body {
  
         <!-- Cancel window -->
         <div class="card cancel-card" id="cancelCard">
-          <div class="cancel-label">False alarm? Cancel within <span id="cancelCountdown">60</span>s</div>
+          <div class="cancel-label">False alarm? Cancel within <span id="cancelCountdown">30</span>s</div>
           <div class="cancel-track"><div class="cancel-fill" id="cancelFill"></div></div>
           <button class="cancel-btn" id="cancelBtn" onclick="cancelAlert()">
             <i class="fas fa-xmark" aria-hidden="true"></i> Cancel — This was a false alarm
           </button>
-          <div class="cancel-timer" aria-live="polite" id="cancelTimer">Cancel option expires in 60 seconds</div>
+          <div class="cancel-timer" aria-live="polite" id="cancelTimer">Cancel option expires in 30 seconds</div>
         </div>
  
       </div><!-- /successScreen -->
@@ -1411,7 +1411,7 @@ function showSuccessScreen() {
   document.getElementById('triggerSection').style.display = 'none';
   document.getElementById('successScreen').classList.add('visible');
 
-  let secondsLeft = 60;
+  let secondsLeft = 30;
   const fillEl      = document.getElementById('cancelFill');
   const countdownEl = document.getElementById('cancelCountdown');
   const timerEl     = document.getElementById('cancelTimer');
@@ -1419,7 +1419,7 @@ function showSuccessScreen() {
   cancelTimer = setInterval(() => {
     secondsLeft--;
     countdownEl.textContent = secondsLeft;
-    fillEl.style.width = `${(secondsLeft / 60) * 100}%`;
+    fillEl.style.width = `${(secondsLeft / 30) * 100}%`;
 
     if (secondsLeft <= 0) {
       clearInterval(cancelTimer);
