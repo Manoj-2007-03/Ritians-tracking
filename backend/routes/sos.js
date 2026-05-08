@@ -79,6 +79,47 @@ async function sendSosSmS(alert) {
   };
 }
 
+// ── Voice Call Helper ──────────────────────────────────────────────────────
+async function makeVoiceCall(alert) {
+  if (!TWILIO_SID || !TWILIO_TOKEN || !FROM_NUMBER) {
+    console.warn("[SOS] Twilio not configured — Voice call skipped.");
+    return { called: false, error: "Twilio not configured" };
+  }
+
+  const CALL_RECIPIENT = process.env.ADMIN_PHONE;
+  if (!CALL_RECIPIENT) {
+    console.warn("[SOS] ADMIN_PHONE not set — Voice call skipped.");
+    return { called: false, error: "No call recipient configured" };
+  }
+
+  const client = twilio(TWILIO_SID, TWILIO_TOKEN);
+
+  const twiml = `
+    <Response>
+      <Say voice="alice" language="en-IN" loop="2">
+        Alert. Alert. Alert.
+        There is an emergency S O S from student ${alert.studentName},
+        on Bus ${alert.busId}.
+        Please check your message section immediately for details.
+        Alert. Alert.
+      </Say>
+    </Response>
+  `.trim();
+
+  try {
+    const call = await client.calls.create({
+      twiml,
+      to:   CALL_RECIPIENT,
+      from: FROM_NUMBER,
+    });
+    console.log(`[SOS] 📞 Voice call initiated to Admin (${CALL_RECIPIENT}) — SID: ${call.sid}`);
+    return { called: true, callSid: call.sid };
+  } catch (err) {
+    console.error(`[SOS] Voice call failed:`, err.message);
+    return { called: false, error: err.message };
+  }
+}
+
 // ── POST /api/sos/trigger ──────────────────────────────────────────────────
 // Called by student when SOS button is held for 3 seconds
 router.post("/api/sos/trigger", async (req, res) => {
@@ -127,17 +168,21 @@ router.post("/api/sos/trigger", async (req, res) => {
     // Send SMS (non-blocking — don't fail if SMS fails)
     const smsResult = await sendSosSmS(alert);
 
-    // Update alert with SMS status
+    // 📞 Make voice call to Admin (non-blocking — don't fail if call fails)
+    const callResult = await makeVoiceCall(alert);
+
+    // Update alert with SMS + call status
     alert.smsSent       = smsResult.sent;
     alert.smsRecipients = smsResult.recipients || [];
     alert.smsError      = smsResult.error || null;
     await alert.save();
 
     return res.json({
-      success:   true,
-      alertId:   alert._id,
-      smsSent:   smsResult.sent,
-      message:   "Emergency alert sent successfully.",
+      success:    true,
+      alertId:    alert._id,
+      smsSent:    smsResult.sent,
+      callMade:   callResult.called,
+      message:    "Emergency alert sent successfully.",
     });
 
   } catch (err) {
