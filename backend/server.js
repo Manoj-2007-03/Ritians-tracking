@@ -49,6 +49,8 @@
 
 "use strict";
 
+require("dotenv").config(); // ← Load .env file (TWILIO, MONGODB, JWT credentials)
+
 const express    = require("express");
 const cors       = require("cors");
 const path       = require("path");
