@@ -44,8 +44,8 @@ async function sendSosSmS(alert) {
   const client = twilio(TWILIO_SID, TWILIO_TOKEN);
 
   const mapsLink = alert.latitude && alert.longitude
-    ? `https://maps.google.com/?q=${alert.latitude},${alert.longitude}`
-    : "Location not available";
+    ? `https://maps.google.com/?q=${parseFloat(alert.latitude).toFixed(4)},${parseFloat(alert.longitude).toFixed(4)}`
+    : "No location";
 
   const triggeredTime = new Date(alert.triggeredAt).toLocaleTimeString("en-IN", {
     hour: "2-digit", minute: "2-digit", hour12: true,
@@ -53,9 +53,7 @@ async function sendSosSmS(alert) {
   });
 
   const message =
-    `🚨SOS! ${alert.studentName}, Bus:${alert.busId}, ` +
-    `${triggeredTime}. ` +
-    `${mapsLink}`;
+    `🚨EMERGENCY | SOS ${alert.studentName} | Bus:${alert.busId} | ${triggeredTime} | ${mapsLink}`;
   const sentTo = [];
   let lastError = null;
 
