@@ -49,7 +49,10 @@
 
 "use strict";
 
-require("dotenv").config(); // ← Load .env file (TWILIO, MONGODB, JWT credentials)
+// Load .env file only in local development — don't override Render/production env vars
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").config();
+}
 
 const express    = require("express");
 const cors       = require("cors");
