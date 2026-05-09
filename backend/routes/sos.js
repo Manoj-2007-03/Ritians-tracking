@@ -96,12 +96,12 @@ async function makeVoiceCall(alert) {
 
   const twiml = `
     <Response>
-      <Say voice="alice" language="en-IN" loop="2">
-        Alert. Alert. Alert.
-        There is an emergency S O S from student ${alert.studentName},
-        on Bus ${alert.busId}.
-        Please check your message section immediately for details.
-        Alert. Alert.
+      <Say voice="Polly.Joanna" language="en-US" loop="2">
+        Emergency. Emergency.
+        Student ${alert.studentName} has triggered an S O S alert.
+        Bus number ${alert.busId}.
+        Please check your messages immediately.
+        Emergency.
       </Say>
     </Response>
   `.trim();
