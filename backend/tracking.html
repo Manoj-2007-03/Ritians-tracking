@@ -1418,47 +1418,59 @@ loadGoogleMaps();
 // ── Animated stat counters (purely additive — does not touch renderVehicles) ──
 // Watches the three stat number elements and tweens the displayed value
 // whenever the existing code updates them, without altering any original
-// function or logic.
+// function or logic. The observer is fully disconnected while an animation
+// is in progress (not just flagged) so its own intermediate writes can
+// never re-trigger themselves — this avoids a feedback loop that caused
+// the numbers to flicker rapidly when a value changed.
 (function () {
   "use strict";
   const ids = ["totalCount", "movingCount", "stoppedCount"];
-  const state = {}; // id -> { displayed, writing }
 
-  ids.forEach((id) => {
+  function makeCounter(id) {
     const el = document.getElementById(id);
     if (!el) return;
-    state[id] = { displayed: parseInt(el.textContent, 10) || 0, writing: false };
+
+    let displayed = parseInt(el.textContent, 10) || 0;
+    let rafId = null;
 
     const observer = new MutationObserver(() => {
-      if (state[id].writing) return; // ignore mutations we caused ourselves
       const target = parseInt(el.textContent, 10);
-      if (Number.isNaN(target) || target === state[id].displayed) return;
+      if (Number.isNaN(target) || target === displayed) return;
+      animate(target);
+    });
 
-      const from = state[id].displayed;
-      const to = target;
+    function observe() {
+      observer.observe(el, { childList: true, characterData: true, subtree: true });
+    }
+
+    function animate(target) {
+      if (rafId) cancelAnimationFrame(rafId);
+      observer.disconnect(); // stop watching entirely while we write frames
+
+      const from = displayed;
       const duration = 450;
       const start = performance.now();
 
       function step(now) {
         const p = Math.min((now - start) / duration, 1);
         const eased = 1 - Math.pow(1 - p, 3);
-        const value = Math.round(from + (to - from) * eased);
-
-        state[id].writing = true;
-        el.textContent = value;
-        state[id].writing = false;
+        el.textContent = Math.round(from + (target - from) * eased);
 
         if (p < 1) {
-          requestAnimationFrame(step);
+          rafId = requestAnimationFrame(step);
         } else {
-          state[id].displayed = to;
+          displayed = target;
+          rafId = null;
+          observe(); // safe to resume watching now that we're done writing
         }
       }
-      requestAnimationFrame(step);
-    });
+      rafId = requestAnimationFrame(step);
+    }
 
-    observer.observe(el, { childList: true, characterData: true, subtree: true });
-  });
+    observe();
+  }
+
+  ids.forEach(makeCounter);
 })();
 </script>
 <script src="toast.js"></script>
