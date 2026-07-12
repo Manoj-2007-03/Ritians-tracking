@@ -207,21 +207,22 @@ body::before{
 /* Search field — pixel-perfect icon/text alignment, luxurious feel */
 .route-search-wrap{position:relative;flex-shrink:0;margin-bottom:10px}
 .route-search-icon{
-  position:absolute;left:16px;top:50%;transform:translateY(-50%);
-  color:var(--text3);font-size:13px;line-height:1;pointer-events:none;
+  position:absolute;left:22px;top:0;bottom:0;width:18px;
   display:flex;align-items:center;justify-content:center;
+  color:var(--text3);font-size:13.5px;line-height:1;pointer-events:none;
   transition:color 0.25s var(--ease);
 }
 .route-search{
-  width:100%;height:46px;padding:0 16px 0 42px;
+  width:100%;height:48px;padding:0 18px 0 58px;
   display:block;
   background:var(--bg3);border:1px solid var(--border);border-radius:14px;
   color:var(--text);font-family:var(--font-body);font-size:13.5px;font-weight:450;
-  line-height:46px;outline:none;
+  line-height:48px;outline:none;
+  box-shadow:0 1px 0 rgba(255,255,255,0.03) inset;
   transition:border-color 0.25s var(--ease),box-shadow 0.25s var(--ease),background 0.25s var(--ease);
 }
 .route-search::placeholder{color:var(--text3);font-weight:450;opacity:0.85;letter-spacing:0.005em}
-.route-search:focus{border-color:var(--accent2);box-shadow:0 0 0 4px rgba(78,205,196,0.14),0 8px 22px rgba(78,205,196,0.1);background:var(--bg4)}
+.route-search:focus{border-color:var(--accent2);box-shadow:0 0 0 4px rgba(78,205,196,0.14),0 8px 22px rgba(78,205,196,0.1),0 1px 0 rgba(255,255,255,0.03) inset;background:var(--bg4)}
 .route-search-wrap:focus-within .route-search-icon{color:var(--accent2)}
 
 /* Route list */
