@@ -321,10 +321,13 @@ body::before{
   font-size:12.5px;color:var(--text2);line-height:1.6;margin-bottom:22px;
 }
 .alert i{
-  width:28px;height:28px;border-radius:9px;flex-shrink:0;
+  width:32px;height:32px;border-radius:10px;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
-  background:rgba(251,191,36,0.16);color:var(--yellow);font-size:12px;
+  background:rgba(84,58,10,0.4);color:#F6C453;font-size:24px;line-height:1;
+  box-shadow:0 0 0 1px rgba(251,191,36,0.16) inset,0 0 16px rgba(246,196,83,0.22);
+  animation:alertIconPulse 4.6s ease-in-out infinite;
 }
+@keyframes alertIconPulse{0%,100%{opacity:1}50%{opacity:0.8}}
 
 /* Ping dot */
 .ping-dot{
@@ -380,7 +383,7 @@ footer{
 
     <div class="card-body">
       <div class="alert">
-        <i class="fas fa-shield-check"></i>
+        <i class="fas fa-satellite-dish"></i>
         <span>Your location is only visible while tracking is active. It auto-expires after 60 seconds of inactivity.</span>
       </div>
 
