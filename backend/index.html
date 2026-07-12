@@ -402,19 +402,6 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .admin-quick-link:hover .admin-quick-link__arrow{transform:translateX(4px);color:var(--accent2)}
 
 
-.toast-container{position:fixed;bottom:20px;right:20px;z-index:300;display:flex;flex-direction:column;gap:8px}
-.toast{
-  display:flex;align-items:center;gap:10px;
-  padding:10px 16px;border-radius:99px;font-size:13px;
-  background:var(--bg2);border:1px solid var(--border2);
-  box-shadow:0 16px 48px rgba(0,0,0,0.6);
-  animation:toastIn 0.2s ease-out;
-}
-.toast i{font-size:13px}
-.toast.success i{color:#4ADE80}
-.toast.error i{color:#F87171}
-@keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-
 /* ── UTILITIES ── */
 .hidden{display:none!important}
 .divider{border:none;border-top:1px solid var(--border);margin:14px 0}
@@ -437,6 +424,7 @@ code{font-family:var(--font-mono);font-size:11px;background:var(--bg4);padding:1
 }
 </style>
 <!-- Mobile responsive layer — added on top of existing desktop styles -->
+<link rel="stylesheet" href="toast.css"/>
 <link rel="stylesheet" href="mobile.css"/>
 <!-- Auth guard: redirects to login if not logged in -->
 <script src="auth-guard.js"></script>
@@ -858,6 +846,7 @@ code{font-family:var(--font-mono);font-size:11px;background:var(--bg4);padding:1
 <!-- Toast -->
 <div class="toast-container" id="toastContainer"></div>
 
+<script src="toast.js"></script>
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ── DATA ──────────────────────────────────────────────────────────────────────
 const routes=[
@@ -991,11 +980,7 @@ function timeCat(min){if(min<360)return'early';if(min<=390)return'normal';return
 function isToday(ts){if(!ts)return false;const d=typeof ts==='number'?new Date(ts):new Date(ts);const n=new Date();return d.getDate()===n.getDate()&&d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear();}
 function todayParking(){const o={};for(const[k,v]of Object.entries(driverParking))if(isToday(v.updatedAt))o[k]=v;return o;}
 function toast(msg,type='success'){
-  const c=document.getElementById('toastContainer');
-  const el=document.createElement('div');el.className=`toast ${type}`;
-  el.innerHTML=`<i class="fas ${type==='error'?'fa-circle-exclamation':'fa-circle-check'}"></i><span>${msg}</span>`;
-  c.appendChild(el);
-  setTimeout(()=>{el.style.opacity='0';el.style.transform='translateY(8px)';setTimeout(()=>el.remove(),200);},2500);
+  window.RitiansToast.show(msg,type);
 }
 function closeModal(id){document.getElementById(id).classList.add('hidden');}
 function showModal(id){document.getElementById(id).classList.remove('hidden');}

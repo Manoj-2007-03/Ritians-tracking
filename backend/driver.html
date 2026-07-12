@@ -139,18 +139,6 @@ html,body{
 }
 .alert i{color:var(--accent);margin-top:1px;flex-shrink:0}
 
-/* Toast */
-.toast{
-  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
-  background:var(--bg2);border:1px solid var(--border2);border-radius:99px;
-  padding:10px 20px;font-size:13px;
-  display:flex;align-items:center;gap:8px;
-  box-shadow:0 16px 48px rgba(0,0,0,0.6);
-  animation:toastIn 0.25s ease;z-index:100;
-}
-.toast.hidden{display:none}
-@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-
 /* Ping dot */
 .ping-dot{
   width:8px;height:8px;border-radius:50%;background:var(--text3);
@@ -165,6 +153,7 @@ footer{
 }
 </style>
 <!-- Mobile responsive layer -->
+<link rel="stylesheet" href="toast.css"/>
 <link rel="stylesheet" href="mobile.css"/>
 </head>
 <body>
@@ -292,11 +281,9 @@ footer{
 
 <footer>Ritians Transport · RIT Chennai · Driver GPS Portal</footer>
 
-<div class="toast hidden" id="toastEl">
-  <i class="fas fa-circle-check" style="color:var(--green)"></i>
-  <span id="toastMsg"></span>
-</div>
+<div class="toast-container" id="toastContainer"></div>
 
+<script src="toast.js"></script>
 <script>
 // ── CONFIG — Auto-detect backend URL ──────────────────────────────────────────
 const API_BASE = (() => {
@@ -353,7 +340,12 @@ async function startTracking() {
   // Update UI
   isTracking = true;
   setActiveUI(true);
-  showToast('📡 GPS tracking started!');
+  window.RitiansToast.show({
+    title: 'Live Tracking Enabled',
+    subtitle: 'Real-time location updates are now active.',
+    type: 'success',
+    busIcon: true,
+  });
 }
 
 // ── Stop Tracking ────────────────────────────────────────────────────────────
@@ -363,7 +355,11 @@ function stopTracking() {
   watchId = null; sendInterval = null; lastPosition = null;
   isTracking = false;
   setActiveUI(false);
-  showToast('Tracking stopped.');
+  window.RitiansToast.show({
+    title: 'Tracking Stopped',
+    subtitle: 'Live location sharing has been turned off.',
+    type: 'info',
+  });
 }
 
 // ── GPS Position Update ───────────────────────────────────────────────────────
@@ -430,16 +426,8 @@ function setActiveUI(active) {
   document.getElementById('statusText').className = active ? 'status-val yellow' : 'status-val';
 }
 
-let toastTimer;
 function showToast(msg, type = 'success') {
-  const el = document.getElementById('toastEl');
-  const icon = el.querySelector('i');
-  document.getElementById('toastMsg').textContent = msg;
-  icon.style.color = type === 'error' ? 'var(--red)' : 'var(--green)';
-  icon.className = type === 'error' ? 'fas fa-circle-exclamation' : 'fas fa-circle-check';
-  el.classList.remove('hidden');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.add('hidden'), 3000);
+  window.RitiansToast.show(msg, type);
 }
 
 // Auto-stop tracking when page is closed/hidden (save battery)

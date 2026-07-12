@@ -561,10 +561,28 @@
   gap: 8px;
 }
 
-/* ── TOAST (index.html) ── */
+/* ── TOAST (index.html, driver.html) ──
+   The premium toast engine (toast.css) already centers itself on
+   mobile via a max-width media query. These rules make the same
+   positioning apply whenever the user is explicitly in .mode-mobile
+   (e.g. forced via the view-toggle button on a wide device), and
+   restore the desktop position whenever .mode-desktop is forced on
+   a narrow device. Class-based selectors here outrank toast.css's
+   plain media query, so whichever mode is active always wins. */
 .mode-mobile .toast-container {
-  bottom: 72px; /* above the view toggle button */
-  right: 16px;
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
+  width: min(400px, calc(100vw - 32px));
+}
+
+.mode-desktop .toast-container {
+  left: auto;
+  right: 24px;
+  transform: none;
+  bottom: 24px;
+  width: min(360px, calc(100vw - 48px));
 }
 
 
