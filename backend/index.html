@@ -847,6 +847,7 @@ code{font-family:var(--font-mono);font-size:11px;background:var(--bg4);padding:1
 <div class="toast-container" id="toastContainer"></div>
 
 <script src="toast.js"></script>
+<script src="sounds.js"></script>
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ── DATA ──────────────────────────────────────────────────────────────────────
 const routes=[
@@ -1310,7 +1311,22 @@ async function enableNotifications() {
 
 // Foreground message handler (when the tab is open and active)
 messaging.onMessage((payload) => {
-  toast(payload.notification?.title || 'New notification');
+  const title = payload.notification?.title || '';
+  const body = payload.notification?.body || '';
+  const text = (title + ' ' + body).toLowerCase();
+
+  toast(title || 'New notification');
+
+  // NOTE: these keyword checks assume your backend's push titles/bodies
+  // contain words like "started" and "arriving"/"near"/"boarding". If your
+  // actual wording differs, adjust the keywords below to match.
+  if (window.RitiansSounds) {
+    if (/start/.test(text)) {
+      window.RitiansSounds.playBusStarted();
+    } else if (/arriv|near|boarding/.test(text)) {
+      window.RitiansSounds.playNearBoarding();
+    }
+  }
 });
 
 // ── INIT ──────────────────────────────────────────────────────────────────────

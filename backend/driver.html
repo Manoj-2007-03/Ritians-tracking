@@ -284,6 +284,7 @@ footer{
 <div class="toast-container" id="toastContainer"></div>
 
 <script src="toast.js"></script>
+<script src="sounds.js"></script>
 <script>
 // ── CONFIG — Auto-detect backend URL ──────────────────────────────────────────
 const API_BASE = (() => {
@@ -346,6 +347,7 @@ async function startTracking() {
     type: 'success',
     busIcon: true,
   });
+  if (window.RitiansSounds) window.RitiansSounds.playBusStarted();
 }
 
 // ── Stop Tracking ────────────────────────────────────────────────────────────
