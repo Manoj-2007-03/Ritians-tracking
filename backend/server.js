@@ -1556,6 +1556,26 @@ function checkAndHandleDestination(vehicle, newLat, newLng) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 // ── POST /update-location ──────────────────────────────────────────────────
+// ── POST /trip-start/:vehicleId ─────────────────────────────────────────────
+// Call this explicitly when the driver presses "Start Trip" / opens the
+// tracking screen. Guarantees a fresh trip every time, regardless of how
+// long ago the last GPS ping was — no more guessing from a time gap.
+app.post("/trip-start/:vehicleId", (req, res) => {
+  const { vehicleId } = req.params;
+  const vehicle = locationStore[vehicleId] || { vehicleId };
+
+  vehicle.tripStartNotified = false; // next /update-location ping will be treated as a new trip
+  vehicle.lastStopIdx = 0;
+  vehicle.reachedDestination = false;
+  vehicle.destinationReachedAt = null;
+  locationStore[vehicleId] = vehicle;
+
+  resetNotifyState(vehicleId); // clear arriving-notification locks too
+
+  console.log(`[TRIP-START] ${vehicleId}: manually reset, ready for new trip`);
+  res.json({ success: true, vehicleId, message: "Trip state reset. Next location update will trigger Bus Started." });
+});
+
 app.post("/update-location", (req, res) => {
   const { vehicleId, lat, lng, speed, heading } = req.body;
   if (!vehicleId || lat === undefined || lng === undefined)
