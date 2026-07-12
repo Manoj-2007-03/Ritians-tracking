@@ -11,6 +11,7 @@ const router   = express.Router();
 const mongoose = require("mongoose");
 const https    = require("https");
 const http     = require("http");
+const Student  = require("../models/Student");
 
 // ── Config ─────────────────────────────────────────────────────────
 const FLASK_BASE = process.env.FLASK_URL || "http://localhost:5001";
@@ -33,25 +34,6 @@ const attendSchema = new mongoose.Schema({
 }, { collection: "attendance" });
 
 const Attendance = mongoose.models.Attendance || mongoose.model("Attendance", attendSchema);
-
-// ── Student Schema (extend existing) ──────────────────────────────
-const studentSchema = new mongoose.Schema({
-  name:               String,
-  regNo:              { type: String, unique: true, index: true },
-  department:         String,
-  year:               String,
-  className:          String,
-  busNo:              String,
-  route:              String,
-  boardStop:          String,
-  password:           String,
-  face_registered:    { type: Boolean, default: false },
-  face_embedding:     [Number],
-  face_registered_at: Date,
-  last_attendance:    Date,
-}, { collection: "students" });
-
-const Student = mongoose.models.Student || mongoose.model("Student", studentSchema);
 
 // ── Helper: proxy request to Flask ────────────────────────────────
 function flaskPost(path, body) {
@@ -134,13 +116,13 @@ router.post("/attendance/recognize", async (req, res) => {
 
 // ══════════════════════════════════════════════════════════════════
 // ATTENDANCE DASHBOARD (Admin)
-// GET /attendance/records?date=&busNo=&route=&department=&page=&limit=
+// GET /attendance/records?date=&busNo=&route=&department=&year=&session=&className=&page=&limit=
 // Header: x-admin-key
 // ══════════════════════════════════════════════════════════════════
 router.get("/attendance/records", requireAdmin, async (req, res) => {
   try {
     const {
-      date, busNo, route, department, year, session,
+      date, busNo, route, department, year, session, className,
       page  = 1,
       limit = 50,
     } = req.query;
@@ -158,6 +140,7 @@ router.get("/attendance/records", requireAdmin, async (req, res) => {
     if (department) filter.department = department;
     if (year)       filter.year       = year;
     if (session)    filter.session    = session;
+    if (className)  filter.className  = className;
 
     const skip  = (parseInt(page) - 1) * parseInt(limit);
     const total = await Attendance.countDocuments(filter);
@@ -227,7 +210,7 @@ router.get("/attendance/stats", requireAdmin, async (req, res) => {
 // ══════════════════════════════════════════════════════════════════
 router.get("/attendance/export/csv", requireAdmin, async (req, res) => {
   try {
-    const { date, busNo, route, department } = req.query;
+    const { date, busNo, route, department, className, session } = req.query;
     const filter = {};
     if (date) {
       const d = new Date(date);
@@ -239,6 +222,8 @@ router.get("/attendance/export/csv", requireAdmin, async (req, res) => {
     if (busNo)      filter.busNo      = busNo;
     if (route)      filter.route      = route;
     if (department) filter.department = department;
+    if (className)  filter.className  = className;
+    if (session)    filter.session    = session;
 
     const records = await Attendance.find(filter).sort({ timestamp: -1 }).lean();
 

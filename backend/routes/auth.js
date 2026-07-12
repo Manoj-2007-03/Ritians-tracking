@@ -12,13 +12,16 @@ const router  = express.Router();
 // ── POST /signup ──────────────────────────────────────────────
 router.post("/signup", async (req, res) => {
   try {
-    const { name, regNo, className, department, year, password, busNumber, boardingPoint } = req.body;
+    const { name, regNo, className, department, year, password, busNumber, boardingPoint, phoneNumber } = req.body;
 
     if (!name || !regNo || !className || !department || !year || !password)
       return res.status(400).json({ success: false, message: "All fields are required." });
 
     if (password.length < 6)
       return res.status(400).json({ success: false, message: "Password must be at least 6 characters." });
+
+    if (phoneNumber && !/^[6-9]\d{9}$/.test(phoneNumber))
+      return res.status(400).json({ success: false, message: "Enter a valid 10-digit phone number." });
 
     const existing = await Student.findOne({ regNo: regNo.toUpperCase() });
     if (existing)
@@ -32,6 +35,7 @@ router.post("/signup", async (req, res) => {
       password: hashedPassword,
       busNumber: busNumber || "",
       boardingPoint: boardingPoint || "",
+      phoneNumber: phoneNumber || "",
     }).save();
     return res.status(201).json({ success: true, message: "Signup successful! Please log in." });
 
@@ -65,8 +69,9 @@ router.post("/login", async (req, res) => {
       className:    student.className,
       department:   student.department,
       year:         student.year,
-      busNumber:    student.busNumber    || "",   // ← FIXED
-      boardingPoint: student.boardingPoint || "",  // ← FIXED
+      busNumber:    student.busNumber    || "",
+      boardingPoint: student.boardingPoint || "",
+      phoneNumber:  student.phoneNumber  || "",
     });
 
   } catch (err) {

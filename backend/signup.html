@@ -332,6 +332,7 @@ body::after{
       <div class="prog-dot" id="pd6"></div>
       <div class="prog-dot" id="pd7"></div>
       <div class="prog-dot" id="pd8"></div>
+      <div class="prog-dot" id="pd9"></div>
     </div>
 
     <!-- Alert -->
@@ -351,6 +352,17 @@ body::after{
         <i class="field-ok fas fa-check" id="ok-name"></i>
       </div>
       <div class="field-error" id="err-name"><i class="fas fa-xmark"></i> Enter your full name</div>
+    </div>
+
+    <div class="field" id="field-phoneNumber">
+      <label><i class="fas fa-phone"></i> Phone Number</label>
+      <div class="input-wrap">
+        <i class="input-icon fas fa-phone"></i>
+        <input type="tel" id="phoneNumber" placeholder="e.g. 9876543210" autocomplete="tel"
+          maxlength="10" inputmode="numeric" oninput="onPhoneInput()"/>
+        <i class="field-ok fas fa-check" id="ok-phoneNumber"></i>
+      </div>
+      <div class="field-error" id="err-phoneNumber"><i class="fas fa-xmark"></i> Enter a valid 10-digit number</div>
     </div>
 
     <div class="form-row">
@@ -632,6 +644,13 @@ function onPasswordInput() {
   updateProgress();
 }
 
+/* ── Phone number input (digits only) ── */
+function onPhoneInput() {
+  const el = document.getElementById('phoneNumber');
+  el.value = el.value.replace(/\D/g, '').slice(0, 10);
+  validateField('phoneNumber');
+}
+
 /* ── Reg number debounce check ── */
 let regTimer = null;
 function onRegInput() {
@@ -707,6 +726,7 @@ function onBusChange() {
 /* ── Generic field validation ── */
 const VALIDATORS = {
   name:         v => v.trim().length >= 2,
+  phoneNumber:  v => /^[6-9]\d{9}$/.test(v.trim()),
   regNo:        v => v.trim().length >= 5,
   password:     v => v.length >= 6,
   department:   v => !!v,
@@ -737,7 +757,7 @@ function setFieldState(id, ok) {
 }
 
 /* ── Progress indicator ── */
-const TRACKED_FIELDS = ['name','regNo','password','department','year','className','busNumber','boardingPoint'];
+const TRACKED_FIELDS = ['name','phoneNumber','regNo','password','department','year','className','busNumber','boardingPoint'];
 
 function updateProgress() {
   const filled = TRACKED_FIELDS.filter(id => {
@@ -773,6 +793,7 @@ async function handleSignup() {
   hideAlert();
 
   const name          = document.getElementById('name').value.trim();
+  const phoneNumber   = document.getElementById('phoneNumber').value.trim();
   const regNo         = document.getElementById('regNo').value.trim().toUpperCase();
   const department    = document.getElementById('department').value;
   const year          = document.getElementById('year').value;
@@ -790,7 +811,7 @@ async function handleSignup() {
     const res  = await fetch('/signup', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ name, regNo, className, department, year, password, busNumber, boardingPoint }),
+      body:    JSON.stringify({ name, regNo, phoneNumber, className, department, year, password, busNumber, boardingPoint }),
     });
     const data = await res.json();
 
