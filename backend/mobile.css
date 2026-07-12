@@ -258,6 +258,17 @@
   flex-shrink: 0;
 }
 
+/* Enable Alerts drawer item — on/off state (was referenced by JS, previously unstyled) */
+.drawer-nav-item.notify-item.notify-on {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #4ADE80;
+}
+
+.drawer-nav-item.notify-item.notify-on i {
+  color: #4ADE80;
+}
+
 .drawer-divider {
   height: 1px;
   background: var(--border);
@@ -313,6 +324,12 @@
   display: none !important;
 }
 
+/* Full-text desktop "Enable Alerts" button is replaced on mobile by the
+   icon-only .mobile-notify-btn injected into .nav-right (see section 13) */
+.mode-mobile #notifyBtn {
+  display: none !important;
+}
+
 /* Slim down the navbar itself */
 .mode-mobile .nav {
   flex-direction: row;
@@ -324,8 +341,10 @@
 }
 
 .mode-mobile .nav-brand {
+  display: flex;
+  align-items: center;
   gap: 10px;
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -337,6 +356,8 @@
 }
 
 .mode-mobile .nav-title {
+  flex: 1 1 auto;
+  min-width: 0;
   font-size: 15px;
   white-space: nowrap;
   overflow: hidden;
@@ -345,6 +366,15 @@
 
 .mode-mobile .nav-sub {
   display: none; /* hide on very small screens */
+}
+
+/* nav-right: houses hamburger + notify icon, always right-aligned,
+   never shrinks, never wraps */
+.mode-mobile .nav-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
 }
 
 /* ── HERO ── */
@@ -586,13 +616,6 @@
   justify-content: center;
 }
 
-/* tracking.html nav-right */
-.mode-mobile .nav-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 /* Hide clock text in tracking page nav — hamburger replaces it */
 .mode-mobile .nav-right .clock {
   display: none !important;
@@ -624,6 +647,10 @@
    8. .mode-desktop  —  Force desktop layout regardless of screen
 ───────────────────────────────────────────────────────────── */
 .mode-desktop .hamburger-btn {
+  display: none !important;
+}
+
+.mode-desktop .mobile-notify-btn {
   display: none !important;
 }
 
@@ -753,11 +780,115 @@
 @media print {
   .view-toggle-btn,
   .hamburger-btn,
+  .mobile-notify-btn,
   .mobile-drawer,
   .drawer-backdrop {
     display: none !important;
   }
 }
+
+
+/* ─────────────────────────────────────────────────────────────
+   13. MOBILE HEADER — "ENABLE ALERTS" ICON BUTTON
+   Icon-only bell, sized to match the hamburger, sits in .nav-right.
+   Full "Enable Alerts" text lives only in the drawer (section 4/5)
+   so the header row never has to fit the full label.
+───────────────────────────────────────────────────────────── */
+.mobile-notify-btn {
+  display: none; /* shown only in .mode-mobile, see below */
+  align-items: center;
+  justify-content: center;
+  width: var(--hamburger-size);
+  height: var(--hamburger-size);
+  border-radius: 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  transition: all var(--transition-smooth);
+}
+
+.mobile-notify-btn:hover {
+  background: var(--bg4);
+  border-color: var(--border2);
+  color: var(--text);
+}
+
+.mobile-notify-btn:active {
+  transform: scale(0.94);
+}
+
+.mobile-notify-btn i {
+  font-size: 15px;
+  color: var(--accent2);
+  transition: color var(--transition-smooth);
+}
+
+/* "On" state — small solid accent so users can tell alerts are live
+   at a glance, without needing text */
+.mobile-notify-btn.notify-on {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.mobile-notify-btn.notify-on i {
+  color: #4ADE80;
+}
+
+/* Small dot indicator doubles down on the on/off state for accessibility
+   beyond color alone (color-blind friendly) */
+.mobile-notify-btn.notify-on::after {
+  content: '';
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ADE80;
+  border: 1.5px solid var(--bg3);
+  transform: translate(11px, -11px);
+}
+
+.mobile-notify-btn {
+  position: relative; /* anchor for the ::after dot above */
+}
+
+.mode-mobile .mobile-notify-btn {
+  display: inline-flex;
+}
+
+/* ── Ultra-narrow phones (< 360px): tighten everything one more notch ── */
+@media (max-width: 359px) {
+  .mode-mobile .nav {
+    padding: 0 12px;
+  }
+
+  .mode-mobile .nav-brand {
+    gap: 8px;
+  }
+
+  .mode-mobile .nav-logo {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
+  }
+
+  .mode-mobile .nav-title {
+    font-size: 13.5px;
+  }
+
+  .mode-mobile .nav-right {
+    gap: 6px;
+  }
+
+  .mode-mobile .hamburger-btn,
+  .mode-mobile .mobile-notify-btn {
+    width: 36px;
+    height: 36px;
+  }
+}
+
 
 /* ── SOS Circle Button in Drawer ── */
 .drawer-sos-wrapper {

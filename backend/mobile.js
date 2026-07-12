@@ -11,9 +11,12 @@
  *   5. Handle drawer open/close + backdrop
  *   6. Handle mode switching (.mode-mobile / .mode-desktop)
  *   7. Sync drawer clock with existing clock elements
- *   8. Provide an "Enable Alerts" drawer item on index.html,
- *      relocated from the top nav (#notifyBtn is hidden on mobile
- *      via mobile.css — this is the mobile-friendly replacement).
+ *   8. Provide "Enable Alerts" on mobile in two synced places on
+ *      index.html: an icon-only bell button injected into the header
+ *      (.nav-right, next to the hamburger) and a full-text item in the
+ *      drawer. The desktop #notifyBtn is hidden on mobile via
+ *      mobile.css; refreshNotifyItemState() keeps both mobile copies
+ *      in sync with its on/off state.
  *
  * Integration: <script src="mobile.js"></script>
  * Place this AFTER <link rel="stylesheet" href="mobile.css">
@@ -34,6 +37,7 @@
   const HAMBURGER_ID  = 'hamburgerBtn';
   const TOGGLE_BTN_ID = 'viewToggleBtn';
   const NOTIFY_ITEM_ID = 'drawerNotifyItem';
+  const HEADER_NOTIFY_BTN_ID = 'mobileNotifyBtn'; // icon-only bell, lives in .nav-right
 
   // ── STATE ──────────────────────────────────────────────────
   let currentMode = null; // 'mobile' | 'desktop'
@@ -150,19 +154,27 @@
     }
   }
 
-  // ── NOTIFY ITEM: reflect current on/off state ───────────────
+  // ── NOTIFY STATE: reflect current on/off state everywhere ───
   // Mirrors whatever the top-nav #notifyBtn currently shows, so the
-  // drawer item and the (hidden-on-mobile) nav button never disagree.
+  // drawer item and the header's icon-only mobile button never disagree.
   function refreshNotifyItemState() {
-    const drawerItem = document.getElementById(NOTIFY_ITEM_ID);
+    const drawerItem  = document.getElementById(NOTIFY_ITEM_ID);
+    const headerBtn   = document.getElementById(HEADER_NOTIFY_BTN_ID);
     const navBtnLabel = document.getElementById('notifyBtnLabel');
-    if (!drawerItem) return;
+    const isOn = !!(navBtnLabel && navBtnLabel.textContent.trim() === 'Alerts On');
 
-    const isOn = navBtnLabel && navBtnLabel.textContent.trim() === 'Alerts On';
-    const label = drawerItem.querySelector('.drawer-notify-label');
+    if (drawerItem) {
+      const label = drawerItem.querySelector('.drawer-notify-label');
+      drawerItem.classList.toggle('notify-on', isOn);
+      if (label) label.textContent = isOn ? 'Alerts On' : 'Enable Alerts';
+    }
 
-    drawerItem.classList.toggle('notify-on', !!isOn);
-    if (label) label.textContent = isOn ? 'Alerts On' : 'Enable Alerts';
+    if (headerBtn) {
+      headerBtn.classList.toggle('notify-on', isOn);
+      const label = isOn ? 'Alerts On' : 'Enable Alerts';
+      headerBtn.setAttribute('aria-label', label);
+      headerBtn.title = label;
+    }
   }
 
   // ── BUILD DRAWER HTML ──────────────────────────────────────
@@ -295,6 +307,19 @@
     `;
   }
 
+  // ── BUILD HEADER NOTIFY BUTTON HTML ─────────────────────────
+  // Icon-only bell so the mobile header row (logo | title | bell | menu)
+  // never has to fit the full "Enable Alerts" label. Full text stays
+  // in the drawer item instead — see buildDrawerHTML().
+  function buildHeaderNotifyBtnHTML() {
+    return `
+      <button id="${HEADER_NOTIFY_BTN_ID}" class="mobile-notify-btn"
+        aria-label="Enable Alerts" title="Enable Alerts">
+        <i class="fas fa-bell"></i>
+      </button>
+    `;
+  }
+
   // ── SYNC DRAWER CLOCK ──────────────────────────────────────
   function startDrawerClock() {
     const el = document.getElementById('drawerClock');
@@ -321,6 +346,18 @@
       // Prepend so it's leftmost in nav-right
       navRight.insertBefore(hbEl, navRight.firstChild);
       hbEl.addEventListener('click', toggleDrawer);
+    }
+
+    // 1b. Inject icon-only "Enable Alerts" button into nav-right.
+    // Placed after the hamburger, so it sits at the far right edge of
+    // the header. Only relevant on index.html, which owns the
+    // notification feature — tracking/driver pages don't get one.
+    if (page === 'index' && navRight) {
+      const notifyWrap = document.createElement('div');
+      notifyWrap.innerHTML = buildHeaderNotifyBtnHTML();
+      const notifyEl = notifyWrap.firstElementChild;
+      navRight.appendChild(notifyEl);
+      notifyEl.addEventListener('click', handleNotifyClick);
     }
 
     // 2. Inject backdrop
