@@ -11,6 +11,9 @@
  *   5. Handle drawer open/close + backdrop
  *   6. Handle mode switching (.mode-mobile / .mode-desktop)
  *   7. Sync drawer clock with existing clock elements
+ *   8. Provide an "Enable Alerts" drawer item on index.html,
+ *      relocated from the top nav (#notifyBtn is hidden on mobile
+ *      via mobile.css — this is the mobile-friendly replacement).
  *
  * Integration: <script src="mobile.js"></script>
  * Place this AFTER <link rel="stylesheet" href="mobile.css">
@@ -30,6 +33,7 @@
   const BACKDROP_ID   = 'drawerBackdrop';
   const HAMBURGER_ID  = 'hamburgerBtn';
   const TOGGLE_BTN_ID = 'viewToggleBtn';
+  const NOTIFY_ITEM_ID = 'drawerNotifyItem';
 
   // ── STATE ──────────────────────────────────────────────────
   let currentMode = null; // 'mobile' | 'desktop'
@@ -101,6 +105,10 @@
     if (hbBtn)    hbBtn.classList.add('open');
     drawerOpen = true;
 
+    // Refresh the notify item's on/off state each time the drawer opens,
+    // in case notifications were enabled/disabled since last render.
+    refreshNotifyItemState();
+
     // Prevent body scroll while drawer is open
     document.body.style.overflow = 'hidden';
 
@@ -131,6 +139,32 @@
     if (drawerOpen) closeDrawer(); else openDrawer();
   }
 
+  // ── NOTIFY ITEM: click handler ──────────────────────────────
+  // Delegates to the enableNotifications() function defined in
+  // index.html's inline script (loaded before mobile.js). Guards
+  // against that function not existing on pages without it.
+  function handleNotifyClick() {
+    closeDrawer();
+    if (typeof window.enableNotifications === 'function') {
+      window.enableNotifications();
+    }
+  }
+
+  // ── NOTIFY ITEM: reflect current on/off state ───────────────
+  // Mirrors whatever the top-nav #notifyBtn currently shows, so the
+  // drawer item and the (hidden-on-mobile) nav button never disagree.
+  function refreshNotifyItemState() {
+    const drawerItem = document.getElementById(NOTIFY_ITEM_ID);
+    const navBtnLabel = document.getElementById('notifyBtnLabel');
+    if (!drawerItem) return;
+
+    const isOn = navBtnLabel && navBtnLabel.textContent.trim() === 'Alerts On';
+    const label = drawerItem.querySelector('.drawer-notify-label');
+
+    drawerItem.classList.toggle('notify-on', !!isOn);
+    if (label) label.textContent = isOn ? 'Alerts On' : 'Enable Alerts';
+  }
+
   // ── BUILD DRAWER HTML ──────────────────────────────────────
   function buildDrawerHTML(page) {
     // Each page gets a tailored nav item set
@@ -157,6 +191,10 @@
         <a class="drawer-nav-item driver-ext" href="driver.html">
           <i class="fas fa-location-arrow"></i> Driver GPS
         </a>
+        <button class="drawer-nav-item notify-item" id="${NOTIFY_ITEM_ID}"
+          onclick="MobileNav.handleNotifyClick()">
+          <i class="fas fa-bell"></i> <span class="drawer-notify-label">Enable Alerts</span>
+        </button>
         <div class="drawer-divider"></div>
         <div class="drawer-sos-wrapper">
           <a class="drawer-sos-circle" href="sos.html" aria-label="Emergency SOS">
@@ -303,10 +341,11 @@
     drawer.innerHTML = buildDrawerHTML(page);
     document.body.appendChild(drawer);
 
-    // Wire drawer close button
+    // Wire drawer close button + reflect current notify state
     setTimeout(() => {
       const closeBtn = document.getElementById('drawerCloseBtn');
       if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
+      refreshNotifyItemState();
     }, 0);
 
     // 4. Inject view toggle button
@@ -366,6 +405,8 @@
     toggleDrawer,
     toggleMode,
     syncDrawerActiveTab,
+    handleNotifyClick,
+    refreshNotifyItemState,
     getMode: () => currentMode,
   };
 
