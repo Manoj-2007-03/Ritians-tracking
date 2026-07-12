@@ -176,11 +176,23 @@ body::before{
   box-shadow:0 6px 24px rgba(0,0,0,0.24),0 1px 0 rgba(255,255,255,0.03) inset;
   transition:border-color 0.3s var(--ease),transform 0.3s var(--ease),box-shadow 0.3s var(--ease);
   position:relative;z-index:1;
+  /* One-time entrance only — no repeating movement. Card is fully still afterward. */
   animation:fadeSlideUp 0.4s var(--ease) both;
 }
 .vehicle-card:hover{
   border-color:var(--border2);transform:translateY(-2px);
   box-shadow:0 14px 36px rgba(0,0,0,0.32),0 1px 0 rgba(255,255,255,0.05) inset;
+}
+/* Extremely subtle idle ambient glow, on its own layer so it never touches
+   the card's own box-shadow/border/transform — zero movement, ever. */
+.vehicle-card::after{
+  content:'';position:absolute;inset:0;border-radius:inherit;
+  pointer-events:none;
+  animation:cardAmbientGlow 8s ease-in-out 0.5s infinite;
+}
+@keyframes cardAmbientGlow{
+  0%,100%{box-shadow:0 0 0 rgba(78,205,196,0)}
+  50%{box-shadow:0 0 18px rgba(78,205,196,0.10)}
 }
 .vehicle-card-top{display:flex;align-items:center;gap:14px;margin-bottom:14px}
 .vehicle-icon{
@@ -895,19 +907,49 @@ function renderVehicles(vehicles) {
     return;
   }
 
-  container.innerHTML = vehicles
-    .sort((a,b) => a.vehicleId.localeCompare(b.vehicleId))
-    .map(v => {
-      const ago      = Math.round((Date.now() - v.updatedAt) / 1000);
-      const isStale  = v.isStale;
-      const isMoving = !isStale && v.status === 'Moving';
-      const iconCls  = isStale ? 'offline' : isMoving ? 'moving' : 'stopped';
-      const badgeCls = isStale ? 'badge-stale' : isMoving ? 'badge-moving' : 'badge-stopped';
-      const badgeTxt = isStale ? 'Offline' : v.status;
-      const mapsUrl  = `https://www.google.com/maps?q=${v.lat},${v.lng}`;
+  // If the last render was the empty-state, clear it before diffing real cards
+  if (container.querySelector('.empty-state')) container.innerHTML = '';
 
-      return `
-        <div class="vehicle-card" id="card-${v.vehicleId}">
+  const sorted     = vehicles.sort((a,b) => a.vehicleId.localeCompare(b.vehicleId));
+  const currentIds = new Set(sorted.map(v => v.vehicleId));
+
+  // Remove cards for vehicles that dropped off — everything else stays untouched
+  Array.from(container.children).forEach(child => {
+    const id = (child.id || '').replace('card-', '');
+    if (id && !currentIds.has(id)) child.remove();
+  });
+
+  sorted.forEach((v, index) => {
+    const ago      = Math.round((Date.now() - v.updatedAt) / 1000);
+    const isStale  = v.isStale;
+    const isMoving = !isStale && v.status === 'Moving';
+    const iconCls  = isStale ? 'offline' : isMoving ? 'moving' : 'stopped';
+    const badgeCls = isStale ? 'badge-stale' : isMoving ? 'badge-moving' : 'badge-stopped';
+    const badgeTxt = isStale ? 'Offline' : v.status;
+    const mapsUrl  = `https://www.google.com/maps?q=${v.lat},${v.lng}`;
+
+    let card = document.getElementById(`card-${v.vehicleId}`);
+
+    if (card) {
+      // Update data in place — DOM node is untouched, so its entrance
+      // animation never replays and the card stays perfectly still.
+      const iconEl = card.querySelector('.vehicle-icon');
+      iconEl.className = `vehicle-icon ${iconCls}`;
+      card.querySelector('.vehicle-name').textContent = `Bus ${v.vehicleId}`;
+      card.querySelector('.vehicle-meta').textContent = `${v.speed} km/h  ·  Updated ${ago}s ago`;
+      const badgeEl = card.querySelector('.vehicle-badge');
+      badgeEl.className   = `vehicle-badge ${badgeCls}`;
+      badgeEl.textContent = badgeTxt;
+      card.querySelector('.btn-map').href = mapsUrl;
+
+      const refNode = container.children[index];
+      if (refNode !== card) container.insertBefore(card, refNode || null);
+    } else {
+      // Genuinely new vehicle — gets the entrance animation once, then settles
+      card = document.createElement('div');
+      card.className = 'vehicle-card';
+      card.id = `card-${v.vehicleId}`;
+      card.innerHTML = `
           <div class="vehicle-card-top">
             <div class="vehicle-icon ${iconCls}"><i class="fas fa-bus"></i></div>
             <div class="vehicle-info">
@@ -926,9 +968,11 @@ function renderVehicles(vehicles) {
             <a class="btn-map" href="${mapsUrl}" target="_blank">
               <i class="fas fa-map-location-dot"></i> Maps
             </a>
-          </div>
-        </div>`;
-    }).join('');
+          </div>`;
+      const refNode = container.children[index];
+      container.insertBefore(card, refNode || null);
+    }
+  });
 }
 
 // ── Filter ────────────────────────────────────────────────────────────────────
