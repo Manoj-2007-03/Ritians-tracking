@@ -49,6 +49,9 @@
   --r-lg:  16px;
 
   --shadow:    0 8px 32px rgba(0,0,0,0.5);
+  --shadow-md: 0 4px 20px rgba(0,0,0,0.35);
+  --shadow-lg: 0 20px 60px rgba(0,0,0,0.55);
+  --shadow-glow: 0 0 0 1px rgba(78,205,196,0.08), 0 8px 32px rgba(0,0,0,0.5);
 
   --t-base:   0.2s ease;
   --t-smooth: 0.28s cubic-bezier(0.4,0,0.2,1);
@@ -266,16 +269,45 @@ html, body {
 }
 
 .stat-card {
-  background: var(--bg2);
+  background: linear-gradient(160deg, var(--bg2), var(--bg4));
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   padding: var(--sp-2);
-  transition: border-color var(--t-base), transform var(--t-base);
+  transition: border-color var(--t-smooth), transform var(--t-smooth), box-shadow var(--t-smooth);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0;
+  transition: opacity var(--t-smooth);
 }
 
 .stat-card:hover {
   border-color: var(--border2);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.stat-card:hover::before { opacity: 1; }
+
+.stat-card-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--accent3);
+  border: 1px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  font-size: 13px;
+  margin-bottom: 10px;
 }
 
 .stat-label {
@@ -304,12 +336,12 @@ html, body {
 
 /* ── 8. FILTERS CARD ── */
 .filters-card {
-  background: var(--bg2);
+  background: linear-gradient(160deg, var(--bg2), rgba(12,18,32,0.85));
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   padding: var(--sp-2);
   margin-bottom: var(--sp-2);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-glow);
 }
 
 /* Collapsible on mobile */
@@ -323,7 +355,7 @@ html, body {
 }
 
 .filters-header:not(.expanded) + .filters-body { display: none; }
-.filters-header.expanded + .filters-body { display: block; }
+.filters-header.expanded + .filters-body { display: block; animation: fadeUp 0.3s var(--t-smooth) both; }
 
 /* Always show on desktop */
 @media (min-width: 768px) {
@@ -368,6 +400,18 @@ html, body {
   .filters-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 }
 
+.filter-field { position: relative; }
+
+.filter-field-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text3);
+  margin-bottom: 5px;
+}
+
 .filter-field select,
 .filter-field input {
   width: 100%;
@@ -379,9 +423,15 @@ html, body {
   border: 1.5px solid var(--border);
   color: var(--text1);
   outline: none;
-  transition: border-color var(--t-base), box-shadow var(--t-base);
+  transition: border-color var(--t-smooth), box-shadow var(--t-smooth), background var(--t-smooth);
   min-height: 44px;
   -webkit-appearance: none;
+}
+
+.filter-field select:hover,
+.filter-field input:hover {
+  border-color: rgba(78,205,196,0.35);
+  background: rgba(26,37,64,0.8);
 }
 
 /* Prevent iOS zoom */
@@ -397,6 +447,15 @@ html, body {
 }
 
 .filter-field select option { background: var(--bg2); }
+
+/* Sort field gets a subtle accent tint to visually separate it from filters */
+.filter-field--sort select {
+  border-color: rgba(78,205,196,0.3);
+  background: linear-gradient(160deg, rgba(78,205,196,0.08), var(--bg3));
+}
+.filter-field--sort select:focus {
+  border-color: var(--accent);
+}
 
 .filters-actions {
   display: flex;
@@ -416,16 +475,21 @@ html, body {
   display: flex;
   align-items: center;
   gap: 6px;
-  transition: all var(--t-base);
+  transition: transform 0.15s ease, box-shadow var(--t-smooth), background var(--t-smooth), opacity var(--t-smooth);
   min-height: 44px;
   user-select: none;
   white-space: nowrap;
+  position: relative;
+  overflow: hidden;
 }
 
-.btn--primary { background: var(--accent); color: #060A14; }
+.btn:active { transform: scale(0.97); }
+
+.btn--primary { background: linear-gradient(135deg, var(--accent), #38b2ac); color: #060A14; }
 .btn--primary:hover, .btn--primary:focus-visible {
-  opacity: 0.9; outline: none;
-  box-shadow: 0 4px 16px rgba(78,205,196,0.3);
+  outline: none;
+  box-shadow: 0 6px 20px rgba(78,205,196,0.35);
+  transform: translateY(-1px);
 }
 
 .btn--ghost {
@@ -437,6 +501,7 @@ html, body {
   background: rgba(255,255,255,0.1);
   color: var(--text1);
   outline: none;
+  transform: translateY(-1px);
 }
 
 .btn--success {
@@ -447,6 +512,8 @@ html, body {
 .btn--success:hover, .btn--success:focus-visible {
   background: rgba(74,222,128,0.18);
   outline: none;
+  box-shadow: 0 6px 20px rgba(74,222,128,0.18);
+  transform: translateY(-1px);
 }
 .btn--pdf {
   background: rgba(248,113,113,0.1);
@@ -456,7 +523,8 @@ html, body {
 .btn--pdf:hover, .btn--pdf:focus-visible {
   background: rgba(248,113,113,0.18);
   outline: none;
-  box-shadow: 0 4px 16px rgba(248,113,113,0.2);
+  box-shadow: 0 6px 20px rgba(248,113,113,0.2);
+  transform: translateY(-1px);
 }
 
 /* On mobile: make action buttons full-width */
@@ -467,11 +535,11 @@ html, body {
 
 /* ── 10. TABLE CARD ── */
 .table-card {
-  background: var(--bg2);
+  background: linear-gradient(160deg, var(--bg2), rgba(12,18,32,0.9));
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   overflow: hidden;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-glow);
 }
 
 .table-header {
@@ -498,6 +566,10 @@ html, body {
 .table-count {
   font-size: 12px;
   color: var(--text3);
+  background: rgba(255,255,255,0.04);
+  padding: 4px 10px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
 }
 
 /* ── 11. TABLE (desktop) ── */
@@ -506,6 +578,8 @@ html, body {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   display: none; /* hidden on mobile by default */
+  max-height: 640px;
+  overflow-y: auto;
 }
 
 /* Show table on tablet+ */
@@ -521,7 +595,7 @@ table {
 }
 
 thead th {
-  padding: 10px 16px;
+  padding: 12px 16px;
   text-align: left;
   font-size: 11px;
   font-weight: 700;
@@ -531,18 +605,28 @@ thead th {
   border-bottom: 1px solid var(--border);
   background: var(--bg3);
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
 tbody tr {
   border-bottom: 1px solid var(--border);
   transition: background var(--t-base);
+  animation: rowIn 0.25s ease both;
 }
 
-tbody tr:hover  { background: rgba(255,255,255,0.025); }
+tbody tr:nth-child(even) { background: rgba(255,255,255,0.012); }
+tbody tr:hover  { background: rgba(78,205,196,0.05); }
 tbody tr:last-child { border-bottom: none; }
 
+@keyframes rowIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 td {
-  padding: 10px 16px;
+  padding: 11px 16px;
   color: var(--text2);
   white-space: nowrap;
 }
@@ -562,9 +646,10 @@ td.reg-cell   { font-family: var(--font-mono); font-size: 12px; color: var(--acc
   background: var(--bg2);
   padding: var(--sp-2);
   transition: background var(--t-base);
+  animation: rowIn 0.25s ease both;
 }
 
-.record-card:hover { background: rgba(255,255,255,0.02); }
+.record-card:hover { background: rgba(78,205,196,0.04); }
 
 .record-card__top {
   display: flex;
@@ -631,27 +716,29 @@ td.reg-cell   { font-family: var(--font-mono); font-size: 12px; color: var(--acc
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 3px 9px;
+  padding: 4px 10px;
   border-radius: 99px;
   font-size: 11px;
   font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: transform var(--t-base);
 }
 
 .badge--present {
-  background: rgba(74,222,128,0.1);
-  border: 1px solid rgba(74,222,128,0.25);
+  background: rgba(74,222,128,0.12);
+  border: 1px solid rgba(74,222,128,0.3);
   color: var(--success);
 }
 
 .badge--morning {
-  background: rgba(78,205,196,0.1);
-  border: 1px solid rgba(78,205,196,0.2);
+  background: rgba(78,205,196,0.12);
+  border: 1px solid rgba(78,205,196,0.25);
   color: var(--accent);
 }
 
 .badge--evening {
-  background: rgba(255,230,109,0.1);
-  border: 1px solid rgba(255,230,109,0.2);
+  background: rgba(255,230,109,0.12);
+  border: 1px solid rgba(255,230,109,0.25);
   color: #FFE66D;
 }
 
@@ -711,15 +798,16 @@ td.reg-cell   { font-family: var(--font-mono); font-size: 12px; color: var(--acc
 /* ── 16. EMPTY / LOADING STATES ── */
 .empty-state {
   text-align: center;
-  padding: 56px var(--sp-3);
+  padding: 64px var(--sp-3);
   color: var(--text3);
 }
 
 .empty-state i {
-  font-size: 32px;
+  font-size: 34px;
   display: block;
   margin-bottom: var(--sp-2);
   color: var(--text3);
+  opacity: 0.6;
 }
 
 .empty-state__title {
@@ -863,21 +951,25 @@ td.reg-cell   { font-family: var(--font-mono); font-size: 12px; color: var(--acc
   <!-- Stats Grid -->
   <div class="stats-grid" role="region" aria-label="Attendance statistics">
     <div class="stat-card">
+      <div class="stat-card-icon" aria-hidden="true"><i class="fas fa-user-check"></i></div>
       <div class="stat-label">Today's Attendance</div>
       <div class="stat-val" id="statToday" aria-live="polite">—</div>
       <div class="stat-sub">students present</div>
     </div>
     <div class="stat-card">
+      <div class="stat-card-icon" aria-hidden="true"><i class="fas fa-users"></i></div>
       <div class="stat-label">Total Students</div>
       <div class="stat-val" id="statTotal" aria-live="polite">—</div>
       <div class="stat-sub">registered in system</div>
     </div>
     <div class="stat-card">
+      <div class="stat-card-icon" aria-hidden="true"><i class="fas fa-chart-line"></i></div>
       <div class="stat-label">Attendance Rate</div>
       <div class="stat-val" id="statRate" aria-live="polite">—</div>
       <div class="stat-sub">for today</div>
     </div>
     <div class="stat-card">
+      <div class="stat-card-icon" aria-hidden="true"><i class="fas fa-bus"></i></div>
       <div class="stat-label">Top Bus Today</div>
       <div class="stat-val" id="statBus" aria-live="polite">—</div>
       <div class="stat-sub">most students present</div>
@@ -889,7 +981,7 @@ td.reg-cell   { font-family: var(--font-mono); font-size: 12px; color: var(--acc
     <!-- Collapsible header (mobile: tap to expand; desktop: always visible) -->
     <div class="filters-header" id="filtersHeader" onclick="toggleFilters()" aria-expanded="false" aria-controls="filtersBody" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' ')toggleFilters()">
       <div class="filters-title">
-        <i class="fas fa-filter" aria-hidden="true"></i> Filters
+        <i class="fas fa-filter" aria-hidden="true"></i> Filters &amp; Sort
       </div>
       <i class="fas fa-chevron-down filters-toggle-icon" id="filterToggleIcon" aria-hidden="true"></i>
     </div>
@@ -897,11 +989,11 @@ td.reg-cell   { font-family: var(--font-mono); font-size: 12px; color: var(--acc
     <div class="filters-body" id="filtersBody">
       <div class="filters-grid">
         <div class="filter-field">
-          <label for="filterDate" class="sr-only">Filter by date</label>
+          <label for="filterDate" class="filter-field-label">Date</label>
           <input type="date" id="filterDate" aria-label="Filter by date"/>
         </div>
         <div class="filter-field">
-          <label for="filterSession" class="sr-only">Filter by session</label>
+          <label for="filterSession" class="filter-field-label">Session</label>
           <select id="filterSession" aria-label="Filter by session">
             <option value="">All Sessions</option>
             <option value="morning">Morning</option>
@@ -909,7 +1001,7 @@ td.reg-cell   { font-family: var(--font-mono); font-size: 12px; color: var(--acc
           </select>
         </div>
         <div class="filter-field">
-          <label for="filterDept" class="sr-only">Filter by department</label>
+          <label for="filterDept" class="filter-field-label">Department</label>
           <select id="filterDept" aria-label="Filter by department">
             <option value="">All Departments</option>
             <option>CSE</option><option>CSE (AIML)</option><option>ECE</option>
@@ -920,7 +1012,7 @@ td.reg-cell   { font-family: var(--font-mono); font-size: 12px; color: var(--acc
           </select>
         </div>
         <div class="filter-field">
-          <label for="filterYear" class="sr-only">Filter by year</label>
+          <label for="filterYear" class="filter-field-label">Year</label>
           <select id="filterYear" aria-label="Filter by year">
             <option value="">All Years</option>
             <option>1st Year</option><option>2nd Year</option>
@@ -928,12 +1020,20 @@ td.reg-cell   { font-family: var(--font-mono); font-size: 12px; color: var(--acc
           </select>
         </div>
         <div class="filter-field">
-          <label for="filterClass" class="sr-only">Filter by class name</label>
-          <input type="text" id="filterClass" placeholder="Class Name (e.g. CSE-A)" aria-label="Filter by class name"/>
+          <label for="filterClass" class="filter-field-label">Class Name</label>
+          <input type="text" id="filterClass" placeholder="e.g. CSE-A" aria-label="Filter by class name"/>
         </div>
         <div class="filter-field">
-          <label for="filterBus" class="sr-only">Filter by bus number</label>
-          <input type="text" id="filterBus" placeholder="Bus No (e.g. R01)" aria-label="Filter by bus number"/>
+          <label for="filterBus" class="filter-field-label">Bus No</label>
+          <input type="text" id="filterBus" placeholder="e.g. R01" aria-label="Filter by bus number"/>
+        </div>
+        <div class="filter-field filter-field--sort">
+          <label for="filterSortBy" class="filter-field-label"><i class="fas fa-arrow-down-a-z" aria-hidden="true"></i> Sort By</label>
+          <select id="filterSortBy" aria-label="Sort records" onchange="handleSortChange()">
+            <option value="timestamp">Latest First</option>
+            <option value="busNo">Bus Number</option>
+            <option value="className">Class Name</option>
+          </select>
         </div>
       </div>
 
@@ -1029,13 +1129,19 @@ td.reg-cell   { font-family: var(--font-mono); font-size: 12px; color: var(--acc
 <script>
 /* ═══════════════════════════════════════════════════════════════
    attendance-dashboard.js — All business logic preserved exactly.
-   Additions: card view for mobile, collapsible filters, view mode.
+   Additions: card view for mobile, collapsible filters, view mode,
+   client-side "Sort By" (Bus No / Class Name / Latest First).
    ═══════════════════════════════════════════════════════════════ */
 
 // ── Admin Auth ─────────────────────────────────────────────────
 let adminKey    = sessionStorage.getItem("ritians_admin_key") || "";
 let currentPage = 1;
 const PAGE_SIZE = 50;
+
+// Holds the records currently loaded on screen (current page only),
+// so "Sort By" can reorder instantly without re-fetching from the server.
+let currentRecords   = [];
+let currentOffset    = 0;
 
 function verifyAdmin() {
   const key = document.getElementById("adminKeyInput").value.trim();
@@ -1189,8 +1295,15 @@ async function loadRecords(page = 1) {
     }
 
     document.getElementById("tableCount").textContent = `${data.total} records`;
-    renderTable(data.records, (page - 1) * PAGE_SIZE);
-    renderCards(data.records, (page - 1) * PAGE_SIZE);
+
+    // Store the current page's records + offset so Sort By can
+    // reorder instantly on the client without another network call.
+    currentRecords = data.records || [];
+    currentOffset  = (page - 1) * PAGE_SIZE;
+
+    applyClientSort();               // sorts currentRecords in place per dropdown
+    renderTable(currentRecords, currentOffset);
+    renderCards(currentRecords, currentOffset);
     renderPagination(data.pages, page);
     loadStats();
   } catch (e) {
@@ -1220,6 +1333,33 @@ function buildParams(page) {
   return params;
 }
 
+/* ── Client-side Sort By ──────────────────────────────────────
+   Reorders the already-loaded `currentRecords` array in memory —
+   no page refresh, no re-fetch, no duplicate records. Works
+   together with whatever filters are currently applied, since it
+   sorts exactly the record set those filters returned.          */
+function applyClientSort() {
+  const sortBy = document.getElementById("filterSortBy").value;
+  if (sortBy === "busNo") {
+    currentRecords.sort((a, b) =>
+      (a.busNo || "").localeCompare(b.busNo || "", undefined, { numeric: true, sensitivity: "base" })
+    );
+  } else if (sortBy === "className") {
+    currentRecords.sort((a, b) =>
+      (a.className || "").localeCompare(b.className || "", undefined, { sensitivity: "base" })
+    );
+  } else {
+    // "timestamp" — restore latest-first order
+    currentRecords.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+  }
+}
+
+function handleSortChange() {
+  applyClientSort();
+  renderTable(currentRecords, currentOffset);
+  renderCards(currentRecords, currentOffset);
+}
+
 // ── Desktop Table Renderer ─────────────────────────────────────
 function renderTable(records, offset) {
   const body = document.getElementById("tableBody");
@@ -1235,7 +1375,7 @@ function renderTable(records, offset) {
     const conf = r.confidence || 0;
     const confClass = conf > 80 ? "var(--success)" : conf > 60 ? "var(--warn)" : "var(--danger)";
     const sessionBadge = r.session === "evening" ? "badge--evening" : "badge--morning";
-    return `<tr>
+    return `<tr style="animation-delay:${Math.min(i,20) * 15}ms">
       <td style="color:var(--text3)">${offset + i + 1}</td>
       <td class="name-cell">${r.name || "—"}</td>
       <td class="reg-cell">${r.regNo || "—"}</td>
@@ -1271,7 +1411,7 @@ function renderCards(records, offset) {
       month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
     }) : "—";
 
-    return `<div class="record-card">
+    return `<div class="record-card" style="animation-delay:${Math.min(i,20) * 15}ms">
       <div class="record-card__num">#${offset + i + 1}</div>
       <div class="record-card__top">
         <div>
@@ -1320,6 +1460,7 @@ function clearFilters() {
   document.getElementById("filterYear").value    = "";
   document.getElementById("filterBus").value     = "";
   document.getElementById("filterClass").value   = "";
+  document.getElementById("filterSortBy").value  = "timestamp";
   setTodayDate();
   loadRecords(1);
 }
