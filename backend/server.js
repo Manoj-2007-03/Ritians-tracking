@@ -1647,11 +1647,13 @@ app.post("/update-location", (req, res) => {
     notifyBusStarted(vehicleId).catch(() => {});
     vehicle.tripStartNotified = true;
   }
-  if (stops && stops[lastStopIdx + 1]) {
-    const nextStop = stops[lastStopIdx + 1];
-    const distToNext = haversine(newLat, newLng, nextStop.lat, nextStop.lng);
-    if (distToNext <= T.ARRIVING_RADIUS_KM) {
-      notifyBusArriving(vehicleId, nextStop.stopName).catch(() => {});
+  if (stops) {
+    const candidates = [stops[lastStopIdx], stops[lastStopIdx + 1]].filter(Boolean);
+    for (const candidateStop of candidates) {
+      const dist = haversine(newLat, newLng, candidateStop.lat, candidateStop.lng);
+      if (dist <= T.ARRIVING_RADIUS_KM) {
+        notifyBusArriving(vehicleId, candidateStop.stopName).catch(() => {});
+      }
     }
   }
 
