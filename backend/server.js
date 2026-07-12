@@ -61,7 +61,7 @@ const mongoose   = require("mongoose");
 const authRoutes = require("./routes/auth");
 const attendanceRoutes = require("./routes/attendance.js");
 const sosRoutes = require("./routes/sos");
-const { notifyBusStarted, notifyBusArriving } = require("./notifications");
+const { notifyBusStarted, notifyBusArriving, resetNotifyState } = require("./notifications");
 
 // ── MongoDB Connection ──────────────────────────────────────────────────────
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/ritians";
@@ -1582,8 +1582,18 @@ app.post("/update-location", (req, res) => {
   }
 
   // STEP 3: Kalman filter
-  const vehicle  = locationStore[vehicleId] || { vehicleId };
-  const isNewTrip = !vehicle.tripStartNotified;
+  const vehicle = locationStore[vehicleId] || { vehicleId };
+
+  // Treat as a new trip if we've never notified before, OR if the last
+  // update was more than TRIP_GAP_MS ago (bus was clearly off/idle since).
+  const TRIP_GAP_MS = 30 * 60 * 1000; // 30 minutes — adjust to your route length
+  const gapSinceLastUpdate = prev ? (now - prev.updatedAt) : Infinity;
+  const isNewTrip = !vehicle.tripStartNotified || gapSinceLastUpdate > TRIP_GAP_MS;
+
+  if (isNewTrip) {
+    vehicle.lastStopIdx = 0;              // reset stop progress for the new trip
+    resetNotifyState(vehicleId);          // clear "already notified" locks for arriving alerts
+  }
   const smoothed = applyKalman(vehicle, rawLat, rawLng);
   const newLat   = smoothed.lat;
   const newLng   = smoothed.lng;
