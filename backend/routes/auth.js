@@ -80,4 +80,30 @@ router.post("/login", async (req, res) => {
   }
 });
 
+// ── POST /api/save-fcm-token ───────────────────────────────────
+// Called from index.html after a student enables push notifications.
+// Saves their Firebase Cloud Messaging token against their student record.
+router.post("/api/save-fcm-token", async (req, res) => {
+  try {
+    const { studentId, fcmToken } = req.body;
+
+    if (!studentId || !fcmToken)
+      return res.status(400).json({ success: false, message: "studentId and fcmToken are required." });
+
+    const student = await Student.findByIdAndUpdate(
+      studentId,
+      { fcmToken },
+      { new: true }
+    );
+
+    if (!student)
+      return res.status(404).json({ success: false, message: "Student not found." });
+
+    return res.json({ success: true, message: "Notification token saved." });
+  } catch (err) {
+    console.error("[AUTH] Save FCM token error:", err);
+    return res.status(500).json({ success: false, message: "Server error. Please try again." });
+  }
+});
+
 module.exports = router;

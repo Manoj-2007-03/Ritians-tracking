@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
 <style>
 :root{
   --bg:#060A14;--bg2:#0C1220;--bg3:#121C2E;--bg4:#1A2540;
@@ -469,6 +471,9 @@ code{font-family:var(--font-mono);font-size:11px;background:var(--bg4);padding:1
       </a>
     </div>
     <div class="clock" id="clockEl">--:--:--</div>
+    <button id="notifyBtn" onclick="enableNotifications()" style="display:none;align-items:center;gap:6px;padding:6px 12px;border-radius:99px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-family:var(--font-body);font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap">
+      <i class="fas fa-bell"></i><span id="notifyBtnLabel">Enable Alerts</span>
+    </button>
     <!-- Auth chip injected here by auth-guard.js -->
   </div>
 </header>
@@ -1254,6 +1259,74 @@ function driverClear(){document.getElementById('driverParkingForm').reset();docu
 
 // ── REPORT FORM ──────────────────────────────────────────────────────────────
 function submitReport(e){e.preventDefault();toast('Thank you for your feedback!');e.target.reset();}
+
+// ── PUSH NOTIFICATIONS ────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyDod0NDvWkdENXQtOn4NNl7AoBv95vPtPo",
+  authDomain: "ritians-transport07.firebaseapp.com",
+  projectId: "ritians-transport07",
+  storageBucket: "ritians-transport07.firebasestorage.app",
+  messagingSenderId: "193463468015",
+  appId: "1:193463468015:web:c3541cae00884351e9001a"
+};
+const VAPID_KEY = "BC7jggGt45rZPo8TVlibGrpuXtpn3ZXRDSuMSJ1uB1XVOO7ROv5gcpaPUV8JBLg6zkJLkZ5PKl6SlqyTDH5SxVc";
+
+firebase.initializeApp(firebaseConfig);
+const messaging = firebase.messaging();
+
+function getStudentSession() {
+  try { return JSON.parse(localStorage.getItem('ritians_student')); }
+  catch (_) { return null; }
+}
+
+async function enableNotifications() {
+  const student = getStudentSession();
+  if (!student) { toast('Please log in first', 'error'); return; }
+
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      toast('Notification permission denied', 'error');
+      return;
+    }
+
+    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    const token = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: registration });
+
+    if (!token) { toast('Could not get notification token', 'error'); return; }
+
+    const res = await fetch('/api/save-fcm-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ studentId: student.studentId, fcmToken: token }),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      toast('Notifications enabled! You\'ll get bus alerts.');
+      document.getElementById('notifyBtnLabel').textContent = 'Alerts On';
+      document.getElementById('notifyBtn').style.color = 'var(--accent2)';
+    } else {
+      toast('Failed to save notification settings', 'error');
+    }
+  } catch (err) {
+    console.error('Notification setup error:', err);
+    toast('Notification setup failed', 'error');
+  }
+}
+
+// Show the "Enable Alerts" button only if a student is logged in
+(function initNotifyButton() {
+  const student = getStudentSession();
+  if (student) {
+    document.getElementById('notifyBtn').style.display = 'inline-flex';
+  }
+})();
+
+// Foreground message handler (when the tab is open and active)
+messaging.onMessage((payload) => {
+  toast(payload.notification?.title || 'New notification');
+});
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 (function init(){
