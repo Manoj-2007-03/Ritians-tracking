@@ -153,16 +153,6 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);fo
 .empty-state h3{font-family:var(--font-head);font-size:17px;font-weight:700;margin-bottom:6px}
 .empty-state p{font-size:13px;color:var(--text3)}
 
-/* TOAST */
-.toast{
-  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
-  background:var(--bg3);border:1px solid var(--border2);border-radius:99px;
-  padding:10px 20px;display:flex;align-items:center;gap:8px;
-  font-size:13px;box-shadow:0 8px 32px rgba(0,0,0,0.5);
-  transition:opacity 0.3s;z-index:999;
-}
-.toast.hidden{opacity:0;pointer-events:none;display:none}
-
 /* ═══════════════════════════════════════════════════════════════
    ETA PANEL OVERLAY
 ═══════════════════════════════════════════════════════════════ */
@@ -584,6 +574,9 @@ html.mode-mobile  .view-toggle-btn{display:flex}
 </style>
 <!-- Auth guard: redirects to login if not logged in -->
 <script src="auth-guard.js"></script>
+<link rel="stylesheet" href="toast.css"/>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
 </head>
 <body>
 
@@ -642,12 +635,6 @@ html.mode-mobile  .view-toggle-btn{display:flex}
     </div>
   </div>
 
-</div>
-
-<!-- TOAST -->
-<div class="toast hidden" id="toastEl">
-  <i id="toastIcon" class="fas fa-circle-check" style="color:var(--green)"></i>
-  <span id="toastMsg"></span>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════
@@ -1277,23 +1264,53 @@ function buildRouteMap() {
 }
 
 // ── Toast ──────────────────────────────────────────────────────────────────────
-let toastTimer;
 function showToast(msg, type='success') {
-  const el   = document.getElementById('toastEl');
-  const icon = document.getElementById('toastIcon');
-  document.getElementById('toastMsg').textContent = msg;
-  icon.style.color = type==='error' ? 'var(--red)' : 'var(--green)';
-  icon.className   = type==='error' ? 'fas fa-circle-exclamation' : 'fas fa-circle-check';
-  el.classList.remove('hidden');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.add('hidden'), 3000);
+  window.RitiansToast.show(msg, type);
 }
+
+// ── Push Notifications (foreground) ─────────────────────────────────────────
+// Reuses the same Firebase project as index.html. Token registration/consent
+// happens on index.html the first time a student enables alerts; this page
+// just needs to listen for messages while it's open, so the right toast +
+// sound plays no matter which page the student is currently viewing.
+const firebaseConfig = {
+  apiKey: "AIzaSyDod0NDvWkdENXQtOn4NNl7AoBv95vPtPo",
+  authDomain: "ritians-transport07.firebaseapp.com",
+  projectId: "ritians-transport07",
+  storageBucket: "ritians-transport07.firebasestorage.app",
+  messagingSenderId: "193463468015",
+  appId: "1:193463468015:web:c3541cae00884351e9001a"
+};
+
+firebase.initializeApp(firebaseConfig);
+const messaging = firebase.messaging();
+
+// Foreground message handler (when this tab is open and active)
+messaging.onMessage((payload) => {
+  const title = payload.notification?.title || '';
+  const body  = payload.notification?.body || '';
+  const text  = (title + ' ' + body).toLowerCase();
+
+  showToast(title || 'New notification');
+
+  // NOTE: same keyword assumption as index.html — adjust if your backend's
+  // actual push wording differs from "started" / "arriving"/"near"/"boarding".
+  if (window.RitiansSounds) {
+    if (/start/.test(text)) {
+      window.RitiansSounds.playBusStarted();
+    } else if (/arriv|near|boarding/.test(text)) {
+      window.RitiansSounds.playNearBoarding();
+    }
+  }
+});
 
 // ── Start ──────────────────────────────────────────────────────────────────────
 refreshVehicleList();
 refreshTimer = setInterval(refreshVehicleList, REFRESH_MS);
 loadGoogleMaps();
 </script>
+<script src="toast.js"></script>
+<script src="sounds.js"></script>
 <!-- Mobile responsive layer -->
 <script src="mobile.js"></script>
 </body>
