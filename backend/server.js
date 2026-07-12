@@ -61,6 +61,7 @@ const mongoose   = require("mongoose");
 const authRoutes = require("./routes/auth");
 const attendanceRoutes = require("./routes/attendance.js");
 const sosRoutes = require("./routes/sos");
+const { notifyBusStarted, notifyBusArriving } = require("./notifications");
 
 // ── MongoDB Connection ──────────────────────────────────────────────────────
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/ritians";
@@ -1525,6 +1526,7 @@ function checkAndHandleDestination(vehicle, newLat, newLng) {
     console.log(`[DEST] 🎯 ${vehicle.vehicleId} reached RIT Campus — resetting route`);
     vehicle.reachedDestination    = true;
     vehicle.destinationReachedAt  = Date.now();
+    vehicle.tripStartNotified     = false;   // reset so next trip fires "started" once
     vehicle.lastStopIdx           = 0;
     vehicle.speedHistory          = [];
     vehicle.ewmaSpeed             = undefined;
@@ -1581,6 +1583,7 @@ app.post("/update-location", (req, res) => {
 
   // STEP 3: Kalman filter
   const vehicle  = locationStore[vehicleId] || { vehicleId };
+  const isNewTrip = !vehicle.tripStartNotified;
   const smoothed = applyKalman(vehicle, rawLat, rawLng);
   const newLat   = smoothed.lat;
   const newLng   = smoothed.lng;
@@ -1636,6 +1639,19 @@ app.post("/update-location", (req, res) => {
     if (nearestIdx > lastStopIdx) {
       recordSegmentSpeed(vehicleId, lastStopIdx, vehicle.ewmaSpeed || finalKmh);
       lastStopIdx = nearestIdx;
+    }
+  }
+
+   // ── NOTIFICATIONS ──────────────────────────────────────────
+  if (isNewTrip) {
+    notifyBusStarted(vehicleId).catch(() => {});
+    vehicle.tripStartNotified = true;
+  }
+  if (stops && stops[lastStopIdx + 1]) {
+    const nextStop = stops[lastStopIdx + 1];
+    const distToNext = haversine(newLat, newLng, nextStop.lat, nextStop.lng);
+    if (distToNext <= T.ARRIVING_RADIUS_KM) {
+      notifyBusArriving(vehicleId, nextStop.stopName).catch(() => {});
     }
   }
 
