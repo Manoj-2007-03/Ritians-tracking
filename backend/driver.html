@@ -148,28 +148,101 @@ body::before{
 }
 .form-field input:focus{border-color:var(--yellow);box-shadow:0 0 0 3px rgba(251,191,36,0.14)}
 
-/* Premium select — native element restyled with a custom trigger look
-   and a decorative chevron; the browser's own dropdown list renders
-   the option colors below where the platform allows it. */
-.select-wrap{position:relative}
-.select-wrap select{
-  width:100%;appearance:none;-webkit-appearance:none;-moz-appearance:none;
-  padding:14px 42px 14px 16px;min-height:48px;
-  background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);
-  color:var(--text);font-family:var(--font-body);font-size:13.5px;font-weight:500;
-  cursor:pointer;outline:none;
-  box-shadow:0 1px 0 rgba(255,255,255,0.03) inset,0 6px 16px rgba(0,0,0,0.18);
-  transition:border-color 0.25s var(--ease),box-shadow 0.25s var(--ease),background 0.25s var(--ease);
+/* Premium custom Route Selector — replaces the native <select> UI.
+   The real <select id="vehicleSelect"> stays in the DOM (visually hidden)
+   as the single source of truth that startTracking() reads from. */
+.visually-hidden{display:none}
+
+.route-picker{position:relative}
+
+/* Closed trigger */
+.route-trigger{
+  width:100%;display:flex;align-items:center;gap:11px;
+  padding:14px 16px;min-height:50px;
+  background:var(--bg3);border:1px solid var(--border2);border-radius:18px;
+  color:var(--text);font-family:var(--font-body);cursor:pointer;text-align:left;
+  box-shadow:0 1px 0 rgba(255,255,255,0.03) inset,0 8px 20px rgba(0,0,0,0.2);
+  transition:border-color 0.25s var(--ease),box-shadow 0.25s var(--ease),background 0.25s var(--ease),transform 0.2s var(--ease);
 }
-.select-wrap select:hover{background:var(--bg4);border-color:var(--border2)}
-.select-wrap select:focus{border-color:var(--yellow);box-shadow:0 0 0 3px rgba(251,191,36,0.15),0 6px 20px rgba(251,191,36,0.12)}
-.select-wrap select option{background:var(--bg3);color:var(--text);padding:10px}
-.select-chevron{
-  position:absolute;right:16px;top:50%;transform:translateY(-50%);
-  color:var(--text3);font-size:11px;pointer-events:none;
-  transition:color 0.2s var(--ease);
+.route-trigger:hover{background:var(--bg4);transform:translateY(-1px)}
+.route-trigger.open{
+  border-color:var(--accent2);
+  box-shadow:0 0 0 3px rgba(78,205,196,0.16),0 10px 26px rgba(78,205,196,0.14);
 }
-.select-wrap select:focus ~ .select-chevron{color:var(--yellow)}
+.route-trigger-icon{
+  width:30px;height:30px;border-radius:9px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(78,205,196,0.14);color:var(--accent2);font-size:12.5px;
+  transition:background 0.25s var(--ease),color 0.25s var(--ease);
+}
+.route-trigger.has-value .route-trigger-icon{background:rgba(34,197,94,0.16);color:#4ADE80}
+.route-trigger-text{
+  flex:1;min-width:0;font-size:13.5px;font-weight:600;color:var(--text);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.route-trigger-text.is-placeholder{color:var(--text3);font-weight:500}
+.route-trigger-chevron{
+  color:var(--text3);font-size:11px;flex-shrink:0;
+  transition:transform 0.25s var(--ease),color 0.25s var(--ease);
+}
+.route-trigger.open .route-trigger-chevron{transform:rotate(180deg);color:var(--accent2)}
+
+/* Floating panel */
+.route-panel{
+  position:absolute;top:calc(100% + 10px);left:0;right:0;z-index:50;
+  display:flex;flex-direction:column;
+  max-height:min(360px,60vh);padding:10px;
+  background:var(--glass-strong);border:1px solid var(--border2);border-radius:20px;
+  backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);
+  box-shadow:0 26px 60px rgba(0,0,0,0.55),0 1px 0 rgba(255,255,255,0.06) inset;
+  transform-origin:top center;
+  opacity:0;visibility:hidden;transform:translateY(-6px) scale(0.98);pointer-events:none;
+  transition:opacity 0.28s var(--ease),transform 0.28s var(--ease),visibility 0s linear 0.28s;
+}
+.route-panel.open{
+  opacity:1;visibility:visible;transform:translateY(0) scale(1);pointer-events:auto;
+  transition:opacity 0.28s var(--ease),transform 0.28s var(--ease),visibility 0s;
+}
+
+/* Search field */
+.route-search-wrap{position:relative;flex-shrink:0;margin-bottom:8px}
+.route-search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:12px}
+.route-search{
+  width:100%;padding:11px 14px 11px 35px;
+  background:var(--bg3);border:1px solid var(--border);border-radius:12px;
+  color:var(--text);font-family:var(--font-body);font-size:13px;outline:none;
+  transition:border-color 0.2s var(--ease),box-shadow 0.2s var(--ease),background 0.2s var(--ease);
+}
+.route-search::placeholder{color:var(--text3)}
+.route-search:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(78,205,196,0.15);background:var(--bg4)}
+
+/* Route list */
+.route-list{overflow-y:auto;flex:1;min-height:0;padding-right:2px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent}
+.route-list::-webkit-scrollbar{width:6px}
+.route-list::-webkit-scrollbar-track{background:transparent}
+.route-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.14);border-radius:99px}
+.route-list::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.22)}
+
+.route-row{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:12px 12px;border-radius:12px;cursor:pointer;color:var(--text2);
+  transition:background 0.18s var(--ease),transform 0.18s var(--ease);
+}
+.route-row-main{display:flex;flex-direction:column;gap:2px;min-width:0}
+.route-row-code{font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--text);letter-spacing:0.02em}
+.route-row-meta{font-size:11.5px;color:var(--text3);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.route-row-check{color:#4ADE80;opacity:0;transform:scale(0.6);flex-shrink:0;transition:opacity 0.2s var(--ease),transform 0.2s var(--ease)}
+.route-row:hover,.route-row.active{background:rgba(78,205,196,0.09);transform:translateX(2px)}
+.route-row.selected{background:rgba(34,197,94,0.10);box-shadow:inset 0 0 0 1px rgba(34,197,94,0.35)}
+.route-row.selected .route-row-code{color:#4ADE80}
+.route-row.selected .route-row-check{opacity:1;transform:scale(1)}
+
+.route-empty{padding:26px 12px;text-align:center;color:var(--text3);font-size:12.5px}
+
+@media (max-width:480px){
+  .route-panel{max-height:min(320px,56vh)}
+  .route-row{padding:13px 12px}
+}
 
 /* Buttons */
 .btn{
@@ -293,8 +366,11 @@ footer{
       <!-- Vehicle selection -->
       <div class="form-field" id="setupPanel">
         <label>Your Route / Vehicle ID</label>
-        <div class="select-wrap">
-        <select id="vehicleSelect">
+
+        <!-- Real select: kept as the single source of truth for
+             startTracking(). Hidden visually; the custom UI below
+             drives it. Options are unchanged from the original markup. -->
+        <select id="vehicleSelect" class="visually-hidden">
           <option value="">— Select your route —</option>
           <option value="R01">Bus 1 · R01 · Ennore</option>
           <option value="R01A">Bus 2 · R01A · Tondiarpet</option>
@@ -343,7 +419,24 @@ footer{
           <option value="R29A">Bus 50 · R29A · Pammal</option>
           <option value="R29B">Bus 51 · R29B · Sivanthangal</option>
         </select>
-        <i class="fas fa-chevron-down select-chevron"></i>
+
+        <!-- Custom premium Route Picker (progressive enhancement) -->
+        <div class="route-picker" id="routePicker">
+          <button type="button" class="route-trigger" id="routeTrigger"
+                  aria-haspopup="listbox" aria-expanded="false" aria-controls="routePanel">
+            <span class="route-trigger-icon"><i class="fas fa-route"></i></span>
+            <span class="route-trigger-text is-placeholder" id="routeTriggerText">Select Your Route</span>
+            <i class="fas fa-chevron-down route-trigger-chevron"></i>
+          </button>
+          <div class="route-panel" id="routePanel" role="listbox" aria-label="Routes" tabindex="-1">
+            <div class="route-search-wrap">
+              <i class="fas fa-search route-search-icon"></i>
+              <input type="text" class="route-search" id="routeSearch"
+                     placeholder="Search routes or destinations…" autocomplete="off"/>
+            </div>
+            <div class="route-list" id="routeList"></div>
+            <div class="route-empty" id="routeEmpty" hidden>No routes match your search</div>
+          </div>
         </div>
       </div>
 
@@ -568,7 +661,152 @@ window.addEventListener('beforeunload', (e) => {
   });
 })();
 </script>
-<!-- Mobile view-mode system -->
-<script src="mobile.js"></script>
+
+<!-- ── Premium custom Route Picker ──────────────────────────────────────────────
+     Self-contained progressive enhancement over #vehicleSelect. It never
+     modifies startTracking(), stopTracking(), or any other existing logic —
+     it only reads/writes the native select's value, exactly like a real
+     select would, so "vehicleSelect.value" keeps working unchanged. ──────── -->
+<script>
+(function initRoutePicker(){
+  const nativeSelect = document.getElementById('vehicleSelect');
+  const trigger       = document.getElementById('routeTrigger');
+  const triggerText    = document.getElementById('routeTriggerText');
+  const panel         = document.getElementById('routePanel');
+  const searchInput   = document.getElementById('routeSearch');
+  const listEl        = document.getElementById('routeList');
+  const emptyEl       = document.getElementById('routeEmpty');
+  if (!nativeSelect || !trigger || !panel || !listEl) return;
+
+  const PLACEHOLDER = 'Select Your Route';
+  const routes = [];      // { value, bus, code, dest }
+  let activeIndex = -1;   // keyboard-highlighted row among currently visible rows
+  let isOpen = false;
+
+  // Build route data straight from the native <select> options, so this
+  // stays correct even if the option list ever changes.
+  Array.from(nativeSelect.options).forEach((opt) => {
+    if (!opt.value) return; // skip the placeholder option
+    const parts = opt.textContent.split('·').map((s) => s.trim());
+    routes.push({ value: opt.value, bus: parts[0] || '', code: parts[1] || opt.value, dest: parts[2] || '' });
+  });
+
+  function getVisibleRows() { return Array.from(listEl.querySelectorAll('.route-row')); }
+
+  function renderList(filter) {
+    const q = (filter || '').trim().toLowerCase();
+    listEl.innerHTML = '';
+    let visibleCount = 0;
+
+    routes.forEach((r) => {
+      const haystack = `${r.code} ${r.dest} ${r.bus}`.toLowerCase();
+      if (q && !haystack.includes(q)) return;
+      visibleCount++;
+
+      const row = document.createElement('div');
+      const isSelected = r.value === nativeSelect.value;
+      row.className = 'route-row' + (isSelected ? ' selected' : '');
+      row.setAttribute('role', 'option');
+      row.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      row.dataset.value = r.value;
+      row.innerHTML =
+        '<span class="route-row-main">' +
+          '<span class="route-row-code"></span>' +
+          '<span class="route-row-meta"></span>' +
+        '</span>' +
+        '<svg class="route-row-check" viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">' +
+          '<path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '</svg>';
+      // Set text via textContent (not innerHTML) so route names can never
+      // be interpreted as markup.
+      row.querySelector('.route-row-code').textContent = r.code;
+      row.querySelector('.route-row-meta').textContent = [r.bus, r.dest].filter(Boolean).join(' · ');
+
+      row.addEventListener('click', () => selectRoute(r.value));
+      row.addEventListener('mouseenter', () => setActiveRow(row));
+      listEl.appendChild(row);
+    });
+
+    emptyEl.hidden = visibleCount !== 0;
+    activeIndex = -1;
+  }
+
+  function updateTriggerLabel() {
+    const r = routes.find((x) => x.value === nativeSelect.value);
+    triggerText.textContent = r ? `${r.code} · ${r.dest}` : PLACEHOLDER;
+    triggerText.classList.toggle('is-placeholder', !r);
+    trigger.classList.toggle('has-value', !!r);
+  }
+
+  function selectRoute(value) {
+    nativeSelect.value = value;
+    updateTriggerLabel();
+    closePanel();
+    trigger.focus();
+  }
+
+  function setActiveRow(row) {
+    getVisibleRows().forEach((r) => r.classList.remove('active'));
+    if (!row) { activeIndex = -1; return; }
+    row.classList.add('active');
+    activeIndex = getVisibleRows().indexOf(row);
+    row.scrollIntoView({ block: 'nearest' });
+  }
+
+  function openPanel() {
+    if (isOpen) return;
+    isOpen = true;
+    renderList('');
+    searchInput.value = '';
+    panel.classList.add('open');
+    trigger.classList.add('open');
+    trigger.setAttribute('aria-expanded', 'true');
+    document.addEventListener('mousedown', onOutsideClick, true);
+    document.addEventListener('keydown', onKeyDown, true);
+    requestAnimationFrame(() => searchInput.focus());
+  }
+
+  function closePanel() {
+    if (!isOpen) return;
+    isOpen = false;
+    panel.classList.remove('open');
+    trigger.classList.remove('open');
+    trigger.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('mousedown', onOutsideClick, true);
+    document.removeEventListener('keydown', onKeyDown, true);
+  }
+
+  function togglePanel() { if (isOpen) closePanel(); else openPanel(); }
+
+  function onOutsideClick(e) {
+    if (!panel.contains(e.target) && !trigger.contains(e.target)) closePanel();
+  }
+
+  function onKeyDown(e) {
+    const rows = getVisibleRows();
+    if (e.key === 'Escape') { e.preventDefault(); closePanel(); trigger.focus(); return; }
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActiveRow(rows[Math.min(activeIndex + 1, rows.length - 1)]); return; }
+    if (e.key === 'ArrowUp') { e.preventDefault(); setActiveRow(rows[Math.max(activeIndex - 1, 0)]); return; }
+    if (e.key === 'Enter') { e.preventDefault(); if (activeIndex >= 0 && rows[activeIndex]) selectRoute(rows[activeIndex].dataset.value); return; }
+    if (e.key === 'Tab') { closePanel(); }
+  }
+
+  trigger.addEventListener('click', togglePanel);
+  trigger.addEventListener('keydown', (e) => {
+    if (!isOpen && (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      openPanel();
+    }
+  });
+  searchInput.addEventListener('input', () => renderList(searchInput.value));
+
+  // If setupPanel gets disabled (pointer-events:none) while tracking is
+  // active, the trigger is disabled along with it automatically since it's
+  // nested inside #setupPanel — no extra wiring needed here.
+
+  renderList('');
+  updateTriggerLabel();
+})();
+</script>
 </body>
 </html>
