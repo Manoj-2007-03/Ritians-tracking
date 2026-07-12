@@ -206,14 +206,8 @@ body::before{
 
 /* Search field — pixel-perfect icon/text alignment, luxurious feel */
 .route-search-wrap{position:relative;flex-shrink:0;margin-bottom:10px}
-.route-search-icon{
-  position:absolute;left:22px;top:0;bottom:0;width:18px;
-  display:flex;align-items:center;justify-content:center;
-  color:var(--text3);font-size:13.5px;line-height:1;pointer-events:none;
-  transition:color 0.25s var(--ease);
-}
 .route-search{
-  width:100%;height:48px;padding:0 18px 0 58px;
+  width:100%;height:48px;padding:0 18px;
   display:block;
   background:var(--bg3);border:1px solid var(--border);border-radius:14px;
   color:var(--text);font-family:var(--font-body);font-size:13.5px;font-weight:450;
@@ -223,7 +217,6 @@ body::before{
 }
 .route-search::placeholder{color:var(--text3);font-weight:450;opacity:0.85;letter-spacing:0.005em}
 .route-search:focus{border-color:var(--accent2);box-shadow:0 0 0 4px rgba(78,205,196,0.14),0 8px 22px rgba(78,205,196,0.1),0 1px 0 rgba(255,255,255,0.03) inset;background:var(--bg4)}
-.route-search-wrap:focus-within .route-search-icon{color:var(--accent2)}
 
 /* Route list */
 .route-list{overflow-y:auto;flex:1;min-height:0;padding-right:2px;display:flex;flex-direction:column;gap:4px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent}
@@ -458,7 +451,6 @@ footer{
           </button>
           <div class="route-panel" id="routePanel" role="listbox" aria-label="Routes" tabindex="-1">
             <div class="route-search-wrap">
-              <i class="fas fa-search route-search-icon"></i>
               <input type="text" class="route-search" id="routeSearch"
                      placeholder="Search routes or destinations…" autocomplete="off"/>
             </div>
