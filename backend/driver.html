@@ -317,13 +317,22 @@ let lastPosition = null;   // Cache latest GPS position
 let isTracking = false;    // UI/guard flag
 
 // ── Start Tracking ──────────────────────────────────────────────────────────
-function startTracking() {
+async function startTracking() {
   vehicleId = document.getElementById('vehicleSelect').value;
   if (!vehicleId) { showToast('Please select your route first!', 'error'); return; }
 
   if (!navigator.geolocation) {
     showToast('GPS not supported on this device!', 'error');
     return;
+  }
+
+  // Tell the backend this is a fresh trip — resets "Bus Started" and
+  // "arriving" notification state so students get alerted every time
+  // the driver starts sharing, not just the very first time ever.
+  try {
+    await fetch(`${API_BASE}/trip-start/${vehicleId}`, { method: 'POST' });
+  } catch (err) {
+    console.warn('trip-start call failed, continuing anyway:', err);
   }
 
   // Request high-accuracy GPS
