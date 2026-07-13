@@ -226,6 +226,16 @@ const T = {
 
   // Segment history
   SEG_HISTORY_LEN:    20,
+
+  // ═══ ★ v6.1 GPS ENGINE HARDENING — new tunables ═══
+  MAX_PLAUSIBLE_KMH:      130,            // buses never exceed this — used for impossible-jump detection
+  TRIP_GAP_MS:            30 * 60 * 1000, // 30 min gap = new trip (hoisted here; shared by outlier check + /update-location)
+  HEADING_EWMA_ALPHA:     0.35,           // circular smoothing factor for heading
+  HEADING_FREEZE_KMH:     3,              // below this speed, compass heading is unreliable — freeze last smoothed value
+  STATIONARY_WINDOW_LEN:  4,              // recent positions checked to confirm "truly parked" vs GPS jitter
+  STATIONARY_RADIUS_KM:   0.015,          // 15 m — positions must stay inside this box to count as stationary
+  KALMAN_Q_SPEED_REF_KMH: 40,             // reference cruise speed for adaptive Kalman process-noise scaling
+  KALMAN_Q_MAX_MULT:      6,              // cap on how much Kalman Q can scale up at high speed
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1070,11 +1080,46 @@ function nowMinutes() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ██  SECTION 2 — KALMAN FILTER  (unchanged from v4)
+// ██  SECTION 2 — KALMAN FILTER  (★ v6.1: speed-adaptive process noise)
 // ═══════════════════════════════════════════════════════════════════════════
 
-function kalmanUpdate(state, measurement) {
-  const Ppred = state.P + T.KALMAN_Q;
+/**
+ * ★ v6.1 CHANGE: Adaptive Kalman process noise (Q).
+ *
+ * LIMITATION (v4/v5): Q was a single fixed constant (0.0001) for every
+ * vehicle at every speed. Q represents "how much we trust our motion model
+ * between pings" — a fixed low Q is great for rejecting jitter while a bus
+ * is stopped or crawling in a dense urban canyon, but at highway speed the
+ * true position moves far between pings, so the same tight Q makes the
+ * filter lag behind the real position (visible as the marker "catching up"
+ * a few seconds late on fast, straight stretches like the R01B expressway).
+ *
+ * WHY IT HAPPENS: Kalman gain K = Ppred / (Ppred + R). A small, constant Q
+ * keeps Ppred small regardless of how fast the vehicle is actually moving,
+ * so K stays small and the filter always leans on its (stale) prediction
+ * over the new measurement — correct for a parked bus, wrong for a moving one.
+ *
+ * FIX: scale Q by the vehicle's last known speed relative to a reference
+ * cruise speed (40 km/h). Stationary/slow buses keep the original tight Q
+ * (best jitter rejection). Fast buses get a proportionally larger Q, capped
+ * at 6x, so the filter trusts fresh GPS more and tracks position with less lag.
+ *
+ * EXPECTED IMPROVEMENT: reduced positional lag at highway speed with no
+ * loss of the existing jitter smoothing while stopped/slow — same output
+ * shape (still { lat, lng }), so no API contract change.
+ *
+ * SIDE EFFECTS: none — this only changes how quickly the filter converges
+ * to new measurements; it cannot destabilize the filter since the effective
+ * Q is always bounded to a small multiple of the original constant.
+ */
+function adaptiveKalmanQ(vehicle) {
+  const speed = vehicle.ewmaSpeed || 0;
+  const mult  = 1 + Math.min(speed / T.KALMAN_Q_SPEED_REF_KMH, T.KALMAN_Q_MAX_MULT - 1);
+  return T.KALMAN_Q * mult;
+}
+
+function kalmanUpdate(state, measurement, q) {
+  const Ppred = state.P + q;
   const K     = Ppred / (Ppred + T.KALMAN_R);
   return { x: state.x + K * (measurement - state.x), P: (1 - K) * Ppred };
 }
@@ -1087,8 +1132,9 @@ function applyKalman(vehicle, rawLat, rawLng) {
     };
     return { lat: rawLat, lng: rawLng };
   }
-  vehicle.kalman.lat = kalmanUpdate(vehicle.kalman.lat, rawLat);
-  vehicle.kalman.lng = kalmanUpdate(vehicle.kalman.lng, rawLng);
+  const q = adaptiveKalmanQ(vehicle);
+  vehicle.kalman.lat = kalmanUpdate(vehicle.kalman.lat, rawLat, q);
+  vehicle.kalman.lng = kalmanUpdate(vehicle.kalman.lng, rawLng, q);
   return { lat: vehicle.kalman.lat.x, lng: vehicle.kalman.lng.x };
 }
 
@@ -1125,6 +1171,63 @@ function updateEwmaSpeed(vehicle, newSpeedKmh) {
   const hist = vehicle.speedHistory || [];
   vehicle.speedHistory = [...hist.slice(-(T.SPEED_HISTORY_LEN - 1)), newSpeedKmh];
   return vehicle.ewmaSpeed;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ██  SECTION 3b — HEADING STABILIZATION  (★ v6.1 NEW)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * ★ v6.1 NEW: Heading smoothing.
+ *
+ * LIMITATION: raw client-reported heading was passed straight through with
+ * zero filtering (`heading ? parseFloat(heading) : 0`). Phone
+ * compass/GPS-course heading is genuinely noisy — especially at low speed,
+ * near turns, or under multipath — so `isMovingTowardStop()` could flip
+ * between "approaching" and "moving away" ping to ping, surfacing false
+ * `directionWarning` flags to students on a bus that never changed course.
+ *
+ * WHY IT HAPPENED: unlike lat/lng (Kalman-filtered) and speed
+ * (EWMA-filtered), heading had no smoothing function at all.
+ *
+ * FIX: circular-aware EWMA — averages the sine/cosine components (not the
+ * raw degrees) so smoothing is correct across the 359°→1° wraparound,
+ * which a naive numeric average would get badly wrong. Below
+ * HEADING_FREEZE_KMH the compass reading is essentially noise (a slow or
+ * stopped bus doesn't have a meaningful "heading"), so the last stable
+ * smoothed value is frozen instead of being dragged around by noise.
+ *
+ * EXPECTED IMPROVEMENT: fewer false "bus moving away" direction warnings;
+ * more stable heading arrows on the live map.
+ *
+ * SIDE EFFECTS: the `heading` field in API responses now reports a
+ * smoothed value instead of the raw instantaneous reading — same field
+ * name and type (a number in degrees), so no contract change, just a
+ * steadier value.
+ */
+function updateHeadingSmoothed(vehicle, rawHeadingDeg, speedKmh) {
+  if (!Number.isFinite(rawHeadingDeg)) return vehicle.headingSmoothed || 0;
+
+  if (speedKmh < T.HEADING_FREEZE_KMH && vehicle.headingSmoothed !== undefined) {
+    return vehicle.headingSmoothed; // too slow for a reliable heading — keep last value
+  }
+
+  const rad = rawHeadingDeg * Math.PI / 180;
+  const sin = Math.sin(rad), cos = Math.cos(rad);
+
+  if (vehicle.headingSin === undefined) {
+    vehicle.headingSin = sin;
+    vehicle.headingCos = cos;
+  } else {
+    const a = T.HEADING_EWMA_ALPHA;
+    vehicle.headingSin = a * sin + (1 - a) * vehicle.headingSin;
+    vehicle.headingCos = a * cos + (1 - a) * vehicle.headingCos;
+  }
+
+  let deg = Math.atan2(vehicle.headingSin, vehicle.headingCos) * 180 / Math.PI;
+  if (deg < 0) deg += 360;
+  vehicle.headingSmoothed = deg;
+  return deg;
 }
 
 function bestSpeed(vehicle, vehicleId, segIdx) {
@@ -1172,14 +1275,125 @@ function stopConfidence(vConf, etaMin) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ██  SECTION 4 — GPS OUTLIER FILTER  (unchanged from v4)
+// ██  SECTION 4 — GPS OUTLIER FILTER  (★ v6.1: real impossible-jump detection)
 // ═══════════════════════════════════════════════════════════════════════════
 
+/**
+ * ★ v6.1 CHANGE: outlier rejection now checks implied speed, not just a
+ * short time window.
+ *
+ * LIMITATION (v4/v5): `isGpsOutlier` returned `false` immediately whenever
+ * `elapsed >= GPS_NOISE_TIME_MS` (5s) — meaning ANY jump, no matter how
+ * large, was accepted as long as it arrived 5+ seconds after the last ping.
+ * A 50 km teleport reported 6 seconds later (a bad GPS fix, app bug, or
+ * spoofed payload) sailed straight through and would have corrupted the
+ * bus's tracked position, ETA, and stop index.
+ *
+ * WHY IT HAPPENED: the original check conflated "how much time has passed"
+ * with "is this jump physically possible" — but a single distance threshold
+ * only makes sense within a fixed, short window; once the window passed,
+ * nothing else guarded against it.
+ *
+ * FIX: reject a ping if the implied speed (distance / elapsed time) exceeds
+ * a generous ceiling no real bus can exceed (130 km/h). Legitimate long gaps
+ * — the bus was parked overnight and starts a new trip across town — are
+ * explicitly exempted via TRIP_GAP_MS, so a real new trip is never rejected.
+ *
+ * EXPECTED IMPROVEMENT: closes the filtering gap for teleports/spoofed
+ * coordinates at any polling interval, not just sub-5-second ones.
+ *
+ * SIDE EFFECTS: none for real buses (max realistic speed is far below the
+ * 130 km/h ceiling); the TRIP_GAP_MS exemption prevents false rejection of
+ * legitimate "starting a new trip" pings after a long parked gap.
+ */
 function isGpsOutlier(prev, rawLat, rawLng, now) {
   if (!prev) return false;
-  const elapsed = now - prev.updatedAt;
-  if (elapsed >= T.GPS_NOISE_TIME_MS) return false;
-  return haversine(prev.lat, prev.lng, rawLat, rawLng) > T.GPS_NOISE_KM;
+  const elapsedMs = now - prev.updatedAt;
+
+  // A long gap plausibly means the bus was parked/off — treat as a new
+  // trip starting point, not a teleport, regardless of distance.
+  if (elapsedMs > T.TRIP_GAP_MS) return false;
+
+  const distKm = haversine(prev.lat, prev.lng, rawLat, rawLng);
+
+  // Original short-window jitter/teleport guard (unchanged behavior).
+  if (elapsedMs < T.GPS_NOISE_TIME_MS && distKm > T.GPS_NOISE_KM) return true;
+
+  // ★ v6.1: physically-grounded check — works at any elapsed time up to
+  // TRIP_GAP_MS, closing the gap the old time-window-only check left open.
+  const elapsedHrs = Math.max(elapsedMs, 1) / 3_600_000;
+  const impliedKmh = distKm / elapsedHrs;
+  return impliedKmh > T.MAX_PLAUSIBLE_KMH;
+}
+
+/**
+ * ★ v6.1 NEW: Coordinate & payload validation.
+ *
+ * LIMITATION: `/update-location` previously ran `parseFloat(lat)` /
+ * `parseFloat(lng)` with no bounds or NaN checking. A malformed payload
+ * (non-numeric string, out-of-range value, or the classic (0,0) "null
+ * island" GPS-failure signature) would flow straight into the Kalman
+ * filter. Since NaN poisons all arithmetic it touches, a single bad ping
+ * could set `vehicle.kalman.lat.x = NaN` PERMANENTLY — every future ping
+ * for that vehicle would also compute to NaN, silently killing tracking
+ * until the process restarted.
+ *
+ * FIX: validate before any state mutation. Reject NaN, out-of-range
+ * lat/lng, and (0,0). Existing valid payloads are completely unaffected.
+ *
+ * EXPECTED IMPROVEMENT: eliminates an entire class of permanent
+ * per-vehicle corruption from a single malformed or spoofed ping.
+ *
+ * SIDE EFFECTS: a genuinely malformed request now gets a clear 400 instead
+ * of being silently accepted and corrupting state — this only rejects data
+ * that was already invalid, never a legitimate GPS reading.
+ */
+function isValidCoordinate(lat, lng) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return false;
+  if (lat === 0 && lng === 0) return false; // "null island" GPS-failure signature
+  return true;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ██  SECTION 4b — STATIONARY CONFIRMATION  (★ v6.1 NEW)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * ★ v6.1 NEW: Positional-variance stationary confirmation.
+ *
+ * LIMITATION: whether a bus counts as "Stopped" vs "Crawling" vs "Moving"
+ * was decided purely from the instantaneous computed speed on each ping.
+ * In dense urban canyons, multipath reflection can make a genuinely parked
+ * bus's raw GPS fix "walk" a few meters between pings, computing to a
+ * phantom 2-5 km/h — enough to flicker the status between "Stopped" and
+ * "Crawling" and reset the JAM/STALL timers even though the bus never moved.
+ *
+ * WHY IT HAPPENS: single-ping speed has no memory — it can't distinguish
+ * "actually crept forward slowly" from "GPS noise around a fixed point".
+ *
+ * FIX: keep a short rolling window (last 4 Kalman-filtered positions). If
+ * every position in the window sits within a small radius (15 m) of their
+ * centroid, the vehicle could not have travelled meaningfully — force
+ * "stationary" regardless of what the single-ping speed computed to.
+ *
+ * EXPECTED IMPROVEMENT: fewer false status flickers and fewer JAM/STALL
+ * timers falsely resetting for a bus that is actually parked.
+ *
+ * SIDE EFFECTS: adds one small bounded array (max 4 entries) per vehicle —
+ * no unbounded growth, negligible CPU (at most 4 haversine calls/ping).
+ */
+function isStationaryConfirmed(vehicle, lat, lng) {
+  const win = vehicle.recentPositions || [];
+  const updated = [...win.slice(-(T.STATIONARY_WINDOW_LEN - 1)), { lat, lng }];
+  vehicle.recentPositions = updated;
+
+  if (updated.length < T.STATIONARY_WINDOW_LEN) return false;
+
+  const centroidLat = updated.reduce((s, p) => s + p.lat, 0) / updated.length;
+  const centroidLng = updated.reduce((s, p) => s + p.lng, 0) / updated.length;
+
+  return updated.every(p => haversine(p.lat, p.lng, centroidLat, centroidLng) <= T.STATIONARY_RADIUS_KM);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1586,6 +1800,13 @@ app.post("/update-location", (req, res) => {
   const rawLng = parseFloat(lng);
   const prev   = locationStore[vehicleId];
 
+  // STEP 0: ★ v6.1 Coordinate validation — reject before any state mutation
+  // so a malformed/spoofed payload can never poison the Kalman filter (see
+  // isValidCoordinate() docblock for why this matters).
+  if (!isValidCoordinate(rawLat, rawLng)) {
+    return res.status(400).json({ success: false, error: "Invalid or out-of-range GPS coordinates." });
+  }
+
   // STEP 1: Hard GPS outlier rejection
   if (isGpsOutlier(prev, rawLat, rawLng, now)) {
     return res.json({ success: true, status: prev?.status, speed: prev?.speed, filtered: true });
@@ -1606,9 +1827,10 @@ app.post("/update-location", (req, res) => {
 
   // Treat as a new trip if we've never notified before, OR if the last
   // update was more than TRIP_GAP_MS ago (bus was clearly off/idle since).
-  const TRIP_GAP_MS = 30 * 60 * 1000; // 30 minutes — adjust to your route length
+  // ★ v6.1: hoisted to T.TRIP_GAP_MS so isGpsOutlier()'s "long gap = new
+  // trip, not a teleport" exemption always agrees with this check.
   const gapSinceLastUpdate = prev ? (now - prev.updatedAt) : Infinity;
-  const isNewTrip = !vehicle.tripStartNotified || gapSinceLastUpdate > TRIP_GAP_MS;
+  const isNewTrip = !vehicle.tripStartNotified || gapSinceLastUpdate > T.TRIP_GAP_MS;
 
   if (isNewTrip) {
     vehicle.lastStopIdx = 0;              // reset stop progress for the new trip
@@ -1645,7 +1867,11 @@ app.post("/update-location", (req, res) => {
   updateEwmaSpeed(vehicle, finalKmh);
 
   // STEP 6: ★ v5 Three-tier traffic state tracking
-  const isStopped = finalKmh < T.STOPPED_KMH;
+  // ★ v6.1: a bus whose last few positions all sit inside a 15m box cannot
+  // actually be moving — this overrides a phantom speed reading caused by
+  // urban-canyon GPS jitter (see isStationaryConfirmed() docblock).
+  const stationaryConfirmed = isStationaryConfirmed(vehicle, newLat, newLng);
+  const isStopped = finalKmh < T.STOPPED_KMH || stationaryConfirmed;
   const isJam     = finalKmh < T.CONGESTION_KMH && !isStopped;
 
   if (isStopped) {
@@ -1704,7 +1930,7 @@ app.post("/update-location", (req, res) => {
     lat: newLat, lng: newLng,
     rawLat, rawLng,
     speed:               parseFloat(finalKmh.toFixed(1)),
-    heading:             heading ? parseFloat(heading) : 0,
+    heading:             parseFloat(updateHeadingSmoothed(vehicle, heading ? parseFloat(heading) : NaN, finalKmh).toFixed(1)),
     status:              busStatus,
     updatedAt:           now,
     lastStopIdx,
@@ -1741,7 +1967,10 @@ app.post("/update-location", (req, res) => {
 app.get("/get-location/:vehicleId", (req, res) => {
   const data = locationStore[req.params.vehicleId];
   if (!data) return res.status(404).json({ success: false, error: "Vehicle not found." });
-  const { speedHistory, path, kalman, ...safe } = data;
+  // ★ v6.1: also strip internal GPS-engine bookkeeping (heading smoothing
+  // state, stationary-window buffer) — same pattern as the existing
+  // path/kalman/speedHistory exclusion, just extended to the new fields.
+  const { speedHistory, path, kalman, recentPositions, headingSin, headingCos, headingSmoothed, ...safe } = data;
   res.json({ success: true, ...safe, isStale: Date.now() - data.updatedAt > 60_000 });
 });
 
