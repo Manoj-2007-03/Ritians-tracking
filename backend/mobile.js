@@ -23,6 +23,19 @@
  * and BEFORE </body> on each page.
  *
  * Zero dependencies. Vanilla JS only.
+ *
+ * ── FIX (header alignment) ──────────────────────────────────
+ * The hamburger button is now injected into `.nav-brand` (left side,
+ * alongside the logo + title) instead of `.nav-right`. Previously it
+ * was prepended into `.nav-right`, the same container auth-guard.js
+ * independently injects the profile chip into — two unrelated scripts
+ * racing to mutate the same container, with the visual order decided
+ * by whichever script's DOMContentLoaded listener fired first. Moving
+ * the hamburger out of that shared container removes it from the race
+ * entirely and matches "hamburger + logo + title on the left" layout.
+ * See mobile.css for the matching `order` rules that make the chip
+ * and notify button render in a fixed visual order inside `.nav-right`
+ * regardless of which script injected first.
  * ============================================================
  */
 
@@ -308,7 +321,7 @@
   }
 
   // ── BUILD HEADER NOTIFY BUTTON HTML ─────────────────────────
-  // Icon-only bell so the mobile header row (logo | title | bell | menu)
+  // Icon-only bell so the mobile header row (hamburger | logo | title | chip | bell)
   // never has to fit the full "Enable Alerts" label. Full text stays
   // in the drawer item instead — see buildDrawerHTML().
   function buildHeaderNotifyBtnHTML() {
@@ -337,21 +350,29 @@
   function inject() {
     const page = detectPage();
 
-    // 1. Inject hamburger into nav-right
+    // 1. Inject hamburger into nav-brand (LEFT side, with logo + title).
+    //    FIX: previously this was inserted into `.nav-right`, the same
+    //    container auth-guard.js independently injects the profile chip
+    //    into. Two unrelated scripts racing to mutate one container made
+    //    the header's visual order (and the hamburger's visibility)
+    //    depend on load timing. Living in `.nav-brand` removes it from
+    //    that race and matches "hamburger + logo + title on the left".
+    const navBrand = document.querySelector('.nav-brand');
     const navRight = document.querySelector('.nav-right');
-    if (navRight) {
+    if (navBrand) {
       const hbWrap = document.createElement('div');
       hbWrap.innerHTML = buildHamburgerHTML();
       const hbEl = hbWrap.firstElementChild;
-      // Prepend so it's leftmost in nav-right
-      navRight.insertBefore(hbEl, navRight.firstChild);
+      navBrand.insertBefore(hbEl, navBrand.firstChild);
       hbEl.addEventListener('click', toggleDrawer);
     }
 
-    // 1b. Inject icon-only "Enable Alerts" button into nav-right.
-    // Placed after the hamburger, so it sits at the far right edge of
-    // the header. Only relevant on index.html, which owns the
-    // notification feature — tracking/driver pages don't get one.
+    // 1b. Inject icon-only "Enable Alerts" button into nav-right (RIGHT side).
+    // Only relevant on index.html, which owns the notification feature —
+    // tracking/driver pages don't get one. Its position relative to the
+    // profile chip (also injected into `.nav-right`, by auth-guard.js) is
+    // pinned via CSS `order` rules in mobile.css, so it renders in a fixed
+    // visual position regardless of which script injected first.
     if (page === 'index' && navRight) {
       const notifyWrap = document.createElement('div');
       notifyWrap.innerHTML = buildHeaderNotifyBtnHTML();
