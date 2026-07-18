@@ -526,6 +526,53 @@ let vehicleId = null;      // Selected route ID
 let sendInterval = null;   // Interval for POSTing to server
 let lastPosition = null;   // Cache latest GPS position
 let isTracking = false;    // UI/guard flag
+let bgWatcherId = null;    // Native background-geolocation watcher handle
+
+// ── Native Background Tracking (Capacitor app only) ─────────────────────
+// Uses the native plugin when running inside the Android app shell.
+// In a normal browser, isNativeApp() is false and nothing here runs —
+// the existing navigator.geolocation flow below is untouched.
+function isNativeApp() {
+  return !!(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.BackgroundGeolocation);
+}
+
+function startNativeBackgroundTracking() {
+  const { BackgroundGeolocation } = window.Capacitor.Plugins;
+  BackgroundGeolocation.addWatcher(
+    {
+      backgroundMessage: 'Ritians Transport is sharing your live location.',
+      backgroundTitle: 'Location sharing active',
+      requestPermissions: true,
+      stale: false,
+      distanceFilter: 5,
+    },
+    (location, error) => {
+      if (error) {
+        if (error.code === 'NOT_AUTHORIZED') {
+          showToast('Please allow "Allow all the time" location access in Settings.', 'error');
+        }
+        return;
+      }
+      if (!location) return;
+      onPositionUpdate({
+        coords: {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          speed: location.speed,
+          heading: location.bearing,
+          accuracy: location.accuracy,
+        },
+      });
+    }
+  ).then((id) => { bgWatcherId = id; });
+}
+
+function stopNativeBackgroundTracking() {
+  if (bgWatcherId !== null && isNativeApp()) {
+    window.Capacitor.Plugins.BackgroundGeolocation.removeWatcher({ id: bgWatcherId });
+    bgWatcherId = null;
+  }
+}
 
 // ── Start Tracking ──────────────────────────────────────────────────────────
 async function startTracking() {
@@ -546,15 +593,14 @@ async function startTracking() {
     console.warn('trip-start call failed, continuing anyway:', err);
   }
 
-  // Request high-accuracy GPS
-  const options = { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 };
-
-  // watchPosition fires every time the device moves
-  watchId = navigator.geolocation.watchPosition(
-    onPositionUpdate,
-    onPositionError,
-    options
-  );
+  if (isNativeApp()) {
+    // Native app: background-capable GPS via Capacitor plugin
+    startNativeBackgroundTracking();
+  } else {
+    // Browser fallback — unchanged existing behavior
+    const options = { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 };
+    watchId = navigator.geolocation.watchPosition(onPositionUpdate, onPositionError, options);
+  }
 
   // Also send to server every 4 seconds (even if position hasn't changed)
   sendInterval = setInterval(() => {
@@ -576,6 +622,7 @@ async function startTracking() {
 // ── Stop Tracking ────────────────────────────────────────────────────────────
 function stopTracking() {
   if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+  stopNativeBackgroundTracking();
   if (sendInterval) clearInterval(sendInterval);
   watchId = null; sendInterval = null; lastPosition = null;
   isTracking = false;
