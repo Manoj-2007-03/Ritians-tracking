@@ -537,12 +537,14 @@ function isNativeApp() {
 }
 
 function startNativeBackgroundTracking() {
-  // NOTE: @capacitor-community/background-geolocation v1.x removed support
-  // for the old `window.Capacitor.Plugins.BackgroundGeolocation` access
-  // pattern. It must be obtained via registerPlugin(), otherwise
-  // addWatcher(...) does not return a real Promise and .then() throws.
-  const BackgroundGeolocation = window.Capacitor.registerPlugin('BackgroundGeolocation');
-  BackgroundGeolocation.addWatcher(
+  // NOTE: window.Capacitor.registerPlugin (the officially documented method)
+  // is only available when the page is loaded through a bundler that imports
+  // it from '@capacitor/core'. This is a plain HTML page with no bundler, so
+  // that global does not exist here — only window.Capacitor.Plugins works.
+  // Additionally, in this runtime addWatcher(...) does not return a real
+  // Promise (no .then), so we handle both possible return styles safely.
+  const { BackgroundGeolocation } = window.Capacitor.Plugins;
+  const watcherResult = BackgroundGeolocation.addWatcher(
     {
       backgroundMessage: 'Ritians Transport is sharing your live location.',
       backgroundTitle: 'Location sharing active',
@@ -568,7 +570,15 @@ function startNativeBackgroundTracking() {
         },
       });
     }
-  ).then((id) => { bgWatcherId = id; });
+  );
+  // Handle both possible return styles: a real Promise (newer plugin/
+  // runtime combinations) or the watcher ID returned directly (this
+  // runtime's actual behavior, confirmed via device console).
+  if (watcherResult && typeof watcherResult.then === 'function') {
+    watcherResult.then((id) => { bgWatcherId = id; });
+  } else {
+    bgWatcherId = watcherResult;
+  }
 }
 
 function stopNativeBackgroundTracking() {
