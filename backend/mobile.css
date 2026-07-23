@@ -867,11 +867,34 @@
   color: #F87171;
 }
 
-/* ── Home Page mobile header only: premium avatar+username treatment,
-   plus pinning chip-then-hamburger visual order as a backstop against
-   any future injection-timing change. ── */
+/* ── STRUCTURAL: guarantees chip-then-hamburger, far right, no overlap.
+   Intentionally NOT scoped to .page-index — this must keep working even
+   if index.html's body class didn't make it into a deploy, or an old
+   cached mobile.css/index.html is briefly served alongside a newer file.
+   !important because this is a "this must never overlap the brand"
+   guarantee, not a cosmetic preference. Harmless on tracking/driver:
+   their hamburger never lives in .nav-right, so nothing here matches. ── */
+.mode-mobile .nav-right {
+  flex-wrap: nowrap !important;
+}
+
+.mode-mobile .nav-right .auth-chip {
+  order: 1 !important;
+  flex-shrink: 0 !important;
+  position: static !important;
+  margin: 0 !important;
+}
+
+.mode-mobile .nav-right .hamburger-btn {
+  order: 2 !important;
+  margin-left: 0 !important;
+}
+
+/* ── COSMETIC (Home Page mobile header only): premium glass treatment
+   for the avatar+username chip. Purely visual — if `page-index` is ever
+   missing from a deploy, the chip still renders correctly via the base
+   .auth-chip rules above, just without this extra polish. ── */
 .mode-mobile .page-index .nav-right .auth-chip {
-  order: 1;
   gap: 9px;
   padding: 4px 14px 4px 4px;
   background: linear-gradient(135deg, rgba(78, 205, 196, 0.18), rgba(78, 205, 196, 0.06));
@@ -892,10 +915,6 @@
 .mode-mobile .page-index .nav-right .auth-chip-name {
   font-size: 12.5px;
   max-width: 78px;
-}
-
-.mode-mobile .page-index .nav-right .hamburger-btn {
-  order: 2;
 }
 
 /* ── Ultra-narrow phones (< 360px): tighten everything one more notch ── */

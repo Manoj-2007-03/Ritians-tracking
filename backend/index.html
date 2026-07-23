@@ -533,9 +533,9 @@ code{font-family:var(--font-mono);font-size:11px;background:rgba(255,255,255,0.0
 </style>
 <!-- Mobile responsive layer — added on top of existing desktop styles -->
 <link rel="stylesheet" href="toast.css"/>
-<link rel="stylesheet" href="mobile.css"/>
+<link rel="stylesheet" href="mobile.css?v=2"/>
 <!-- Auth guard: redirects to login if not logged in -->
-<script src="auth-guard.js"></script>
+<script src="auth-guard.js?v=2"></script>
 </head>
 <body class="page-index">
 
@@ -1464,6 +1464,6 @@ messaging.onMessage((payload) => {
 })();
 </script>
 <!-- Mobile responsive layer — loaded after all page scripts to avoid conflicts -->
-<script src="mobile.js"></script>
+<script src="mobile.js?v=2"></script>
 </body>
 </html>
