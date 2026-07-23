@@ -11,12 +11,10 @@
  *   5. Handle drawer open/close + backdrop
  *   6. Handle mode switching (.mode-mobile / .mode-desktop)
  *   7. Sync drawer clock with existing clock elements
- *   8. Provide "Enable Alerts" on mobile in two synced places on
- *      index.html: an icon-only bell button injected into the header
- *      (.nav-right, next to the hamburger) and a full-text item in the
- *      drawer. The desktop #notifyBtn is hidden on mobile via
- *      mobile.css; refreshNotifyItemState() keeps both mobile copies
- *      in sync with its on/off state.
+ *   8. Provide "Enable Alerts" on mobile via the full-text item in
+ *      the drawer. The desktop #notifyBtn is hidden on mobile via
+ *      mobile.css; refreshNotifyItemState() keeps the drawer item's
+ *      on/off state in sync with it.
  *
  * Integration: <script src="mobile.js"></script>
  * Place this AFTER <link rel="stylesheet" href="mobile.css">
@@ -24,18 +22,20 @@
  *
  * Zero dependencies. Vanilla JS only.
  *
- * ── FIX (header alignment) ──────────────────────────────────
- * The hamburger button is now injected into `.nav-brand` (left side,
- * alongside the logo + title) instead of `.nav-right`. Previously it
- * was prepended into `.nav-right`, the same container auth-guard.js
- * independently injects the profile chip into — two unrelated scripts
- * racing to mutate the same container, with the visual order decided
- * by whichever script's DOMContentLoaded listener fired first. Moving
- * the hamburger out of that shared container removes it from the race
- * entirely and matches "hamburger + logo + title on the left" layout.
- * See mobile.css for the matching `order` rules that make the chip
- * and notify button render in a fixed visual order inside `.nav-right`
- * regardless of which script injected first.
+ * ── HEADER LAYOUT (index.html only) ─────────────────────────
+ * On the home page, the hamburger is injected into `.nav-right`
+ * (appended after the auth-guard.js profile chip), so the header
+ * reads: logo/title — avatar/username — hamburger, all in one row,
+ * far-right hamburger. auth-guard.js's DOMContentLoaded listener is
+ * registered earlier in the document (head) than this script's, so
+ * the chip is always in the DOM before this script appends the
+ * hamburger after it; mobile.css also pins the visual order
+ * (`.page-index .nav-right` — chip before hamburger) as a backstop
+ * regardless of injection timing.
+ *
+ * tracking.html and driver.html are intentionally left on the prior
+ * behaviour — hamburger injected into `.nav-brand` (left side) — so
+ * neither page's header layout changes as part of this update.
  * ============================================================
  */
 
@@ -50,7 +50,6 @@
   const HAMBURGER_ID  = 'hamburgerBtn';
   const TOGGLE_BTN_ID = 'viewToggleBtn';
   const NOTIFY_ITEM_ID = 'drawerNotifyItem';
-  const HEADER_NOTIFY_BTN_ID = 'mobileNotifyBtn'; // icon-only bell, lives in .nav-right
 
   // ── STATE ──────────────────────────────────────────────────
   let currentMode = null; // 'mobile' | 'desktop'
@@ -58,7 +57,8 @@
 
 
   // ── DETECT PAGE TYPE ───────────────────────────────────────
-  // Used to build the correct drawer nav items per page
+  // Used to build the correct drawer nav items per page, and to
+  // decide where the hamburger gets injected in the header.
   function detectPage() {
     const path = window.location.pathname.split('/').pop() || 'index.html';
     if (path.includes('tracking'))  return 'tracking';
@@ -167,12 +167,11 @@
     }
   }
 
-  // ── NOTIFY STATE: reflect current on/off state everywhere ───
+  // ── NOTIFY STATE: reflect current on/off state in the drawer ─
   // Mirrors whatever the top-nav #notifyBtn currently shows, so the
-  // drawer item and the header's icon-only mobile button never disagree.
+  // drawer item never disagrees with the desktop control.
   function refreshNotifyItemState() {
     const drawerItem  = document.getElementById(NOTIFY_ITEM_ID);
-    const headerBtn   = document.getElementById(HEADER_NOTIFY_BTN_ID);
     const navBtnLabel = document.getElementById('notifyBtnLabel');
     const isOn = !!(navBtnLabel && navBtnLabel.textContent.trim() === 'Alerts On');
 
@@ -180,13 +179,6 @@
       const label = drawerItem.querySelector('.drawer-notify-label');
       drawerItem.classList.toggle('notify-on', isOn);
       if (label) label.textContent = isOn ? 'Alerts On' : 'Enable Alerts';
-    }
-
-    if (headerBtn) {
-      headerBtn.classList.toggle('notify-on', isOn);
-      const label = isOn ? 'Alerts On' : 'Enable Alerts';
-      headerBtn.setAttribute('aria-label', label);
-      headerBtn.title = label;
     }
   }
 
@@ -320,19 +312,6 @@
     `;
   }
 
-  // ── BUILD HEADER NOTIFY BUTTON HTML ─────────────────────────
-  // Icon-only bell so the mobile header row (hamburger | logo | title | chip | bell)
-  // never has to fit the full "Enable Alerts" label. Full text stays
-  // in the drawer item instead — see buildDrawerHTML().
-  function buildHeaderNotifyBtnHTML() {
-    return `
-      <button id="${HEADER_NOTIFY_BTN_ID}" class="mobile-notify-btn"
-        aria-label="Enable Alerts" title="Enable Alerts">
-        <i class="fas fa-bell"></i>
-      </button>
-    `;
-  }
-
   // ── SYNC DRAWER CLOCK ──────────────────────────────────────
   function startDrawerClock() {
     const el = document.getElementById('drawerClock');
@@ -350,35 +329,29 @@
   function inject() {
     const page = detectPage();
 
-    // 1. Inject hamburger into nav-brand (LEFT side, with logo + title).
-    //    FIX: previously this was inserted into `.nav-right`, the same
-    //    container auth-guard.js independently injects the profile chip
-    //    into. Two unrelated scripts racing to mutate one container made
-    //    the header's visual order (and the hamburger's visibility)
-    //    depend on load timing. Living in `.nav-brand` removes it from
-    //    that race and matches "hamburger + logo + title on the left".
+    // 1. Inject the hamburger button.
+    //    - index.html: appended into `.nav-right`, AFTER the auth-guard.js
+    //      profile chip, so the header reads brand — chip — hamburger,
+    //      hamburger flush to the far right. auth-guard.js's
+    //      DOMContentLoaded listener is registered earlier in the document
+    //      than this one, so the chip is already in the DOM by the time
+    //      this runs; mobile.css additionally pins the order via
+    //      `.page-index .nav-right` as a backstop.
+    //    - tracking.html / driver.html: unchanged from before — injected
+    //      into `.nav-brand` (left side, with the logo/title) — so those
+    //      pages' headers are not touched by this update.
     const navBrand = document.querySelector('.nav-brand');
     const navRight = document.querySelector('.nav-right');
-    if (navBrand) {
-      const hbWrap = document.createElement('div');
-      hbWrap.innerHTML = buildHamburgerHTML();
-      const hbEl = hbWrap.firstElementChild;
+    const hbWrap = document.createElement('div');
+    hbWrap.innerHTML = buildHamburgerHTML();
+    const hbEl = hbWrap.firstElementChild;
+
+    if (page === 'index' && navRight) {
+      navRight.appendChild(hbEl);
+      hbEl.addEventListener('click', toggleDrawer);
+    } else if (navBrand) {
       navBrand.insertBefore(hbEl, navBrand.firstChild);
       hbEl.addEventListener('click', toggleDrawer);
-    }
-
-    // 1b. Inject icon-only "Enable Alerts" button into nav-right (RIGHT side).
-    // Only relevant on index.html, which owns the notification feature —
-    // tracking/driver pages don't get one. Its position relative to the
-    // profile chip (also injected into `.nav-right`, by auth-guard.js) is
-    // pinned via CSS `order` rules in mobile.css, so it renders in a fixed
-    // visual position regardless of which script injected first.
-    if (page === 'index' && navRight) {
-      const notifyWrap = document.createElement('div');
-      notifyWrap.innerHTML = buildHeaderNotifyBtnHTML();
-      const notifyEl = notifyWrap.firstElementChild;
-      navRight.appendChild(notifyEl);
-      notifyEl.addEventListener('click', handleNotifyClick);
     }
 
     // 2. Inject backdrop

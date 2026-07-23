@@ -30,13 +30,18 @@
       const navRight = document.querySelector('.nav-right');
       if (!navRight) return;
 
+      // Markup/session data/logout behavior unchanged — only moved from
+      // inline styles to classes (.auth-chip / .auth-chip-avatar /
+      // .auth-chip-name / .auth-chip-logout), styled in mobile.css. This
+      // keeps desktop pixel-identical while letting the mobile header
+      // (index.html only) restyle the chip into a premium avatar treatment.
       const chip = document.createElement('div');
       chip.id = 'authChip';
-      chip.style.cssText = 'display:flex;align-items:center;gap:8px;background:rgba(78,205,196,0.10);border:1px solid rgba(78,205,196,0.25);border-radius:99px;padding:5px 12px 5px 8px;font-size:12px;color:#4ECDC4;font-family:"DM Sans",sans-serif;flex-shrink:0;';
+      chip.className = 'auth-chip';
       chip.innerHTML = `
-        <div style="width:24px;height:24px;border-radius:50%;background:rgba(78,205,196,0.2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#4ECDC4;">${student.name.charAt(0).toUpperCase()}</div>
-        <span style="font-weight:600;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${student.name.split(' ')[0]}</span>
-        <button onclick="authLogout()" title="Log out" style="background:none;border:none;color:#5A6A8A;cursor:pointer;font-size:12px;padding:0;line-height:1;" onmouseover="this.style.color='#F87171'" onmouseout="this.style.color='#5A6A8A'">
+        <div class="auth-chip-avatar">${student.name.charAt(0).toUpperCase()}</div>
+        <span class="auth-chip-name">${student.name.split(' ')[0]}</span>
+        <button class="auth-chip-logout" onclick="authLogout()" title="Log out" aria-label="Log out">
           <i class="fas fa-arrow-right-from-bracket"></i>
         </button>`;
 

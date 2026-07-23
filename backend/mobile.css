@@ -324,8 +324,9 @@
   display: none !important;
 }
 
-/* Full-text desktop "Enable Alerts" button is replaced on mobile by the
-   icon-only .mobile-notify-btn injected into .nav-right (see section 13) */
+/* Desktop "Enable Alerts" button is hidden on the mobile header — the
+   feature stays reachable via the full-text item in the drawer
+   (see section 4/5) instead of a bell icon in the header row. */
 .mode-mobile #notifyBtn {
   display: none !important;
 }
@@ -368,12 +369,13 @@
   display: none; /* hide on very small screens */
 }
 
-/* nav-right: houses hamburger + notify icon, always right-aligned,
-   never shrinks, never wraps */
+/* nav-right: on index.html houses the auth-guard.js profile chip +
+   hamburger (see section 14); on tracking/driver it's unchanged from
+   before. Always right-aligned, never shrinks, never wraps. */
 .mode-mobile .nav-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   flex: 0 0 auto;
 }
 
@@ -668,10 +670,6 @@
   display: none !important;
 }
 
-.mode-desktop .mobile-notify-btn {
-  display: none !important;
-}
-
 .mode-desktop .nav-right .tab-bar,
 .mode-desktop .nav-right .clock {
   display: flex !important;
@@ -798,7 +796,6 @@
 @media print {
   .view-toggle-btn,
   .hamburger-btn,
-  .mobile-notify-btn,
   .mobile-drawer,
   .drawer-backdrop {
     display: none !important;
@@ -807,73 +804,98 @@
 
 
 /* ─────────────────────────────────────────────────────────────
-   13. MOBILE HEADER — "ENABLE ALERTS" ICON BUTTON
-   Icon-only bell, sized to match the hamburger, sits in .nav-right.
-   Full "Enable Alerts" text lives only in the drawer (section 4/5)
-   so the header row never has to fit the full label.
+   13. MOBILE HOME HEADER — AUTH CHIP (AVATAR + USERNAME)
+   auth-guard.js injects `#authChip` (.auth-chip / .auth-chip-avatar /
+   .auth-chip-name / .auth-chip-logout) into .nav-right on every
+   protected page. The base rules below just reproduce its original
+   inline styles as classes — desktop, tracking.html and driver.html
+   all look exactly as before.
+
+   The .page-index block that follows gives the chip the premium
+   glassmorphic look ONLY on the Home Page's mobile header. body
+   carries the `page-index` class only on index.html, so this never
+   touches tracking.html / driver.html mobile headers.
 ───────────────────────────────────────────────────────────── */
-.mobile-notify-btn {
-  display: none; /* shown only in .mode-mobile, see below */
+.auth-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(78, 205, 196, 0.10);
+  border: 1px solid rgba(78, 205, 196, 0.25);
+  border-radius: 99px;
+  padding: 5px 12px 5px 8px;
+  font-size: 12px;
+  color: #4ECDC4;
+  font-family: "DM Sans", sans-serif;
+  flex-shrink: 0;
+}
+
+.auth-chip-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(78, 205, 196, 0.2);
+  display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--hamburger-size);
-  height: var(--hamburger-size);
-  border-radius: 10px;
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  color: var(--text2);
-  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  color: #4ECDC4;
   flex-shrink: 0;
+}
+
+.auth-chip-name {
+  font-weight: 600;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auth-chip-logout {
+  background: none;
+  border: none;
+  color: #5A6A8A;
+  cursor: pointer;
+  font-size: 12px;
   padding: 0;
-  transition: all var(--transition-smooth);
+  line-height: 1;
+  transition: color var(--transition-smooth, 0.2s);
 }
 
-.mobile-notify-btn:hover {
-  background: var(--bg4);
-  border-color: var(--border2);
-  color: var(--text);
+.auth-chip-logout:hover {
+  color: #F87171;
 }
 
-.mobile-notify-btn:active {
-  transform: scale(0.94);
+/* ── Home Page mobile header only: premium avatar+username treatment,
+   plus pinning chip-then-hamburger visual order as a backstop against
+   any future injection-timing change. ── */
+.mode-mobile .page-index .nav-right .auth-chip {
+  order: 1;
+  gap: 9px;
+  padding: 4px 14px 4px 4px;
+  background: linear-gradient(135deg, rgba(78, 205, 196, 0.18), rgba(78, 205, 196, 0.06));
+  border-color: rgba(78, 205, 196, 0.32);
+  backdrop-filter: blur(var(--glass-blur, 14px));
+  -webkit-backdrop-filter: blur(var(--glass-blur, 14px));
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 4px 14px rgba(0, 0, 0, 0.28);
 }
 
-.mobile-notify-btn i {
-  font-size: 15px;
-  color: var(--accent2);
-  transition: color var(--transition-smooth);
+.mode-mobile .page-index .nav-right .auth-chip-avatar {
+  width: 28px;
+  height: 28px;
+  font-size: 12px;
+  background: linear-gradient(135deg, rgba(78, 205, 196, 0.4), rgba(78, 205, 196, 0.16));
+  box-shadow: 0 0 0 1px rgba(78, 205, 196, 0.45) inset;
 }
 
-/* "On" state — small solid accent so users can tell alerts are live
-   at a glance, without needing text */
-.mobile-notify-btn.notify-on {
-  background: rgba(34, 197, 94, 0.1);
-  border-color: rgba(34, 197, 94, 0.35);
+.mode-mobile .page-index .nav-right .auth-chip-name {
+  font-size: 12.5px;
+  max-width: 78px;
 }
 
-.mobile-notify-btn.notify-on i {
-  color: #4ADE80;
-}
-
-/* Small dot indicator doubles down on the on/off state for accessibility
-   beyond color alone (color-blind friendly) */
-.mobile-notify-btn.notify-on::after {
-  content: '';
-  position: absolute;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #4ADE80;
-  border: 1.5px solid var(--bg3);
-  transform: translate(11px, -11px);
-}
-
-.mobile-notify-btn {
-  position: relative; /* anchor for the ::after dot above */
-}
-
-.mode-mobile .mobile-notify-btn {
-  display: inline-flex;
+.mode-mobile .page-index .nav-right .hamburger-btn {
+  order: 2;
 }
 
 /* ── Ultra-narrow phones (< 360px): tighten everything one more notch ── */
@@ -900,10 +922,25 @@
     gap: 6px;
   }
 
-  .mode-mobile .hamburger-btn,
-  .mode-mobile .mobile-notify-btn {
+  .mode-mobile .hamburger-btn {
     width: 36px;
     height: 36px;
+  }
+
+  .mode-mobile .page-index .nav-right .auth-chip {
+    padding: 3px 10px 3px 3px;
+    gap: 6px;
+  }
+
+  .mode-mobile .page-index .nav-right .auth-chip-avatar {
+    width: 24px;
+    height: 24px;
+    font-size: 10.5px;
+  }
+
+  .mode-mobile .page-index .nav-right .auth-chip-name {
+    max-width: 56px;
+    font-size: 11.5px;
   }
 }
 
