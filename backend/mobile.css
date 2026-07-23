@@ -331,17 +331,30 @@
   display: none !important;
 }
 
-/* Slim down the navbar itself */
+/* Slim down the navbar itself.
+   !important on the row-layout properties is a structural guarantee, not
+   a cosmetic preference: index.html still carries a legacy, unscoped
+   `@media(max-width:768px) .nav{flex-direction:column}` block (a pre-JS,
+   no-JS-fallback layout from before the .mode-mobile/.mode-desktop class
+   system existed). That block is left in place on purpose — it's outside
+   this file's scope and still serves visitors with JS disabled — but it
+   must never be allowed to stack the header into two rows once JS has
+   set .mode-mobile. Width is pinned to `auto` for the same reason: the
+   legacy block also sets `.nav-brand{width:100%}` / `.nav-right{width:100%}`,
+   which would otherwise force each side onto its own line even inside a
+   row-direction flex container. */
 .mode-mobile .nav {
-  flex-direction: row;
-  align-items: center;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
   padding: 0 var(--mobile-padding);
   height: var(--nav-height);
-  gap: 0;
-  justify-content: space-between;
+  gap: 0 !important;
+  justify-content: space-between !important;
 }
 
 .mode-mobile .nav-brand {
+  width: auto !important;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -377,6 +390,7 @@
   align-items: center;
   gap: 10px;
   flex: 0 0 auto;
+  width: auto !important;
 }
 
 /* ── HERO ── */
