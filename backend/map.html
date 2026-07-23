@@ -38,10 +38,21 @@ html,body{width:100%;height:100%;overflow:hidden;background:#060A14;font-family:
   font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;
   flex-shrink:0;transition:all 0.3s;
 }
-.status-moving{background:rgba(34,197,94,0.15);color:#4ADE80;border:1px solid rgba(34,197,94,0.3)}
-.status-stopped{background:rgba(251,191,36,0.12);color:#FBBF24;border:1px solid rgba(251,191,36,0.25)}
+.status-moving{background:rgba(55,138,221,0.15);color:#7FB4EA;border:1px solid rgba(55,138,221,0.3)}
+.status-slow{background:rgba(186,117,23,0.15);color:#F0B65B;border:1px solid rgba(186,117,23,0.3)}
+.status-stopped{background:rgba(120,120,116,0.18);color:#B4B2A9;border:1px solid rgba(120,120,116,0.3)}
 .status-waiting{background:rgba(90,106,138,0.2);color:#9BAAC8;border:1px solid rgba(90,106,138,0.3)}
 .status-offline{background:rgba(239,68,68,0.12);color:#F87171;border:1px solid rgba(239,68,68,0.25)}
+
+/* ── PULSE RING OVERLAY (sits under the marker, added via OverlayView) ── */
+.pulse-wrap{position:absolute;width:0;height:0;pointer-events:none}
+.pulse-ring{position:absolute;left:0;top:0;border-radius:50%;transform:translate(-50%,-50%)}
+.pulse-ring.moving{border:2px solid #378ADD;animation:pulseFast 1.4s ease-out infinite}
+.pulse-ring.slow{border:2px dashed #BA7517;animation:pulseSlow 2.4s ease-out infinite}
+.pulse-ring.stopped{border:1px solid #5F5E5A;width:36px;height:36px;opacity:0.5;animation:none}
+.pulse-ring.offline{display:none}
+@keyframes pulseFast{0%{width:16px;height:16px;opacity:0.65}100%{width:80px;height:80px;opacity:0}}
+@keyframes pulseSlow{0%{width:16px;height:16px;opacity:0.55}100%{width:60px;height:60px;opacity:0}}
 
 /* ── BOTTOM INFO CARD ── */
 .info-card{
@@ -168,6 +179,12 @@ const MAPS_API_KEY = 'AIzaSyAjCI_cdiIGzAGDbRMEOpyXDsjIx9SOObI'; // authorized ke
 const API_BASE     = window.location.origin;
 const POLL_MS      = 3000; // poll every 3 seconds
 
+// Speed thresholds (km/h) for marker state — with small hysteresis to avoid flicker near the edges
+const SPEED_STOPPED_ENTER = 2;   // drop to STOPPED once speed <= this
+const SPEED_STOPPED_EXIT  = 4;   // only leave STOPPED once speed > this
+const SPEED_SLOW_MAX      = 15;  // SLOW band is (stopped-exit .. 15], above that is MOVING
+const STALE_MS             = 10000; // no update for this long -> treat as offline regardless of last speed
+
 // ── Read vehicleId from URL ───────────────────────────────────────────────────
 const params    = new URLSearchParams(window.location.search);
 const vehicleId = params.get('vehicleId');
@@ -184,6 +201,71 @@ let map, marker, isSatellite = false;
 let lastLat = null, lastLng = null;
 let pollTimer;
 let makeIcon; // defined inside initMap after API loads
+let pulseOverlay;
+let currentState  = 'waiting'; // moving | slow | stopped | offline
+let currentHeading = 0;        // degrees, 0 = north
+
+// ── Derive marker state from speed + staleness, with hysteresis ─────────────
+function getMarkerState(speed, isStale, prevState) {
+  if (isStale) return 'offline';
+  const s = Number(speed) || 0;
+  if (prevState === 'stopped') {
+    // stay stopped until speed clearly rises above the exit threshold
+    if (s <= SPEED_STOPPED_EXIT) return 'stopped';
+  } else if (s <= SPEED_STOPPED_ENTER) {
+    return 'stopped';
+  }
+  return s <= SPEED_SLOW_MAX ? 'slow' : 'moving';
+}
+
+// ── Bearing between two lat/lng points, in degrees (0 = north, clockwise) ───
+function computeHeading(lat1, lng1, lat2, lng2) {
+  const toRad = d => d * Math.PI / 180;
+  const dLng  = toRad(lng2 - lng1);
+  const y = Math.sin(dLng) * Math.cos(toRad(lat2));
+  const x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) -
+            Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(dLng);
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
+
+// PulseOverlay is a class that extends google.maps.OverlayView — that global doesn't exist
+// until the Maps API script (loaded at the bottom of this file) has finished loading, so the
+// class itself is defined lazily inside initMap() via this factory, not at top-level script scope.
+let PulseOverlay;
+function definePulseOverlay() {
+  PulseOverlay = class extends google.maps.OverlayView {
+    constructor() {
+      super();
+      this.div = null;
+      this.pos = null;
+    }
+    onAdd() {
+      this.div = document.createElement('div');
+      this.div.className = 'pulse-wrap';
+      this.div.innerHTML = `<div class="pulse-ring stopped"></div>`;
+      this.getPanes().overlayLayer.appendChild(this.div);
+    }
+    draw() {
+      if (!this.pos) return;
+      const proj = this.getProjection();
+      if (!proj) return;
+      const point = proj.fromLatLngToDivPixel(this.pos);
+      this.div.style.left = `${point.x}px`;
+      this.div.style.top  = `${point.y}px`;
+    }
+    setPosition(pos) {
+      this.pos = new google.maps.LatLng(pos.lat, pos.lng);
+      this.draw();
+    }
+    setState(state) {
+      const ring = this.div && this.div.querySelector('.pulse-ring');
+      if (ring) ring.className = `pulse-ring ${state}`;
+    }
+    onRemove() {
+      if (this.div) { this.div.parentNode.removeChild(this.div); this.div = null; }
+    }
+  };
+}
 
 // ── Dark map style ────────────────────────────────────────────────────────────
 const darkStyle = [
@@ -201,15 +283,20 @@ const darkStyle = [
 // ── Init Google Map ───────────────────────────────────────────────────────────
 function initMap() {
   // makeIcon must be defined here — google.maps.SymbolPath only available after API loads
-  makeIcon = function(color) {
+  makeIcon = function(color, rotation, showArrow) {
+    // Teardrop pin body, with an optional arrowhead drawn on top (only when moving/slow)
+    const arrowPath = showArrow
+      ? 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 4l3 6h-2v3h-2v-3H9l3-6z'
+      : 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z';
     return {
-      path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z',
+      path: arrowPath,
       fillColor: color,
       fillOpacity: 1,
       strokeColor: '#ffffff',
       strokeWeight: 1.5,
       scale: 1.6,
       anchor: new google.maps.Point(12, 22),
+      rotation: rotation || 0, // rotates the whole path around the anchor — used to face the heading
     };
   };
   map = new google.maps.Map(document.getElementById('map'), {
@@ -224,9 +311,14 @@ function initMap() {
   marker = new google.maps.Marker({
     map,
     title: `Bus ${vehicleId}`,
-    icon: makeIcon('#4ECDC4'),
+    icon: makeIcon('#4ECDC4', 0, false),
     optimized: false,
   });
+
+  // Pulse ring drawn under the marker, reflects moving / slow / stopped / offline
+  definePulseOverlay();
+  pulseOverlay = new PulseOverlay();
+  pulseOverlay.setMap(map);
 
   // Start polling
   fetchLocation();
@@ -246,12 +338,22 @@ async function fetchLocation() {
       return;
     }
 
-    const { lat, lng, speed, status, isStale, updatedAt } = data;
+    const { lat, lng, speed, isStale, updatedAt } = data;
+    const staleByAge = isStale || (Date.now() - updatedAt) > STALE_MS;
+
+    // Heading: only recompute from movement if the bus actually moved a meaningful amount,
+    // otherwise keep facing the last known direction instead of jittering on GPS noise.
+    if (lastLat !== null && lastLng !== null) {
+      const moved = Math.hypot(lat - lastLat, lng - lastLng);
+      if (moved > 0.00003) currentHeading = computeHeading(lastLat, lastLng, lat, lng);
+    }
+
     lastLat = lat;
     lastLng = lng;
 
     const pos = { lat, lng };
     marker.setPosition(pos);
+    pulseOverlay.setPosition(pos);
 
     // Only auto-center first time or when very far off screen
     if (!map.getBounds() || !map.getBounds().contains(pos)) {
@@ -261,10 +363,10 @@ async function fetchLocation() {
     // Hide loading screen
     document.getElementById('loadingScreen').classList.add('hidden');
 
-    // Status pill
-    if (isStale)              setStatus('offline',  'Offline');
-    else if (status==='Moving') setStatus('moving', 'Moving');
-    else                        setStatus('stopped','Stopped');
+    // Derive state (moving / slow / stopped / offline) with hysteresis, then apply it
+    const state = getMarkerState(speed, staleByAge, currentState);
+    const labels = { moving: 'Moving', slow: 'Slow', stopped: 'Stopped', offline: 'Offline' };
+    setStatus(state, labels[state]);
 
     // Info card
     updateInfoCard({ lat, lng, speed, updatedAt });
@@ -292,14 +394,21 @@ function updateInfoCard(data) {
 
 // ── Status pill ───────────────────────────────────────────────────────────────
 function setStatus(type, text) {
+  currentState = type;
+
   const pill = document.getElementById('statusPill');
   pill.textContent  = text;
   pill.className    = `status-pill status-${type}`;
 
-  // Update marker colour
+  // moving = blue with heading arrow, slow = amber with heading arrow, stopped = gray no arrow, offline = red no arrow
+  const colors    = { moving:'#378ADD', slow:'#BA7517', stopped:'#5F5E5A', offline:'#EF4444', waiting:'#4ECDC4' };
+  const showArrow = (type === 'moving' || type === 'slow');
+
   if (marker) {
-    const colors = { moving:'#22C55E', stopped:'#FBBF24', offline:'#EF4444', waiting:'#4ECDC4' };
-    marker.setIcon(makeIcon(colors[type] || '#4ECDC4'));
+    marker.setIcon(makeIcon(colors[type] || '#4ECDC4', showArrow ? currentHeading : 0, showArrow));
+  }
+  if (pulseOverlay) {
+    pulseOverlay.setState(type);
   }
 }
 
