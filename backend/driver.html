@@ -520,6 +520,129 @@ const API_BASE = (() => {
   return `${location.protocol}//${location.host}`;
 })();
 
+// ── Persistence config ───────────────────────────────────────────────────────
+// IMPORTANT PLATFORM NOTE (read before touching this file):
+// A plain browser tab's JavaScript is destroyed the instant the page is
+// actually unloaded (full navigation to another .html document, or the tab
+// closing). No client-side code — ours or anyone else's — can keep
+// navigator.geolocation.watchPosition() running through that. Apps like
+// Uber Driver / Ola Driver get "truly background" tracking because they run
+// inside a native OS process with a foreground service; that's exactly what
+// the Capacitor BackgroundGeolocation path below does when this page is
+// loaded inside the native app shell (isNativeApp() === true) — that watcher
+// lives in the OS, independent of this page, and really does survive Back,
+// Home, locking the phone, etc.
+//
+// In a plain mobile browser tab (no native wrapper), tracking keeps running
+// as long as the tab itself stays alive — including minimized Chrome, screen
+// off, or switching apps — because the tab process isn't destroyed by those.
+// It only stops if the tab is actually navigated away from or closed, which
+// is why the guard below intercepts in-app navigation with a warning instead
+// of silently letting it happen. Everything else in this file (session
+// persistence, offline queue, heartbeats) exists to make reconnecting to an
+// still-alive session, or one restored by the native watcher, instant and
+// seamless — not to defy this browser platform limit.
+
+const SESSION_KEY   = 'ritians_tracking_session';
+const HEARTBEAT_MS  = 10_000;   // how often we ping /tracking/heartbeat
+const DB_NAME       = 'ritians_gps_queue';
+const DB_STORE      = 'pending_points';
+
+// ── Tiny IndexedDB wrapper for the offline GPS queue ────────────────────────
+// Only ever holds points that failed to reach the backend while offline.
+// Never used for session state — that lives in localStorage per spec.
+let _dbPromise = null;
+function openOfflineDB() {
+  if (_dbPromise) return _dbPromise;
+  _dbPromise = new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(DB_STORE)) {
+        db.createObjectStore(DB_STORE, { keyPath: 'id', autoIncrement: true });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  return _dbPromise;
+}
+
+async function queueOfflinePoint(point) {
+  try {
+    const db = await openOfflineDB();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(DB_STORE, 'readwrite');
+      tx.objectStore(DB_STORE).add({ ...point, t: Date.now(), status: 'pending' });
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (err) {
+    console.warn('Failed to queue offline GPS point:', err);
+  }
+}
+
+async function getPendingPoints() {
+  const db = await openOfflineDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DB_STORE, 'readonly');
+    const req = tx.objectStore(DB_STORE).getAll();
+    req.onsuccess = () => resolve(req.result.sort((a, b) => a.t - b.t)); // chronological order
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function deletePendingPoint(id) {
+  const db = await openOfflineDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DB_STORE, 'readwrite');
+    tx.objectStore(DB_STORE).delete(id);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+let isFlushingQueue = false;
+async function flushOfflineQueue() {
+  if (isFlushingQueue || !navigator.onLine) return;
+  isFlushingQueue = true;
+  try {
+    const pending = await getPendingPoints();
+    for (const p of pending) {
+      try {
+        const res = await fetch(`${API_BASE}/update-location`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            vehicleId: p.vehicleId, lat: p.lat, lng: p.lng,
+            speed: p.speed || 0, heading: p.heading || 0, sessionId: p.sessionId,
+          }),
+        });
+        if (!res.ok) throw new Error('upload failed');
+        await deletePendingPoint(p.id); // synced — remove from queue
+      } catch (err) {
+        break; // stop on first failure, preserve remaining order for next attempt
+      }
+    }
+  } finally {
+    isFlushingQueue = false;
+  }
+}
+
+// ── Persistent session (localStorage) ───────────────────────────────────────
+function saveSession(session) {
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch (e) { /* storage full/blocked — non-fatal */ }
+}
+function loadSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+function clearSession() {
+  try { localStorage.removeItem(SESSION_KEY); } catch (e) { /* ignore */ }
+}
+
 // ── State ──────────────────────────────────────────────────────────────────────
 let watchId = null;        // GPS watch handle
 let vehicleId = null;      // Selected route ID
@@ -527,6 +650,8 @@ let sendInterval = null;   // Interval for POSTing to server
 let lastPosition = null;   // Cache latest GPS position
 let isTracking = false;    // UI/guard flag
 let bgWatcherId = null;    // Native background-geolocation watcher handle
+let sessionId = null;      // Backend-issued tracking session id
+let heartbeatInterval = null; // Interval for /tracking/heartbeat pings
 
 // ── Native Background Tracking (Capacitor app only) ─────────────────────
 // Uses the native plugin when running inside the Android app shell.
@@ -589,22 +714,41 @@ function stopNativeBackgroundTracking() {
 }
 
 // ── Start Tracking ──────────────────────────────────────────────────────────
-async function startTracking() {
+async function startTracking(isRestore = false) {
   vehicleId = document.getElementById('vehicleSelect').value;
   if (!vehicleId) { showToast('Please select your route first!', 'error'); return; }
+
+  if (isTracking) return; // guard: never create a second watcher/session
 
   if (!navigator.geolocation) {
     showToast('GPS not supported on this device!', 'error');
     return;
   }
 
-  // Tell the backend this is a fresh trip — resets "Bus Started" and
-  // "arriving" notification state so students get alerted every time
-  // the driver starts sharing, not just the very first time ever.
+  if (!isRestore) {
+    // Tell the backend this is a fresh trip — resets "Bus Started" and
+    // "arriving" notification state so students get alerted every time
+    // the driver starts sharing, not just the very first time ever.
+    try {
+      await fetch(`${API_BASE}/trip-start/${vehicleId}`, { method: 'POST' });
+    } catch (err) {
+      console.warn('trip-start call failed, continuing anyway:', err);
+    }
+  }
+
+  // Create (or reuse) the authoritative backend tracking session. Reusing
+  // means a page reload/reopen for a session that's still running never
+  // spawns a duplicate trip on the server.
   try {
-    await fetch(`${API_BASE}/trip-start/${vehicleId}`, { method: 'POST' });
+    const res = await fetch(`${API_BASE}/tracking/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vehicleId, routeId: vehicleId }),
+    });
+    const data = await res.json();
+    if (data.success) sessionId = data.session.sessionId;
   } catch (err) {
-    console.warn('trip-start call failed, continuing anyway:', err);
+    console.warn('tracking/start call failed, continuing with local session only:', err);
   }
 
   if (isNativeApp()) {
@@ -627,25 +771,101 @@ async function startTracking() {
     if (lastPosition) sendToServer(lastPosition);
   }, 4000);
 
+  startHeartbeat();
+
   // Update UI
   isTracking = true;
-  setActiveUI(true);
-  window.RitiansToast.show({
-    title: 'Live Tracking Enabled',
-    subtitle: 'Real-time location updates are now active.',
-    type: 'success',
-    busIcon: true,
+  saveSession({
+    trackingActive: true,
+    driverId: null,
+    vehicleId,
+    routeId: vehicleId,
+    sessionId,
+    trackingStartTime: Date.now(),
+    lastKnownLocation: lastPosition,
+    backendStatus: 'running',
+    lastHeartbeatTime: Date.now(),
   });
-  if (window.RitiansSounds) window.RitiansSounds.playBusStarted();
+  setActiveUI(true);
+  flushOfflineQueue(); // pick up anything queued from a previous offline stretch
+  if (!isRestore) {
+    window.RitiansToast.show({
+      title: 'Live Tracking Enabled',
+      subtitle: 'Real-time location updates are now active.',
+      type: 'success',
+      busIcon: true,
+    });
+    if (window.RitiansSounds) window.RitiansSounds.playBusStarted();
+  } else {
+    showToast('Live tracking session restored.', 'success');
+  }
 }
 
-// ── Stop Tracking ────────────────────────────────────────────────────────────
-function stopTracking() {
+// ── Heartbeat — proves the session is alive independent of GPS fixes ────────
+function startHeartbeat() {
+  stopHeartbeat();
+  heartbeatInterval = setInterval(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/tracking/heartbeat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vehicleId, sessionId, lastKnownLocation: lastPosition }),
+      });
+      if (res.status === 409) {
+        // Another session has taken over this vehicle — stand down locally
+        // rather than fight it (e.g. driver started tracking on another device).
+        showToast('Tracking was started elsewhere for this route.', 'error');
+        stopTrackingLocalOnly();
+        return;
+      }
+      const data = await res.json();
+      if (data.success) {
+        const s = loadSession();
+        if (s) { s.lastHeartbeatTime = Date.now(); s.backendStatus = 'running'; saveSession(s); }
+      }
+    } catch (err) {
+      // Network down — heartbeat just skips a beat, offline queue covers GPS itself.
+    }
+  }, HEARTBEAT_MS);
+}
+function stopHeartbeat() {
+  if (heartbeatInterval) clearInterval(heartbeatInterval);
+  heartbeatInterval = null;
+}
+
+// Clears local tracking state only, without telling the backend to stop the
+// session (used when a 409 tells us the session already belongs elsewhere).
+function stopTrackingLocalOnly() {
   if (watchId !== null) navigator.geolocation.clearWatch(watchId);
   stopNativeBackgroundTracking();
   if (sendInterval) clearInterval(sendInterval);
-  watchId = null; sendInterval = null; lastPosition = null;
+  stopHeartbeat();
+  watchId = null; sendInterval = null; lastPosition = null; sessionId = null;
   isTracking = false;
+  clearSession();
+  setActiveUI(false);
+}
+
+// ── Stop Tracking ────────────────────────────────────────────────────────────
+async function stopTracking() {
+  if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+  stopNativeBackgroundTracking();
+  if (sendInterval) clearInterval(sendInterval);
+  stopHeartbeat();
+
+  try {
+    await fetch(`${API_BASE}/tracking/stop`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vehicleId, sessionId }),
+    });
+  } catch (err) {
+    console.warn('tracking/stop call failed (session will time out server-side instead):', err);
+  }
+
+  watchId = null; sendInterval = null; lastPosition = null; sessionId = null;
+  isTracking = false;
+  clearSession();
   setActiveUI(false);
   window.RitiansToast.show({
     title: 'Tracking Stopped',
@@ -684,11 +904,19 @@ function onPositionError(err) {
 
 // ── POST to Backend ───────────────────────────────────────────────────────────
 async function sendToServer({ lat, lng, speed, heading }) {
+  if (!navigator.onLine) {
+    // Don't even attempt the round trip — go straight to the offline queue
+    // so we don't burn the fetch timeout every 4 seconds while offline.
+    await queueOfflinePoint({ vehicleId, lat, lng, speed: speed || 0, heading: heading || 0, sessionId });
+    document.getElementById('statusText').textContent = '📴 Offline — queued';
+    document.getElementById('statusText').className = 'status-val yellow';
+    return;
+  }
   try {
     const res = await fetch(`${API_BASE}/update-location`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ vehicleId, lat, lng, speed: speed || 0, heading: heading || 0 }),
+      body: JSON.stringify({ vehicleId, lat, lng, speed: speed || 0, heading: heading || 0, sessionId }),
     });
     const data = await res.json();
     if (data.success) {
@@ -698,12 +926,20 @@ async function sendToServer({ lat, lng, speed, heading }) {
         data.status === 'Moving' ? '🚌 Moving' : '🅿️ Stopped';
       document.getElementById('statusText').className =
         `status-val ${data.status === 'Moving' ? 'green' : 'yellow'}`;
+      // Opportunistically drain anything left over from an earlier offline spell.
+      flushOfflineQueue();
     }
   } catch (err) {
-    document.getElementById('statusText').textContent = 'Server unreachable';
+    // Network blip even though navigator.onLine said we were fine — queue it,
+    // preserving chronological order for when connectivity is confirmed back.
+    await queueOfflinePoint({ vehicleId, lat, lng, speed: speed || 0, heading: heading || 0, sessionId });
+    document.getElementById('statusText').textContent = 'Server unreachable — queued';
     document.getElementById('statusText').className = 'status-val red';
   }
 }
+
+// Flush the queue as soon as the browser reports connectivity restored.
+window.addEventListener('online', () => { if (isTracking) flushOfflineQueue(); });
 
 // ── UI Helpers ────────────────────────────────────────────────────────────────
 function setActiveUI(active) {
@@ -722,34 +958,88 @@ function showToast(msg, type = 'success') {
   window.RitiansToast.show(msg, type);
 }
 
-// Auto-stop tracking when page is closed/hidden (save battery)
+// Tracking is intentionally NOT stopped here — see the platform note at the
+// top of this script. Staying on the tab (minimized, screen off, switched
+// app) never destroys watchPosition(); nothing to do but leave it running.
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden && watchId !== null) {
-    // Keep running in background — do not stop tracking.
-    // Note: some browsers may throttle timers in background; watchPosition can still update.
-  }
+  // No-op by design: tracking continues regardless of visibility.
 });
 
-// Prevent accidental stop by navigation/closing while tracking is active
+// Warn (don't block) before an actual page unload while tracking is active,
+// since that genuinely does end this tab's GPS collection in browser mode.
 window.addEventListener('beforeunload', (e) => {
   if (!isTracking) return;
   e.preventDefault();
   e.returnValue = '';
 });
 
-// Guard the "Back to Main" link while tracking
+// ── Leave-page confirmation modal ────────────────────────────────────────────
+// Per spec: leaving the Driver Portal while tracking is active must NEVER
+// stop tracking — it only ever closes/navigates the UI. The backend session
+// and (on native) the OS-level watcher keep running either way.
+function showLeaveConfirm(destinationUrl) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;background:rgba(3,5,11,0.7);backdrop-filter:blur(4px);padding:20px;';
+  overlay.innerHTML = `
+    <div style="max-width:360px;width:100%;background:#0F192C;border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:26px 24px;box-shadow:0 30px 70px rgba(0,0,0,0.5);font-family:'DM Sans',sans-serif;">
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:#F5F8FF;margin-bottom:10px;">Location sharing is active</div>
+      <div style="font-size:13px;color:#9BAAC8;line-height:1.6;margin-bottom:20px;">Tracking will continue in the background. Do you want to leave this page?</div>
+      <div style="display:flex;gap:10px;">
+        <button id="leaveCancelBtn" style="flex:1;padding:11px;border-radius:99px;border:1px solid rgba(255,255,255,0.15);background:#172443;color:#F5F8FF;font-weight:600;font-size:13px;cursor:pointer;">Stay Here</button>
+        <button id="leaveConfirmBtn" style="flex:1;padding:11px;border-radius:99px;border:none;background:linear-gradient(135deg,#FF6B35,#F97316);color:#fff;font-weight:700;font-size:13px;cursor:pointer;">Leave Page</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#leaveCancelBtn').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('#leaveConfirmBtn').addEventListener('click', () => {
+    overlay.remove();
+    window.location.href = destinationUrl; // tracking keeps running — never stopped here
+  });
+}
+
 (function wireNavGuards(){
-  const backLink = document.querySelector('a.back-btn');
-  if (!backLink) return;
-  backLink.addEventListener('click', (e) => {
-    if (!isTracking) return;
-    e.preventDefault();
-    const ok = confirm('Location sharing is active. Stop sharing and leave this page?');
-    if (!ok) return;
-    stopTracking();
-    window.location.href = backLink.getAttribute('href') || 'index.html';
+  document.querySelectorAll('a.back-btn').forEach((link) => {
+    link.addEventListener('click', (e) => {
+      if (!isTracking) return;
+      e.preventDefault();
+      showLeaveConfirm(link.getAttribute('href') || 'index.html');
+    });
   });
 })();
+
+// ── Session restore on load ──────────────────────────────────────────────────
+// If a tracking session is already active (from localStorage + confirmed
+// with the backend), restore the UI to "Live Tracking Active" instantly
+// instead of asking the driver to press Start again — no duplicate watcher
+// or session is created either way.
+async function restoreSessionOnLoad() {
+  const saved = loadSession();
+  if (!saved || !saved.trackingActive || !saved.vehicleId) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/tracking/session/${saved.vehicleId}`);
+    const data = await res.json();
+    if (!data.success || !data.active) {
+      // Backend says the session is gone (stopped/stale) — don't resurrect it.
+      clearSession();
+      return;
+    }
+    sessionId = data.session.sessionId;
+  } catch (err) {
+    // Can't reach backend right now — still restore locally so GPS keeps
+    // flowing; the heartbeat/queue will resync once the network is back.
+    sessionId = saved.sessionId;
+  }
+
+  vehicleId = saved.vehicleId;
+  const select = document.getElementById('vehicleSelect');
+  if (select) {
+    select.value = vehicleId;
+    select.dispatchEvent(new Event('change'));
+  }
+  await startTracking(true);
+}
+restoreSessionOnLoad();
 </script>
 
 <!-- ── Premium custom Route Picker ──────────────────────────────────────────────
