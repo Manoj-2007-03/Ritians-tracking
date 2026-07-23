@@ -1184,6 +1184,12 @@ restoreSessionOnLoad();
   // active, the trigger is disabled along with it automatically since it's
   // nested inside #setupPanel — no extra wiring needed here.
 
+  // Keep the visible pill in sync whenever the underlying select's value
+  // changes for any reason — including programmatic restores that fire a
+  // 'change' event (e.g. session recovery on page load), not just clicks
+  // inside this widget's own list.
+  nativeSelect.addEventListener('change', updateTriggerLabel);
+
   renderList('');
   updateTriggerLabel();
 })();

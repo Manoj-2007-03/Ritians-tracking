@@ -159,6 +159,38 @@ const locationStore  = {};
 const etaCache       = {};
 const segmentSpeedDB = {};  // Warm-loaded from MongoDB on startup (see loadSegmentSpeeds)
 
+// ── Tracking Session Store (persistent background GPS feature) ─────────────
+// Keyed by vehicleId. One authoritative session per vehicle — starting a
+// session for a vehicle that already has one just reuses/refreshes it so a
+// page reload/reconnect never spawns a duplicate "trip".
+const trackingSessions = {}; // vehicleId -> { sessionId, driverId, vehicleId, routeId, status, startedAt, lastHeartbeatAt, lastKnownLocation }
+
+const HEARTBEAT_TIMEOUT_MS = 20_000;     // no heartbeat/GPS in this window -> "paused" (network loss)
+const SESSION_STALE_MS     = 5 * 60_000; // no heartbeat/GPS this long -> "stopped" (assume session dead)
+
+function makeSessionId() {
+  return `sess_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+// Runs periodically to demote sessions whose heartbeat has gone quiet,
+// mirroring the "Tracking Paused (Network Only)" / stale-session states
+// requested for the driver GPS feature.
+setInterval(() => {
+  const now = Date.now();
+  for (const vehicleId of Object.keys(trackingSessions)) {
+    const s = trackingSessions[vehicleId];
+    if (!s || s.status === "stopped") continue;
+    const silentFor = now - s.lastHeartbeatAt;
+    if (silentFor > SESSION_STALE_MS) {
+      s.status = "stopped";
+      console.log(`[TRACKING] ${vehicleId}: session marked stopped (stale ${Math.round(silentFor / 1000)}s)`);
+    } else if (silentFor > HEARTBEAT_TIMEOUT_MS && s.status !== "paused") {
+      s.status = "paused";
+      console.log(`[TRACKING] ${vehicleId}: session paused (no heartbeat ${Math.round(silentFor / 1000)}s)`);
+    }
+  }
+}, 10_000);
+
 // ── RIT Campus ──────────────────────────────────────────────────────────────
 const RIT_CAMPUS = { lat: 12.8231, lng: 80.0444 };
 
@@ -1790,10 +1822,102 @@ app.post("/trip-start/:vehicleId", (req, res) => {
   res.json({ success: true, vehicleId, message: "Trip state reset. Next location update will trigger Bus Started." });
 });
 
+// ── Persistent Tracking Session Endpoints ───────────────────────────────────
+// These back the Driver GPS Portal's "session survives navigation/reload"
+// feature. The frontend Tracking Manager calls these instead of assuming
+// anything about its own lifetime — the backend is the source of truth for
+// whether a vehicle's session is Started / Running / Paused / Stopped.
+
+// POST /tracking/start  { vehicleId, driverId, routeId }
+// Reuses an existing non-stopped session for the vehicle instead of creating
+// a duplicate, so a page refresh or reopened tab never spawns a second trip.
+app.post("/tracking/start", (req, res) => {
+  const { vehicleId, driverId, routeId } = req.body || {};
+  if (!vehicleId) return res.status(400).json({ success: false, error: "vehicleId required." });
+
+  const now = Date.now();
+  const existing = trackingSessions[vehicleId];
+
+  if (existing && existing.status !== "stopped") {
+    // Reuse — just refresh the heartbeat and report the same sessionId back.
+    existing.lastHeartbeatAt = now;
+    existing.status = "running";
+    return res.json({ success: true, reused: true, session: existing });
+  }
+
+  const session = {
+    sessionId: makeSessionId(),
+    driverId: driverId || null,
+    vehicleId,
+    routeId: routeId || vehicleId,
+    status: "started",
+    startedAt: now,
+    lastHeartbeatAt: now,
+    lastKnownLocation: null,
+  };
+  trackingSessions[vehicleId] = session;
+  console.log(`[TRACKING] ${vehicleId}: session ${session.sessionId} started`);
+  res.json({ success: true, reused: false, session });
+});
+
+// POST /tracking/heartbeat  { vehicleId, sessionId, lastKnownLocation? }
+// Cheap, frequent ping used purely to prove the driver session is alive —
+// separate from /update-location so heartbeats keep flowing even when GPS
+// itself is temporarily unavailable indoors etc.
+app.post("/tracking/heartbeat", (req, res) => {
+  const { vehicleId, sessionId, lastKnownLocation } = req.body || {};
+  const session = trackingSessions[vehicleId];
+  if (!session) return res.status(404).json({ success: false, error: "No active session for vehicle." });
+  if (sessionId && session.sessionId !== sessionId) {
+    // A different session has since taken over this vehicle (e.g. driver
+    // restarted tracking elsewhere) — tell the caller so it can resync.
+    return res.status(409).json({ success: false, error: "Session superseded.", session });
+  }
+  session.lastHeartbeatAt = Date.now();
+  session.status = "running";
+  if (lastKnownLocation) session.lastKnownLocation = lastKnownLocation;
+  res.json({ success: true, session });
+});
+
+// POST /tracking/stop  { vehicleId, sessionId }
+app.post("/tracking/stop", (req, res) => {
+  const { vehicleId, sessionId } = req.body || {};
+  const session = trackingSessions[vehicleId];
+  if (!session) return res.json({ success: true, alreadyStopped: true });
+  if (sessionId && session.sessionId !== sessionId) {
+    return res.status(409).json({ success: false, error: "Session superseded.", session });
+  }
+  session.status = "stopped";
+  session.stoppedAt = Date.now();
+  console.log(`[TRACKING] ${vehicleId}: session ${session.sessionId} stopped`);
+  res.json({ success: true, session });
+});
+
+// GET /tracking/session/:vehicleId  — used by the Driver Portal on load to
+// silently restore an active session instead of asking the driver to press
+// Start again.
+app.get("/tracking/session/:vehicleId", (req, res) => {
+  const session = trackingSessions[req.params.vehicleId];
+  if (!session || session.status === "stopped") {
+    return res.json({ success: true, active: false });
+  }
+  res.json({ success: true, active: true, session });
+});
+
 app.post("/update-location", (req, res) => {
-  const { vehicleId, lat, lng, speed, heading } = req.body;
+  const { vehicleId, lat, lng, speed, heading, sessionId } = req.body;
   if (!vehicleId || lat === undefined || lng === undefined)
     return res.status(400).json({ success: false, error: "vehicleId, lat, lng required." });
+
+  // A real GPS fix is at least as good a liveness signal as a heartbeat —
+  // count it as one so the driver doesn't need two pings running in parallel
+  // while GPS is flowing normally.
+  const trackedSession = trackingSessions[vehicleId];
+  if (trackedSession && (!sessionId || trackedSession.sessionId === sessionId)) {
+    trackedSession.lastHeartbeatAt = Date.now();
+    trackedSession.status = "running";
+    trackedSession.lastKnownLocation = { lat: parseFloat(lat), lng: parseFloat(lng) };
+  }
 
   const now    = Date.now();
   const rawLat = parseFloat(lat);
