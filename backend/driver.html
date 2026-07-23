@@ -537,7 +537,11 @@ function isNativeApp() {
 }
 
 function startNativeBackgroundTracking() {
-  const { BackgroundGeolocation } = window.Capacitor.Plugins;
+  // NOTE: @capacitor-community/background-geolocation v1.x removed support
+  // for the old `window.Capacitor.Plugins.BackgroundGeolocation` access
+  // pattern. It must be obtained via registerPlugin(), otherwise
+  // addWatcher(...) does not return a real Promise and .then() throws.
+  const BackgroundGeolocation = window.Capacitor.registerPlugin('BackgroundGeolocation');
   BackgroundGeolocation.addWatcher(
     {
       backgroundMessage: 'Ritians Transport is sharing your live location.',
@@ -595,7 +599,13 @@ async function startTracking() {
 
   if (isNativeApp()) {
     // Native app: background-capable GPS via Capacitor plugin
-    startNativeBackgroundTracking();
+    try {
+      startNativeBackgroundTracking();
+    } catch (err) {
+      console.error('Native background tracking failed to start:', err);
+      showToast('GPS tracking failed to start. Please try again.', 'error');
+      return; // don't fake an active state if native tracking truly failed
+    }
   } else {
     // Browser fallback — unchanged existing behavior
     const options = { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 };
