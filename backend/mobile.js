@@ -50,6 +50,8 @@
   const HAMBURGER_ID  = 'hamburgerBtn';
   const TOGGLE_BTN_ID = 'viewToggleBtn';
   const NOTIFY_ITEM_ID = 'drawerNotifyItem';
+  const PROFILE_SLOT_ID = 'drawerProfileSlot';   // where #authChip is relocated to on mobile (index page only)
+  const AUTH_CHIP_ID    = 'authChip';            // id auth-guard.js gives the avatar/username chip it injects
 
   // ── STATE ──────────────────────────────────────────────────
   let currentMode = null; // 'mobile' | 'desktop'
@@ -101,6 +103,52 @@
     if (mode === 'desktop' && drawerOpen) {
       closeDrawer();
     }
+
+    // Relocate the avatar/username chip to match the new mode (index only;
+    // see relocateAuthChip() — no-ops safely if the chip/slot aren't ready yet).
+    relocateAuthChip(mode);
+  }
+
+  // ── RELOCATE AUTH CHIP (index.html only) ───────────────────
+  // auth-guard.js injects `#authChip` into `.nav-right` (desktop header
+  // position — untouched). On mobile, the Mobile Header should show only
+  // the logo/title + hamburger, so this moves the SAME chip node (not a
+  // clone — preserves its logout button listener and lets auth-guard.js
+  // keep updating it normally) into the drawer's profile slot, directly
+  // below "Enable Alerts". Switching back to desktop moves it back to
+  // `.nav-right`, right where auth-guard.js originally placed it.
+  function relocateAuthChip(mode) {
+    if (detectPage() !== 'index') return;
+
+    const chip = document.getElementById(AUTH_CHIP_ID);
+    const slot = document.getElementById(PROFILE_SLOT_ID);
+    const navRight = document.querySelector('.nav-right');
+    if (!chip || !navRight) return;
+
+    if (mode === 'mobile') {
+      if (slot && chip.parentElement !== slot) slot.appendChild(chip);
+    } else if (chip.parentElement !== navRight) {
+      const hbEl = document.getElementById(HAMBURGER_ID);
+      if (hbEl) navRight.insertBefore(chip, hbEl);
+      else navRight.appendChild(chip);
+    }
+  }
+
+  // Fallback: if auth-guard.js injects #authChip asynchronously (after this
+  // script's own init/applyMode calls have already run), catch it as soon
+  // as it appears and place it correctly for whatever mode is active.
+  function watchForAuthChip() {
+    if (document.getElementById(AUTH_CHIP_ID)) {
+      relocateAuthChip(currentMode);
+      return;
+    }
+    const observer = new MutationObserver(() => {
+      if (document.getElementById(AUTH_CHIP_ID)) {
+        relocateAuthChip(currentMode);
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
   }
 
   // ── TOGGLE MODE ────────────────────────────────────────────
@@ -212,6 +260,11 @@
           onclick="MobileNav.handleNotifyClick()">
           <i class="fas fa-bell"></i> <span class="drawer-notify-label">Enable Alerts</span>
         </button>
+        <div class="drawer-divider"></div>
+        <!-- The logged-in user's #authChip (avatar + username), injected into
+             .nav-right by auth-guard.js, is relocated here on mobile — see
+             relocateAuthChip(). Empty on desktop / before auth-guard.js runs. -->
+        <div class="drawer-profile-slot" id="${PROFILE_SLOT_ID}"></div>
         <div class="drawer-divider"></div>
         <div class="drawer-sos-wrapper">
           <a class="drawer-sos-circle" href="sos.html" aria-label="Emergency SOS">
@@ -452,6 +505,9 @@
 
     // Re-apply mode labels now that DOM is ready
     applyMode(mode);
+
+    // Catch #authChip if auth-guard.js injects it after this point
+    watchForAuthChip();
 
     // Listen for resize
     window.addEventListener('resize', debouncedResize, { passive: true });

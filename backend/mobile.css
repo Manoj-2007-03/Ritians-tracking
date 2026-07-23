@@ -964,6 +964,58 @@
 }
 
 
+/* ─────────────────────────────────────────────────────────────
+   13b. DRAWER PROFILE CARD (Home Page mobile drawer)
+   Restyles the #authChip node once mobile.js has relocated it from
+   the mobile header into `.drawer-profile-slot` (between "Enable
+   Alerts" and the SOS button). Scoped to `.drawer-nav .auth-chip`
+   so the header/desktop chip rules above are completely untouched —
+   this only fires once the same element is actually inside the
+   drawer. Collapses cleanly if the chip isn't present (logged out /
+   not yet injected) so no empty gap is left between the dividers.
+───────────────────────────────────────────────────────────── */
+.drawer-profile-slot:empty {
+  display: none;
+}
+
+.drawer-nav .auth-chip {
+  width: 100%;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  font-size: 14px;
+  color: var(--text);
+  transition: all 0.15s;
+}
+
+.drawer-nav .auth-chip:hover {
+  background: var(--bg4);
+  border-color: var(--border2);
+}
+
+.drawer-nav .auth-chip-avatar {
+  width: 36px;
+  height: 36px;
+  font-size: 14px;
+  background: linear-gradient(135deg, rgba(78, 205, 196, 0.4), rgba(78, 205, 196, 0.16));
+  box-shadow: 0 0 0 1px rgba(78, 205, 196, 0.45) inset;
+}
+
+.drawer-nav .auth-chip-name {
+  flex: 1 1 auto;
+  max-width: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.drawer-nav .auth-chip-logout {
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
 /* ── SOS Circle Button in Drawer ── */
 .drawer-sos-wrapper {
   display: flex;
