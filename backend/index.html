@@ -1531,8 +1531,12 @@ function showBusStartedToast(data) {
 
 // Foreground message handler (when the tab is open and active)
 messaging.onMessage((payload) => {
-  const title = payload.notification?.title || '';
-  const body = payload.notification?.body || '';
+  // Backend now sends DATA-ONLY FCM messages (see notifications.js) so the
+  // Android native tray notification can render its own rich UI in every
+  // app state. That means payload.notification no longer exists here --
+  // title/body travel inside payload.data instead.
+  const title = payload.data?.title || '';
+  const body = payload.data?.body || '';
   const text = (title + ' ' + body).toLowerCase();
 
   if (!showBusStartedToast(payload.data)) {
@@ -1559,11 +1563,16 @@ messaging.onMessage((payload) => {
 if (isNativeApp()) {
   const { PushNotifications } = window.Capacitor.Plugins;
   PushNotifications.addListener('pushNotificationReceived', (notification) => {
-    const title = (notification && notification.title) || '';
-    const body = (notification && notification.body) || '';
+    // Same data-only change as the web handler above: for a data-only
+    // message Capacitor's PushNotificationSchema has no notification.title/
+    // notification.body (those only get populated from a "notification"-type
+    // payload) -- read from notification.data instead.
+    const data = (notification && notification.data) || {};
+    const title = data.title || '';
+    const body = data.body || '';
     const text = (title + ' ' + body).toLowerCase();
 
-    if (!showBusStartedToast(notification && notification.data)) {
+    if (!showBusStartedToast(data)) {
       toast(title || 'New notification');
     }
 
