@@ -1809,10 +1809,20 @@ function checkAndHandleDestination(vehicle, newLat, newLng) {
 app.post("/trip-start/:vehicleId", (req, res) => {
   const { vehicleId } = req.params;
   const vehicle = locationStore[vehicleId] || { vehicleId };
-  const now = Date.now();
 
-  vehicle.tripStartNotified = true;  // /update-location won't re-fire off the back of this trip
-  vehicle.tripStartNotifiedAt = now; // debounce stamp for /update-location's fallback (see below)
+  // Arm the trip only — do NOT notify here. This fires the instant the
+  // driver presses Start, before any GPS fix has actually reached the
+  // server, which used to send "Live GPS Tracking Active" notifications
+  // that could be lying (permission denied, no signal yet, etc).
+  //
+  // Clearing tripStartNotified means the very next /update-location call
+  // that passes coordinate validation + status computation is what actually
+  // sends "Bus Started" — see the NOTIFICATIONS block below. Calling this
+  // endpoint again (e.g. a driver retrying after a faulty first attempt)
+  // is harmless and idempotent: it just keeps the trip armed and waiting
+  // for a real fix, so the eventual notification still only fires once per
+  // genuine start, and only once real coordinates exist.
+  vehicle.tripStartNotified = false;
   vehicle.lastStopIdx = 0;
   vehicle.reachedDestination = false;
   vehicle.destinationReachedAt = null;
@@ -1820,16 +1830,8 @@ app.post("/trip-start/:vehicleId", (req, res) => {
 
   resetNotifyState(vehicleId); // clear arriving-notification locks too
 
-  // driver.html calls this endpoint if and only if the driver genuinely
-  // pressed "Start" (startTracking(isRestore=false)) — never on a silent
-  // page-reload/reconnect restore (startTracking(true) skips this call
-  // entirely). That makes it the correct, unambiguous place to notify:
-  // every explicit start fires here, including a driver retrying seconds
-  // after a faulty first attempt, and a plain reload never double-fires.
-  notifyBusStarted(vehicleId).catch(() => {});
-
-  console.log(`[TRIP-START] ${vehicleId}: reset + notified, ready for new trip`);
-  res.json({ success: true, vehicleId, message: "Trip started, Bus Started notification sent." });
+  console.log(`[TRIP-START] ${vehicleId}: armed, waiting for first GPS fix to notify`);
+  res.json({ success: true, vehicleId, message: "Trip armed. Bus Started will fire on the first GPS fix." });
 });
 
 // ── Persistent Tracking Session Endpoints ───────────────────────────────────
@@ -1965,16 +1967,20 @@ app.post("/update-location", (req, res) => {
   // STEP 3: Kalman filter
   const vehicle = locationStore[vehicleId] || { vehicleId };
 
-  // Treat as a new trip if we've never notified before, OR if the last
-  // update was more than TRIP_GAP_MS ago (bus was clearly off/idle since).
+  // Treat as a new trip if the trip was armed via POST /trip-start (which
+  // clears tripStartNotified — see that handler), OR if the last update was
+  // more than TRIP_GAP_MS ago (bus was clearly off/idle since, even without
+  // an explicit trip-start call). This is also where "Bus Started" actually
+  // fires (see the NOTIFICATIONS block below) — deliberately here rather
+  // than in /trip-start, so the notification only ever goes out once a real
+  // GPS coordinate + status have been validated and computed, never on a
+  // bare button press.
   // ★ v6.1: hoisted to T.TRIP_GAP_MS so isGpsOutlier()'s "long gap = new
   // trip, not a teleport" exemption always agrees with this check.
   //
-  // recentlyNotifiedManually guards against double-notifying right after
-  // POST /tracking/start already fired notifyBusStarted() directly — without
-  // it, the very first GPS ping of a trip would often still see a large
-  // gapSinceLastUpdate (left over from the previous trip's last ping) and
-  // re-trigger this block a few seconds later.
+  // recentlyNotifiedManually is a short self-guard: once this block fires,
+  // it stamps tripStartNotifiedAt, so a later ping in the same handshake
+  // can't independently re-trigger via the gap clause a few seconds later.
   const gapSinceLastUpdate = prev ? (now - prev.updatedAt) : Infinity;
   const recentlyNotifiedManually = vehicle.tripStartNotifiedAt && (now - vehicle.tripStartNotifiedAt < 2 * 60_000);
   const isNewTrip = (!vehicle.tripStartNotified || gapSinceLastUpdate > T.TRIP_GAP_MS) && !recentlyNotifiedManually;
