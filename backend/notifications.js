@@ -39,18 +39,27 @@ async function sendToRoute(vehicleId, title, body, boardingPoint = null, data = 
       return;
     }
 
-    // `notification` drives the system-tray push (background/closed app) —
-    // left untouched. `data` is a flat string map delivered alongside it and
-    // is what the foreground handler reads to render the rich glass toast;
-    // FCM data payloads must be strings, so every value is stringified.
-    const message = { tokens, notification: { title, body } };
-    if (data) {
-      message.data = Object.fromEntries(
-        Object.entries(data)
+    // DATA-ONLY payload (no top-level "notification" key). This is required
+    // so RtMessagingService.onMessageReceived on Android always fires and
+    // builds the rich tray notification (icon/color/big picture/action
+    // button) in EVERY app state — foreground, background, and killed.
+    // If a "notification" key were present, Android would bypass our native
+    // code whenever the app is backgrounded/killed and show a bare system
+    // notification instead, with none of the premium styling.
+    //
+    // title/body now travel inside `data` (all FCM data values must be
+    // strings) alongside whatever extra fields the caller passed in, so
+    // both the native tray notification and the foreground JS toast handler
+    // read from the same place.
+    const payload = { title, body, ...(data || {}) };
+    const message = {
+      tokens,
+      data: Object.fromEntries(
+        Object.entries(payload)
           .filter(([, v]) => v !== undefined && v !== null)
           .map(([k, v]) => [k, String(v)])
-      );
-    }
+      ),
+    };
 
     const res = await messaging.sendEachForMulticast(message);
     console.log(`[NOTIFY] ${vehicleId}: sent ${res.successCount}/${tokens.length} (${title})`);

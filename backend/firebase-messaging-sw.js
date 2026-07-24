@@ -13,8 +13,24 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  self.registration.showNotification(payload.notification.title, {
-    body: payload.notification.body,
-    icon: '/favicon.ico'
+  // Backend now sends data-only messages (see notifications.js) so the
+  // Android native path can build its own rich tray notification in every
+  // app state. title/body therefore travel in payload.data, not
+  // payload.notification (which no longer exists on these messages).
+  const data = payload.data || {};
+  self.registration.showNotification(data.title || 'RITIANS Transport', {
+    body: data.body || '',
+    icon: '/favicon.ico',
+    data: { liveUrl: data.liveUrl }
   });
+});
+
+// Clicking the web push notification opens the live tracking page, mirroring
+// the Android native deep-link behavior in MainActivity.java.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const liveUrl = event.notification.data && event.notification.data.liveUrl;
+  if (liveUrl) {
+    event.waitUntil(clients.openWindow(liveUrl));
+  }
 });
