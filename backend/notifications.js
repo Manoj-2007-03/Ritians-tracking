@@ -68,7 +68,7 @@ async function notifyBusStarted(vehicleId, opts = {}) {
   // working unchanged.
   const route = opts.route || vehicleId;
   const startedAt = opts.startedAt || Date.now();
-  const liveUrl = opts.liveUrl || `/tracking.html?bus=${encodeURIComponent(vehicleId)}`;
+  const liveUrl = opts.liveUrl || `/map.html?vehicleId=${encodeURIComponent(vehicleId)}`;
 
   await sendToRoute(
     vehicleId,
