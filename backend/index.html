@@ -1089,7 +1089,21 @@ function timeCat(min){if(min<360)return'early';if(min<=390)return'normal';return
 function isToday(ts){if(!ts)return false;const d=typeof ts==='number'?new Date(ts):new Date(ts);const n=new Date();return d.getDate()===n.getDate()&&d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear();}
 function todayParking(){const o={};for(const[k,v]of Object.entries(driverParking))if(isToday(v.updatedAt))o[k]=v;return o;}
 function toast(msg,type='success'){
-  window.RitiansToast.show(msg,type);
+  if(window.RitiansToast && typeof window.RitiansToast.show==='function'){
+    window.RitiansToast.show(msg,type);
+  }else{
+    console.error('RitiansToast not loaded — check that toast.js is present and loaded before this script.');
+    // Minimal fallback so the user still sees feedback
+    const c=document.getElementById('toastContainer');
+    if(c){
+      const el=document.createElement('div');
+      el.className='toast-fallback toast-'+type;
+      el.textContent=typeof msg==='string'?msg:(msg&&msg.message)||'';
+      el.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:8px;z-index:9999;font-size:14px;';
+      c.appendChild(el);
+      setTimeout(()=>el.remove(),3000);
+    }
+  }
 }
 function closeModal(id){document.getElementById(id).classList.add('hidden');}
 function showModal(id){document.getElementById(id).classList.remove('hidden');}
