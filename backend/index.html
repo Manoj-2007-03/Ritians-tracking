@@ -1377,6 +1377,15 @@ async function enableNotifications() {
   const student = getStudentSession();
   if (!student) { toast('Please log in first', 'error'); return; }
 
+  // Native WebViews (Capacitor Android/iOS) do not implement the browser
+  // Notification API at all — referencing it throws ReferenceError, not
+  // just a permission denial. Guard here instead of crashing.
+  if (typeof Notification === 'undefined') {
+    toast('Push alerts aren\'t available in the app yet — try the website version for now.', 'error');
+    console.warn('enableNotifications: window.Notification unavailable (native WebView).');
+    return;
+  }
+
   try {
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
