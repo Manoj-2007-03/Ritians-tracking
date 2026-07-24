@@ -18,6 +18,7 @@ const studentSchema = new mongoose.Schema(
     boardingPoint: { type: String, default: "" },
     phoneNumber:   { type: String, default: "", trim: true },
     fcmToken:      { type: String, default: null },
+    fcmTokenNative: { type: String, default: null }, // native app (Capacitor) push token, separate from web
 
     // ── merged from routes/attendance.js's duplicate schema ──
     busNo:              { type: String, default: "" },

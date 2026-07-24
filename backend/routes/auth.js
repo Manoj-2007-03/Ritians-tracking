@@ -106,4 +106,32 @@ router.post("/api/save-fcm-token", async (req, res) => {
   }
 });
 
+// ── POST /api/save-fcm-token-native ────────────────────────────
+// Called from index.html's native-app branch (Capacitor PushNotifications
+// plugin) instead of the browser flow above. Kept as a separate field
+// (fcmTokenNative) so a student using both the website and the app doesn't
+// have one token overwrite the other.
+router.post("/api/save-fcm-token-native", async (req, res) => {
+  try {
+    const { studentId, fcmToken } = req.body;
+
+    if (!studentId || !fcmToken)
+      return res.status(400).json({ success: false, message: "studentId and fcmToken are required." });
+
+    const student = await Student.findByIdAndUpdate(
+      studentId,
+      { fcmTokenNative: fcmToken },
+      { new: true }
+    );
+
+    if (!student)
+      return res.status(404).json({ success: false, message: "Student not found." });
+
+    return res.json({ success: true, message: "Native notification token saved." });
+  } catch (err) {
+    console.error("[AUTH] Save native FCM token error:", err);
+    return res.status(500).json({ success: false, message: "Server error. Please try again." });
+  }
+});
+
 module.exports = router;

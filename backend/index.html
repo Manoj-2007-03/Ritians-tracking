@@ -1373,16 +1373,99 @@ function getStudentSession() {
   catch (_) { return null; }
 }
 
+function isNativeApp() {
+  return !!(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PushNotifications);
+}
+
+// Wraps a Capacitor plugin method call so it always behaves like a real
+// Promise, regardless of whether this runtime's bridge actually returns
+// one — same defensive pattern needed for the GPS background-geolocation
+// plugin (some Capacitor/plugin/runtime combinations return the raw value
+// instead of a thenable).
+function callNativePlugin(plugin, method, ...args) {
+  const result = plugin[method](...args);
+  return (result && typeof result.then === 'function') ? result : Promise.resolve(result);
+}
+
+async function enableNativePushNotifications(student) {
+  const { PushNotifications } = window.Capacitor.Plugins;
+
+  try {
+    const permStatus = await callNativePlugin(PushNotifications, 'checkPermissions');
+    let receive = permStatus && permStatus.receive;
+
+    if (receive !== 'granted') {
+      const req = await callNativePlugin(PushNotifications, 'requestPermissions');
+      receive = req && req.receive;
+    }
+
+    if (receive !== 'granted') {
+      toast('Notification permission denied', 'error');
+      return;
+    }
+
+    // The token arrives asynchronously through the 'registration' event,
+    // not as a return value from register() — wire up the listener before
+    // calling register() so we don't miss it.
+    const token = await new Promise((resolve, reject) => {
+      let settled = false;
+      PushNotifications.addListener('registration', (tokenData) => {
+        if (settled) return;
+        settled = true;
+        resolve(tokenData && tokenData.value);
+      });
+      PushNotifications.addListener('registrationError', (err) => {
+        if (settled) return;
+        settled = true;
+        reject(new Error((err && err.error) || 'Push registration failed'));
+      });
+      callNativePlugin(PushNotifications, 'register').catch((err) => {
+        if (settled) return;
+        settled = true;
+        reject(err);
+      });
+    });
+
+    if (!token) { toast('Could not get notification token', 'error'); return; }
+
+    const res = await fetch('/api/save-fcm-token-native', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ studentId: student.studentId, fcmToken: token }),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      toast('Notifications enabled! You\'ll get bus alerts.');
+      document.getElementById('notifyBtnLabel').textContent = 'Alerts On';
+      document.getElementById('notifyBtn').style.color = 'var(--accent2)';
+    } else {
+      toast('Failed to save notification settings', 'error');
+    }
+  } catch (err) {
+    console.error('Native push setup error:', err);
+    toast('Notification setup failed', 'error');
+  }
+}
+
 async function enableNotifications() {
   const student = getStudentSession();
   if (!student) { toast('Please log in first', 'error'); return; }
 
-  // Native WebViews (Capacitor Android/iOS) do not implement the browser
-  // Notification API at all — referencing it throws ReferenceError, not
-  // just a permission denial. Guard here instead of crashing.
+  // Native app (Capacitor Android/iOS): use the native Push Notifications
+  // plugin instead of the browser Notification/FCM-web-push flow below.
+  if (isNativeApp()) {
+    await enableNativePushNotifications(student);
+    return;
+  }
+
+  // Native WebViews without this plugin (shouldn't normally happen now,
+  // but kept as a safety net) do not implement the browser Notification
+  // API at all — referencing it throws ReferenceError, not just a
+  // permission denial. Guard here instead of crashing.
   if (typeof Notification === 'undefined') {
-    toast('Push alerts aren\'t available in the app yet — try the website version for now.', 'error');
-    console.warn('enableNotifications: window.Notification unavailable (native WebView).');
+    toast('Push alerts aren\'t available in this environment.', 'error');
+    console.warn('enableNotifications: window.Notification unavailable.');
     return;
   }
 

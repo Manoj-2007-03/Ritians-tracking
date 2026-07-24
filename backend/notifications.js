@@ -11,11 +11,28 @@ function resetNotifyState(vehicleId) {
 
 async function sendToRoute(vehicleId, title, body, boardingPoint = null) {
   try {
-    const query = { busNumber: vehicleId, fcmToken: { $exists: true, $ne: "" } };
+    // Match students whose bus/route matches AND who have at least one kind
+    // of push token registered (web OR native app).
+    const query = {
+      busNumber: vehicleId,
+      $or: [
+        { fcmToken: { $exists: true, $ne: "" } },
+        { fcmTokenNative: { $exists: true, $ne: "" } },
+      ],
+    };
     if (boardingPoint) query.boardingPoint = boardingPoint;
 
-    const students = await Student.find(query).select("fcmToken");
-    const tokens = students.map(s => s.fcmToken).filter(Boolean);
+    const students = await Student.find(query).select("fcmToken fcmTokenNative");
+
+    // Combine both token types into one list. A Firebase Cloud Messaging
+    // token is a token regardless of whether it came from a browser web
+    // push subscription or a native Android/iOS app registration — the
+    // send call below doesn't need to treat them differently.
+    const tokens = [];
+    for (const s of students) {
+      if (s.fcmToken) tokens.push(s.fcmToken);
+      if (s.fcmTokenNative) tokens.push(s.fcmTokenNative);
+    }
 
     if (tokens.length === 0) {
       console.log(`[NOTIFY] No tokens found for ${vehicleId}${boardingPoint ? " @ " + boardingPoint : ""}`);
