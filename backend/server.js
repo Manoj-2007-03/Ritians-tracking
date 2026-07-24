@@ -1977,13 +1977,8 @@ app.post("/update-location", (req, res) => {
   // bare button press.
   // ★ v6.1: hoisted to T.TRIP_GAP_MS so isGpsOutlier()'s "long gap = new
   // trip, not a teleport" exemption always agrees with this check.
-  //
-  // recentlyNotifiedManually is a short self-guard: once this block fires,
-  // it stamps tripStartNotifiedAt, so a later ping in the same handshake
-  // can't independently re-trigger via the gap clause a few seconds later.
   const gapSinceLastUpdate = prev ? (now - prev.updatedAt) : Infinity;
-  const recentlyNotifiedManually = vehicle.tripStartNotifiedAt && (now - vehicle.tripStartNotifiedAt < 2 * 60_000);
-  const isNewTrip = (!vehicle.tripStartNotified || gapSinceLastUpdate > T.TRIP_GAP_MS) && !recentlyNotifiedManually;
+  const isNewTrip = !vehicle.tripStartNotified || gapSinceLastUpdate > T.TRIP_GAP_MS;
 
   if (isNewTrip) {
     vehicle.lastStopIdx = 0;              // reset stop progress for the new trip
