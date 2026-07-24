@@ -1529,6 +1529,30 @@ messaging.onMessage((payload) => {
   }
 });
 
+// Native app foreground message handler — mirrors the web handler above.
+// Android/iOS do NOT auto-display FCM notifications in the system tray
+// while the app is open in the foreground (only when backgrounded/closed),
+// so without this listener, foreground pushes arrive silently with no
+// visible feedback at all.
+if (isNativeApp()) {
+  const { PushNotifications } = window.Capacitor.Plugins;
+  PushNotifications.addListener('pushNotificationReceived', (notification) => {
+    const title = (notification && notification.title) || '';
+    const body = (notification && notification.body) || '';
+    const text = (title + ' ' + body).toLowerCase();
+
+    toast(title || 'New notification');
+
+    if (window.RitiansSounds) {
+      if (/start/.test(text)) {
+        window.RitiansSounds.playBusStarted();
+      } else if (/arriv|near|boarding/.test(text)) {
+        window.RitiansSounds.playNearBoarding();
+      }
+    }
+  });
+}
+
 // ── INIT ──────────────────────────────────────────────────────────────────────
 (function init(){
   renderWeekStrip();
