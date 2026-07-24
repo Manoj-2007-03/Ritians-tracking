@@ -1509,13 +1509,35 @@ async function enableNotifications() {
   }
 })();
 
+// Renders the premium "Bus Started" glass card when the payload carries the
+// rich data fields (route/startedAt/liveUrl); returns false if it wasn't a
+// bus_started event so the caller can fall back to the plain toast.
+function showBusStartedToast(data) {
+  if (!data || data.type !== 'bus_started') return false;
+  const startedDate = data.startedAt ? new Date(Number(data.startedAt)) : new Date();
+  window.RitiansToast.show({
+    title: 'Bus Started',
+    type: 'success',
+    busIcon: true,
+    meta: [
+      { label: 'Route', value: data.route || data.vehicleId || '—' },
+      { label: 'Started', value: startedDate.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }) },
+    ],
+    liveLabel: 'Live GPS Tracking Active',
+    cta: { label: 'View Live', href: data.liveUrl || '#' },
+  });
+  return true;
+}
+
 // Foreground message handler (when the tab is open and active)
 messaging.onMessage((payload) => {
   const title = payload.notification?.title || '';
   const body = payload.notification?.body || '';
   const text = (title + ' ' + body).toLowerCase();
 
-  toast(title || 'New notification');
+  if (!showBusStartedToast(payload.data)) {
+    toast(title || 'New notification');
+  }
 
   // NOTE: these keyword checks assume your backend's push titles/bodies
   // contain words like "started" and "arriving"/"near"/"boarding". If your
@@ -1541,7 +1563,9 @@ if (isNativeApp()) {
     const body = (notification && notification.body) || '';
     const text = (title + ' ' + body).toLowerCase();
 
-    toast(title || 'New notification');
+    if (!showBusStartedToast(notification && notification.data)) {
+      toast(title || 'New notification');
+    }
 
     if (window.RitiansSounds) {
       if (/start/.test(text)) {

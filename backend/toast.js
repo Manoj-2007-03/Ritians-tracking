@@ -67,19 +67,56 @@
   }
 
   function buildCard(opts) {
+    const isPremium = !!(opts.meta || opts.liveLabel || opts.cta);
+
     const card = document.createElement("div");
-    card.className = `toast-card toast-${opts.type}`;
+    card.className = `toast-card toast-${opts.type}` + (isPremium ? " toast-premium" : "");
     card.setAttribute("role", "status");
     card.setAttribute("tabindex", "0");
 
-    card.innerHTML =
-      `<span class="toast-badge"><i class="fas ${ICONS[opts.type]}"></i></span>` +
-      `<span class="toast-body">` +
-        `<span class="toast-title">${escapeHtml(opts.title)}</span>` +
-        (opts.subtitle ? `<span class="toast-subtitle">${escapeHtml(opts.subtitle)}</span>` : "") +
-        `<span class="toast-time">${nowStamp()}</span>` +
-      `</span>` +
-      (opts.busIcon ? `<span class="toast-bus"><i class="fas fa-bus"></i></span>` : "");
+    if (isPremium) {
+      const metaRows = (opts.meta || [])
+        .map(
+          (m) =>
+            `<span class="toast-meta-row"><span class="toast-meta-label">${escapeHtml(m.label)}</span>` +
+            `<span class="toast-meta-value">${escapeHtml(m.value)}</span></span>`
+        )
+        .join("");
+
+      const liveRow = opts.liveLabel
+        ? `<span class="toast-live"><span class="toast-live-dot"></span>${escapeHtml(opts.liveLabel)}</span>`
+        : "";
+
+      const cta = opts.cta
+        ? `<a class="toast-cta" href="${escapeHtml(opts.cta.href || "#")}" target="_blank" rel="noopener">` +
+          `${escapeHtml(opts.cta.label)} <span class="toast-cta-arrow">→</span></a>`
+        : "";
+
+      card.innerHTML =
+        `<span class="toast-badge toast-badge--bus"><i class="fas fa-bus"></i></span>` +
+        `<span class="toast-body">` +
+          `<span class="toast-title">${escapeHtml(opts.title)}</span>` +
+          metaRows +
+          liveRow +
+          (cta ? `<span class="toast-divider"></span>${cta}` : "") +
+        `</span>` +
+        `<span class="toast-progress"><span class="toast-progress-fill"></span></span>`;
+
+      // Clicking the CTA (or anything inside it) shouldn't also trigger the
+      // card's own click-to-dismiss handler.
+      card.addEventListener("click", (e) => {
+        if (e.target.closest(".toast-cta")) e.stopPropagation();
+      });
+    } else {
+      card.innerHTML =
+        `<span class="toast-badge"><i class="fas ${ICONS[opts.type]}"></i></span>` +
+        `<span class="toast-body">` +
+          `<span class="toast-title">${escapeHtml(opts.title)}</span>` +
+          (opts.subtitle ? `<span class="toast-subtitle">${escapeHtml(opts.subtitle)}</span>` : "") +
+          `<span class="toast-time">${nowStamp()}</span>` +
+        `</span>` +
+        (opts.busIcon ? `<span class="toast-bus"><i class="fas fa-bus"></i></span>` : "");
+    }
 
     return card;
   }
@@ -91,6 +128,7 @@
 
     const container = getContainer();
     const card = buildCard(opts);
+    card.style.setProperty("--toast-duration", `${opts.duration}ms`);
     container.appendChild(card);
 
     // Double rAF so the browser commits the initial (pre-transition) state
@@ -194,6 +232,9 @@
     opts.subtitle = opts.subtitle || null;
     opts.duration = typeof opts.duration === "number" ? opts.duration : DEFAULT_DURATION;
     opts.busIcon = !!opts.busIcon;
+    opts.meta = Array.isArray(opts.meta) ? opts.meta : null;
+    opts.liveLabel = opts.liveLabel || null;
+    opts.cta = opts.cta && opts.cta.label ? opts.cta : null;
     return opts;
   }
 

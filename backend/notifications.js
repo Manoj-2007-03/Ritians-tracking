@@ -9,7 +9,7 @@ function resetNotifyState(vehicleId) {
   notifiedThisTrip[vehicleId] = new Set();
 }
 
-async function sendToRoute(vehicleId, title, body, boardingPoint = null) {
+async function sendToRoute(vehicleId, title, body, boardingPoint = null, data = null) {
   try {
     // Match students whose bus/route matches AND who have at least one kind
     // of push token registered (web OR native app).
@@ -39,19 +39,44 @@ async function sendToRoute(vehicleId, title, body, boardingPoint = null) {
       return;
     }
 
-    const res = await messaging.sendEachForMulticast({
-      tokens,
-      notification: { title, body },
-    });
+    // `notification` drives the system-tray push (background/closed app) —
+    // left untouched. `data` is a flat string map delivered alongside it and
+    // is what the foreground handler reads to render the rich glass toast;
+    // FCM data payloads must be strings, so every value is stringified.
+    const message = { tokens, notification: { title, body } };
+    if (data) {
+      message.data = Object.fromEntries(
+        Object.entries(data)
+          .filter(([, v]) => v !== undefined && v !== null)
+          .map(([k, v]) => [k, String(v)])
+      );
+    }
+
+    const res = await messaging.sendEachForMulticast(message);
     console.log(`[NOTIFY] ${vehicleId}: sent ${res.successCount}/${tokens.length} (${title})`);
   } catch (err) {
     console.error("[NOTIFY] Send failed:", err.message);
   }
 }
 
-async function notifyBusStarted(vehicleId) {
+async function notifyBusStarted(vehicleId, opts = {}) {
   resetNotifyState(vehicleId);
-  await sendToRoute(vehicleId, "Bus Started 🚌", `Bus ${vehicleId} has started its route.`);
+
+  // `opts.route` lets a call site pass a human-facing route label (e.g.
+  // "R12") when it differs from the internal vehicleId. Falls back to
+  // vehicleId so existing call sites (`notifyBusStarted(vehicleId)`) keep
+  // working unchanged.
+  const route = opts.route || vehicleId;
+  const startedAt = opts.startedAt || Date.now();
+  const liveUrl = opts.liveUrl || `/tracking.html?bus=${encodeURIComponent(vehicleId)}`;
+
+  await sendToRoute(
+    vehicleId,
+    "Bus Started 🚌",
+    `Bus ${vehicleId} has started its route.`,
+    null,
+    { type: "bus_started", vehicleId, route, startedAt, liveUrl }
+  );
 }
 
 async function notifyBusArriving(vehicleId, stopName) {

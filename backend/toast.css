@@ -143,6 +143,212 @@
   margin-top: 1px;
 }
 
+/* ============================================================
+   PREMIUM CARD — "Bus Started" style rich notification
+   Same base .toast-card shell; these rules only add to it.
+   ============================================================ */
+
+.toast-card.toast-premium {
+  padding: 16px 18px 14px;
+  gap: 14px;
+  border-radius: var(--r2);
+  border: 1px solid var(--border2);
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(255, 138, 76, 0.10), transparent 55%),
+    linear-gradient(155deg, rgba(18, 28, 46, 0.94), rgba(8, 12, 22, 0.94));
+  box-shadow: var(--shadow-lift), 0 0 0 1px rgba(255, 138, 76, 0.06);
+}
+
+.toast-card.toast-premium.toast-success {
+  border-left: 1px solid var(--border2); /* premium card carries its own accent, skip the generic rail */
+}
+
+/* ── Bus icon badge: circular glass, orange gradient, soft glow ── */
+.toast-badge--bus {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: linear-gradient(155deg, var(--accent), #E85D25);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow:
+    0 0 0 1px rgba(255, 138, 76, 0.25),
+    0 6px 18px -4px var(--glow-accent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -6px 10px -6px rgba(0, 0, 0, 0.45);
+  color: #FFF5EC;
+  font-size: 16px;
+}
+
+.toast-premium .toast-body {
+  gap: 4px;
+}
+
+.toast-premium .toast-title {
+  font-size: 15.5px;
+  letter-spacing: -0.005em;
+}
+
+/* ── Route / Started meta rows ── */
+.toast-meta-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.toast-meta-label {
+  color: var(--text3);
+  flex-shrink: 0;
+}
+
+.toast-meta-value {
+  color: var(--text2);
+  font-weight: 500;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Live status: glowing pulse dot ── */
+.toast-live {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 4px;
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--green);
+  letter-spacing: 0.01em;
+}
+
+.toast-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.55);
+  animation: toast-pulse 1.8s ease-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes toast-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.55); }
+  70%  { box-shadow: 0 0 0 7px rgba(52, 211, 153, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+}
+
+/* ── Divider ── */
+.toast-divider {
+  display: block;
+  height: 1px;
+  margin: 9px 0 1px;
+  background: linear-gradient(to right, var(--border), transparent 85%);
+}
+
+/* ── CTA: glass pill button, gradient border, right-aligned ── */
+.toast-cta {
+  align-self: flex-end;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  margin-top: 2px;
+  border-radius: 99px;
+  font-family: var(--font-head);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text);
+  text-decoration: none;
+  background: linear-gradient(155deg, var(--bg4), rgba(255, 255, 255, 0.03));
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.28), 0 4px 14px -4px var(--glow-teal);
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.toast-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.5), 0 8px 20px -4px var(--glow-teal);
+}
+
+.toast-cta:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* Touch ripple: a radial highlight that expands from center on press */
+.toast-cta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.35), transparent 70%);
+  opacity: 0;
+  transform: scale(0.4);
+  transition: opacity 420ms ease, transform 420ms ease;
+  z-index: -1;
+}
+
+.toast-cta:active::after {
+  opacity: 1;
+  transform: scale(1.4);
+  transition: none;
+}
+
+.toast-cta-arrow {
+  color: var(--accent2);
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.toast-cta:hover .toast-cta-arrow {
+  transform: translateX(2px);
+}
+
+/* ── Progress bar: auto-dismiss countdown ── */
+.toast-progress {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 8px;
+  height: 2.5px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.toast-progress-fill {
+  display: block;
+  height: 100%;
+  width: 100%;
+  border-radius: inherit;
+  background: linear-gradient(to right, var(--accent2), var(--accent));
+  transform-origin: left;
+  animation: toast-countdown var(--toast-duration, 3500ms) linear forwards;
+}
+
+.toast-card.toast-paused .toast-progress-fill {
+  animation-play-state: paused;
+}
+
+@keyframes toast-countdown {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
+.toast-premium {
+  padding-bottom: 20px; /* room for the progress bar without crowding the CTA */
+}
+
 /* ── Mobile: bottom-center, safe-area aware ── */
 @media (max-width: 640px) {
   .toast-container {
@@ -151,6 +357,25 @@
     transform: translateX(-50%);
     bottom: max(84px, calc(76px + env(safe-area-inset-bottom)));
     width: min(400px, calc(100vw - 32px));
+  }
+}
+
+@media (max-width: 380px) {
+  .toast-card.toast-premium {
+    padding: 14px 14px 12px;
+    gap: 11px;
+  }
+  .toast-badge--bus {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+  .toast-premium .toast-title {
+    font-size: 14.5px;
+  }
+  .toast-cta {
+    padding: 6px 12px;
+    font-size: 11px;
   }
 }
 
@@ -163,5 +388,17 @@
   .toast-card.toast-in,
   .toast-card.toast-out {
     transform: none !important;
+  }
+  .toast-live-dot {
+    animation: none !important;
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.25) !important;
+  }
+  .toast-progress-fill {
+    animation: none !important;
+    transform: scaleX(0.4) !important; /* static indicator instead of a countdown motion */
+  }
+  .toast-cta:active::after {
+    transition: none !important;
+    opacity: 0 !important;
   }
 }
