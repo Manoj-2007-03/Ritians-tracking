@@ -1809,8 +1809,10 @@ function checkAndHandleDestination(vehicle, newLat, newLng) {
 app.post("/trip-start/:vehicleId", (req, res) => {
   const { vehicleId } = req.params;
   const vehicle = locationStore[vehicleId] || { vehicleId };
+  const now = Date.now();
 
-  vehicle.tripStartNotified = false; // next /update-location ping will be treated as a new trip
+  vehicle.tripStartNotified = true;  // /update-location won't re-fire off the back of this trip
+  vehicle.tripStartNotifiedAt = now; // debounce stamp for /update-location's fallback (see below)
   vehicle.lastStopIdx = 0;
   vehicle.reachedDestination = false;
   vehicle.destinationReachedAt = null;
@@ -1818,8 +1820,16 @@ app.post("/trip-start/:vehicleId", (req, res) => {
 
   resetNotifyState(vehicleId); // clear arriving-notification locks too
 
-  console.log(`[TRIP-START] ${vehicleId}: manually reset, ready for new trip`);
-  res.json({ success: true, vehicleId, message: "Trip state reset. Next location update will trigger Bus Started." });
+  // driver.html calls this endpoint if and only if the driver genuinely
+  // pressed "Start" (startTracking(isRestore=false)) — never on a silent
+  // page-reload/reconnect restore (startTracking(true) skips this call
+  // entirely). That makes it the correct, unambiguous place to notify:
+  // every explicit start fires here, including a driver retrying seconds
+  // after a faulty first attempt, and a plain reload never double-fires.
+  notifyBusStarted(vehicleId).catch(() => {});
+
+  console.log(`[TRIP-START] ${vehicleId}: reset + notified, ready for new trip`);
+  res.json({ success: true, vehicleId, message: "Trip started, Bus Started notification sent." });
 });
 
 // ── Persistent Tracking Session Endpoints ───────────────────────────────────
@@ -1840,6 +1850,12 @@ app.post("/tracking/start", (req, res) => {
 
   if (existing && existing.status !== "stopped") {
     // Reuse — just refresh the heartbeat and report the same sessionId back.
+    // NOTE: this endpoint is called by driver.html on BOTH an explicit start
+    // and a silent page-reload restore (startTracking(true)) — it cannot
+    // tell those apart, so it must never notify. The "Bus Started"
+    // notification lives in POST /trip-start/:vehicleId instead, which
+    // driver.html only calls when the driver genuinely presses Start
+    // (isRestore === false). See that handler for the notify logic.
     existing.lastHeartbeatAt = now;
     existing.status = "running";
     return res.json({ success: true, reused: true, session: existing });
@@ -1953,8 +1969,15 @@ app.post("/update-location", (req, res) => {
   // update was more than TRIP_GAP_MS ago (bus was clearly off/idle since).
   // ★ v6.1: hoisted to T.TRIP_GAP_MS so isGpsOutlier()'s "long gap = new
   // trip, not a teleport" exemption always agrees with this check.
+  //
+  // recentlyNotifiedManually guards against double-notifying right after
+  // POST /tracking/start already fired notifyBusStarted() directly — without
+  // it, the very first GPS ping of a trip would often still see a large
+  // gapSinceLastUpdate (left over from the previous trip's last ping) and
+  // re-trigger this block a few seconds later.
   const gapSinceLastUpdate = prev ? (now - prev.updatedAt) : Infinity;
-  const isNewTrip = !vehicle.tripStartNotified || gapSinceLastUpdate > T.TRIP_GAP_MS;
+  const recentlyNotifiedManually = vehicle.tripStartNotifiedAt && (now - vehicle.tripStartNotifiedAt < 2 * 60_000);
+  const isNewTrip = (!vehicle.tripStartNotified || gapSinceLastUpdate > T.TRIP_GAP_MS) && !recentlyNotifiedManually;
 
   if (isNewTrip) {
     vehicle.lastStopIdx = 0;              // reset stop progress for the new trip
@@ -2026,6 +2049,7 @@ app.post("/update-location", (req, res) => {
   if (isNewTrip) {
     notifyBusStarted(vehicleId).catch(() => {});
     vehicle.tripStartNotified = true;
+    vehicle.tripStartNotifiedAt = now;
   }
   if (stops) {
     const candidates = [stops[lastStopIdx], stops[lastStopIdx + 1]].filter(Boolean);
