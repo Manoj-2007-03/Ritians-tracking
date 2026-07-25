@@ -1093,16 +1093,23 @@ function toast(msg,type='success'){
     window.RitiansToast.show(msg,type);
   }else{
     console.error('RitiansToast not loaded — check that toast.js is present and loaded before this script.');
-    // Minimal fallback so the user still sees feedback
-    const c=document.getElementById('toastContainer');
-    if(c){
-      const el=document.createElement('div');
-      el.className='toast-fallback toast-'+type;
-      el.textContent=typeof msg==='string'?msg:(msg&&msg.message)||'';
-      el.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:8px;z-index:9999;font-size:14px;';
-      c.appendChild(el);
-      setTimeout(()=>el.remove(),3000);
+    // Minimal fallback so the user still sees feedback. Don't rely on
+    // #toastContainer already existing — it's normally created by
+    // toast.js's own getContainer(), which never ran if we're in this
+    // branch, so build it here instead of silently no-oping.
+    let c=document.getElementById('toastContainer');
+    if(!c){
+      c=document.createElement('div');
+      c.id='toastContainer';
+      c.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;';
+      document.body.appendChild(c);
     }
+    const el=document.createElement('div');
+    el.className='toast-fallback toast-'+type;
+    el.textContent=typeof msg==='string'?msg:(msg&&msg.title)||(msg&&msg.message)||'Notification';
+    el.style.cssText='background:#1a1f2e;color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;box-shadow:0 4px 20px rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);';
+    c.appendChild(el);
+    setTimeout(()=>el.remove(),3000);
   }
 }
 function closeModal(id){document.getElementById(id).classList.add('hidden');}
@@ -1528,6 +1535,18 @@ async function enableNotifications() {
 // bus_started event so the caller can fall back to the plain toast.
 function showBusStartedToast(data) {
   if (!data || data.type !== 'bus_started') return false;
+
+  if (!window.RitiansToast || typeof window.RitiansToast.show !== 'function') {
+    // This is the exact failure mode that produces "no toast at all, no
+    // error visible to the user": toast.js never loaded/initialized, so
+    // calling .show() here would throw inside the FCM callback and abort
+    // silently. Log loudly so it shows up in the console instead of
+    // vanishing, and let the caller fall through to the plain toast(),
+    // which has its own (now-fixed) fallback rendering path.
+    console.error('[showBusStartedToast] window.RitiansToast is not available — toast.js failed to load or ran with an error. Falling back to plain toast.');
+    return false;
+  }
+
   const startedDate = data.startedAt ? new Date(Number(data.startedAt)) : new Date();
   window.RitiansToast.show({
     title: 'Bus Started',
