@@ -1593,6 +1593,62 @@ messaging.onMessage((payload) => {
 // while the app is open in the foreground (only when backgrounded/closed),
 // so without this listener, foreground pushes arrive silently with no
 // visible feedback at all.
+//
+// Two delivery paths call into this same logic:
+//   1. Capacitor's PushNotifications 'pushNotificationReceived' listener
+//      (kept below as a fallback — it may still fire on some devices).
+//   2. window.__rtHandleNativePush(data), called directly by
+//      RtMessagingService.java via webView.evaluateJavascript(). This is
+//      now the PRIMARY path: Android does not reliably deliver one FCM
+//      message to multiple registered FirebaseMessagingService classes, and
+//      RtMessagingService (which builds the tray notification) is the one
+//      that actually receives messages in this app — Capacitor's own
+//      MessagingService was being starved out, so its JS listener alone
+//      could not be relied on to show the in-app toast.
+//
+// __rtLastPushKey/__rtLastPushAt dedupe the rare case where both paths
+// fire for the same push on a given device/OS version, so it never shows
+// two toasts for one notification.
+window.__rtLastPushKey = null;
+window.__rtLastPushAt = 0;
+
+function handleNativePushData(data) {
+  data = data || {};
+  const key = [data.type, data.vehicleId, data.startedAt, data.title].join('|');
+  const now = Date.now();
+  if (key === window.__rtLastPushKey && (now - window.__rtLastPushAt) < 2000) return;
+  window.__rtLastPushKey = key;
+  window.__rtLastPushAt = now;
+
+  const title = data.title || '';
+  const body = data.body || '';
+  const text = (title + ' ' + body).toLowerCase();
+
+  if (!showBusStartedToast(data)) {
+    toast(title || 'New notification');
+  }
+
+  if (window.RitiansSounds) {
+    if (/start/.test(text)) {
+      window.RitiansSounds.playBusStarted();
+    } else if (/arriv|near|boarding/.test(text)) {
+      window.RitiansSounds.playNearBoarding();
+    }
+  }
+}
+
+// Called directly by RtMessagingService.java (webView.evaluateJavascript)
+// whenever the app is in the foreground.
+window.__rtHandleNativePush = function (data) {
+  try {
+    if (typeof data === 'string') data = JSON.parse(data);
+  } catch (e) {
+    console.error('[__rtHandleNativePush] failed to parse push data:', e);
+    data = {};
+  }
+  handleNativePushData(data);
+};
+
 if (isNativeApp()) {
   const { PushNotifications } = window.Capacitor.Plugins;
   PushNotifications.addListener('pushNotificationReceived', (notification) => {
@@ -1601,21 +1657,7 @@ if (isNativeApp()) {
     // notification.body (those only get populated from a "notification"-type
     // payload) -- read from notification.data instead.
     const data = (notification && notification.data) || {};
-    const title = data.title || '';
-    const body = data.body || '';
-    const text = (title + ' ' + body).toLowerCase();
-
-    if (!showBusStartedToast(data)) {
-      toast(title || 'New notification');
-    }
-
-    if (window.RitiansSounds) {
-      if (/start/.test(text)) {
-        window.RitiansSounds.playBusStarted();
-      } else if (/arriv|near|boarding/.test(text)) {
-        window.RitiansSounds.playNearBoarding();
-      }
-    }
+    handleNativePushData(data);
   });
 }
 
