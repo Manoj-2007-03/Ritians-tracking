@@ -82,7 +82,7 @@ async function notifyBusStarted(vehicleId, opts = {}) {
   await sendToRoute(
     vehicleId,
     "Bus Started 🚌",
-    `Bus ${vehicleId} has started its route.`,
+    `Bus ${vehicleId} is now on the move. 📍 Track its live location.`,
     null,
     { type: "bus_started", vehicleId, route, startedAt, liveUrl }
   );
