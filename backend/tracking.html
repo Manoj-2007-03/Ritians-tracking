@@ -658,6 +658,90 @@ body::before{
   letter-spacing:0.04em;
 }
 
+/* ── Auth chip (avatar + username), injected by auth-guard.js.
+   Base rules keep the desktop header identical; the drawer-scoped
+   rules below give it the premium card treatment once mobile.js
+   relocates it into .drawer-profile-slot (see relocateAuthChip()
+   in mobile.js). These were missing here before, which is why the
+   avatar/name/logout rendered as raw unstyled text/button. ── */
+.auth-chip{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(78,205,196,0.10);border:1px solid rgba(78,205,196,0.25);
+  border-radius:99px;padding:5px 12px 5px 8px;
+  font-size:12px;color:var(--accent2);font-family:var(--font-body);
+  flex-shrink:0;
+}
+.auth-chip-avatar{
+  width:24px;height:24px;border-radius:50%;
+  background:rgba(78,205,196,0.2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:var(--accent2);flex-shrink:0;
+}
+.auth-chip-name{
+  font-weight:600;max-width:90px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;
+}
+.auth-chip-logout{
+  background:none;border:none;color:var(--text3);
+  cursor:pointer;font-size:12px;padding:0;line-height:1;
+  transition:color 0.2s var(--ease);
+}
+.auth-chip-logout:hover{color:#F87171}
+
+/* Premium card version — once auth-chip is relocated inside the drawer */
+.drawer-profile-slot:empty{display:none}
+.drawer-nav .auth-chip{
+  width:100%;gap:12px;padding:13px 14px;border-radius:var(--r);
+  background:linear-gradient(135deg,rgba(78,205,196,0.09),rgba(255,255,255,0.03));
+  border:1px solid var(--border2);font-size:14px;color:var(--text);
+  box-shadow:0 1px 0 rgba(255,255,255,0.04) inset,0 4px 16px rgba(0,0,0,0.22);
+  transition:all 0.15s var(--ease);
+}
+.drawer-nav .auth-chip:hover{
+  background:linear-gradient(135deg,rgba(78,205,196,0.14),rgba(255,255,255,0.045));
+  border-color:rgba(78,205,196,0.3);
+}
+.drawer-nav .auth-chip-avatar{
+  width:36px;height:36px;font-size:14px;
+  background:linear-gradient(135deg,rgba(78,205,196,0.4),rgba(78,205,196,0.16));
+  box-shadow:0 0 0 1px rgba(78,205,196,0.45) inset;
+}
+.drawer-nav .auth-chip-name{flex:1 1 auto;max-width:none;font-size:14px;font-weight:600;color:var(--text)}
+.drawer-nav .auth-chip-logout{font-size:13px;flex-shrink:0}
+
+/* ── Emergency SOS button in drawer ── */
+.drawer-sos-wrapper{
+  display:flex;flex-direction:column;align-items:center;gap:9px;
+  padding:14px 0 16px;
+}
+.drawer-sos-circle{
+  width:72px;height:72px;border-radius:50%;
+  background:linear-gradient(145deg,#EF4444,#B91C1C);
+  box-shadow:0 0 24px rgba(239,68,68,0.5),0 4px 16px rgba(0,0,0,0.4);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  text-decoration:none;color:#fff;
+  transition:transform 0.15s ease,box-shadow 0.15s ease;
+  border:2px solid rgba(255,255,255,0.15);
+  animation:sosPulseRing 2.5s ease-out infinite;
+}
+.drawer-sos-circle i{font-size:16px}
+.drawer-sos-circle span{font-size:11px;font-weight:700;letter-spacing:0.5px}
+.drawer-sos-circle:hover{
+  transform:translateY(-2px) scale(1.03);
+  box-shadow:0 0 30px rgba(239,68,68,0.65),0 6px 20px rgba(0,0,0,0.45);
+}
+.drawer-sos-circle:active{
+  transform:scale(0.95);
+  box-shadow:0 0 16px rgba(239,68,68,0.45),0 2px 8px rgba(0,0,0,0.35);
+}
+.drawer-sos-circle:focus-visible{outline:2px solid rgba(239,68,68,0.65);outline-offset:3px}
+.drawer-sos-label{font-size:11px;color:#EF4444;font-weight:600;letter-spacing:0.5px}
+@keyframes sosPulseRing{
+  0%{box-shadow:0 0 0 0 rgba(239,68,68,0.5)}
+  70%{box-shadow:0 0 0 12px rgba(239,68,68,0)}
+  100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}
+}
+
 /* ── Floating view-toggle button ── */
 .view-toggle-btn{
   position:fixed;bottom:20px;right:16px;z-index:250;
