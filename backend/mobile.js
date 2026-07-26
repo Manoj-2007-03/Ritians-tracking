@@ -114,10 +114,9 @@
   // position — untouched). On mobile, the Mobile Header should show only
   // the logo/title + hamburger, so this moves the SAME chip node (not a
   // clone — preserves its logout button listener and lets auth-guard.js
-  // keep updating it normally) into the drawer's profile slot, at the very
-  // top of the drawer (just below the brand header). Switching back to
-  // desktop moves it back to `.nav-right`, right where auth-guard.js
-  // originally placed it.
+  // keep updating it normally) into the drawer's profile slot, directly
+  // below "Enable Alerts". Switching back to desktop moves it back to
+  // `.nav-right`, right where auth-guard.js originally placed it.
   function relocateAuthChip(mode) {
     if (detectPage() !== 'index') return;
 
@@ -238,21 +237,6 @@
 
     if (page === 'index') {
       navItems = `
-        <!-- The logged-in user's #authChip (avatar + username), injected into
-             .nav-right by auth-guard.js, is relocated here on mobile — see
-             relocateAuthChip(). Sits at the very top of the drawer, right
-             below the brand header. Empty on desktop / before auth-guard.js
-             runs (collapses to nothing via .drawer-profile-slot:empty). -->
-        <div class="drawer-profile-slot" id="${PROFILE_SLOT_ID}"></div>
-        <div class="drawer-divider"></div>
-        <div class="drawer-sos-wrapper">
-          <a class="drawer-sos-circle" href="sos.html" aria-label="Emergency SOS">
-            <i class="fas fa-bell"></i>
-            <span>SOS</span>
-          </a>
-          <div class="drawer-sos-label">Emergency Alert</div>
-        </div>
-        <div class="drawer-divider"></div>
         <button class="drawer-nav-item active" id="dni-student"
           onclick="MobileNav.closeDrawer(); typeof showTab==='function' && showTab('student')">
           <i class="fas fa-user-graduate"></i> Student View
@@ -276,6 +260,19 @@
           onclick="MobileNav.handleNotifyClick()">
           <i class="fas fa-bell"></i> <span class="drawer-notify-label">Enable Alerts</span>
         </button>
+        <div class="drawer-divider"></div>
+        <!-- The logged-in user's #authChip (avatar + username), injected into
+             .nav-right by auth-guard.js, is relocated here on mobile — see
+             relocateAuthChip(). Empty on desktop / before auth-guard.js runs. -->
+        <div class="drawer-profile-slot" id="${PROFILE_SLOT_ID}"></div>
+        <div class="drawer-divider"></div>
+        <div class="drawer-sos-wrapper">
+          <a class="drawer-sos-circle" href="sos.html" aria-label="Emergency SOS">
+            <i class="fas fa-bell"></i>
+            <span>SOS</span>
+          </a>
+          <div class="drawer-sos-label">Emergency Alert</div>
+        </div>
       `;
     } else if (page === 'tracking') {
       navItems = `
