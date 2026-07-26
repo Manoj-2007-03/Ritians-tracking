@@ -981,12 +981,13 @@
 /* ─────────────────────────────────────────────────────────────
    13b. DRAWER PROFILE CARD (Home Page mobile drawer)
    Restyles the #authChip node once mobile.js has relocated it from
-   the mobile header into `.drawer-profile-slot` (between "Enable
-   Alerts" and the SOS button). Scoped to `.drawer-nav .auth-chip`
-   so the header/desktop chip rules above are completely untouched —
-   this only fires once the same element is actually inside the
-   drawer. Collapses cleanly if the chip isn't present (logged out /
-   not yet injected) so no empty gap is left between the dividers.
+   the mobile header into `.drawer-profile-slot`, at the very top of
+   the drawer (first item, directly under the brand header). Scoped
+   to `.drawer-nav .auth-chip` so the header/desktop chip rules above
+   are completely untouched — this only fires once the same element
+   is actually inside the drawer. Collapses cleanly if the chip isn't
+   present (logged out / not yet injected) so no empty gap is left
+   above the divider.
 ───────────────────────────────────────────────────────────── */
 .drawer-profile-slot:empty {
   display: none;
@@ -995,18 +996,19 @@
 .drawer-nav .auth-chip {
   width: 100%;
   gap: 12px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  padding: 13px 14px;
+  border-radius: var(--r);
+  background: linear-gradient(135deg, rgba(78, 205, 196, 0.09), rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--border2);
   font-size: 14px;
   color: var(--text);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 4px 16px rgba(0, 0, 0, 0.22);
   transition: all 0.15s;
 }
 
 .drawer-nav .auth-chip:hover {
-  background: var(--bg4);
-  border-color: var(--border2);
+  background: linear-gradient(135deg, rgba(78, 205, 196, 0.14), rgba(255, 255, 255, 0.045));
+  border-color: rgba(78, 205, 196, 0.3);
 }
 
 .drawer-nav .auth-chip-avatar {
@@ -1035,8 +1037,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 16px 0 8px;
+  gap: 9px;
+  padding: 14px 0 16px;
 }
 .drawer-sos-circle {
   width: 72px;
@@ -1051,9 +1053,21 @@
   gap: 3px;
   text-decoration: none;
   color: #fff;
-  transition: all 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
   border: 2px solid rgba(255,255,255,0.15);
   animation: sosPulseRing 2.5s ease-out infinite;
+}
+.drawer-sos-circle:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 0 30px rgba(239,68,68,0.65), 0 6px 20px rgba(0,0,0,0.45);
+}
+.drawer-sos-circle:active {
+  transform: scale(0.95);
+  box-shadow: 0 0 16px rgba(239,68,68,0.45), 0 2px 8px rgba(0,0,0,0.35);
+}
+.drawer-sos-circle:focus-visible {
+  outline: 2px solid rgba(239,68,68,0.65);
+  outline-offset: 3px;
 }
 .drawer-sos-label {
   font-size: 11px;
