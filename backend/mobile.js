@@ -33,9 +33,13 @@
  * (`.page-index .nav-right` — chip before hamburger) as a backstop
  * regardless of injection timing.
  *
- * tracking.html and driver.html are intentionally left on the prior
- * behaviour — hamburger injected into `.nav-brand` (left side) — so
- * neither page's header layout changes as part of this update.
+ * tracking.html: hamburger stays injected into `.nav-brand` (left side,
+ * unchanged) — but as of this update, the auth-guard.js profile chip
+ * (previously left sitting in `.nav-right`) is now ALSO relocated into
+ * the drawer on mobile, same mechanism as index.html, positioned below
+ * "Driver Portal". See relocateAuthChip().
+ *
+ * driver.html header layout is untouched by this update.
  * ============================================================
  */
 
@@ -50,7 +54,7 @@
   const HAMBURGER_ID  = 'hamburgerBtn';
   const TOGGLE_BTN_ID = 'viewToggleBtn';
   const NOTIFY_ITEM_ID = 'drawerNotifyItem';
-  const PROFILE_SLOT_ID = 'drawerProfileSlot';   // where #authChip is relocated to on mobile (index page only)
+  const PROFILE_SLOT_ID = 'drawerProfileSlot';   // where #authChip is relocated to on mobile (index + tracking pages)
   const AUTH_CHIP_ID    = 'authChip';            // id auth-guard.js gives the avatar/username chip it injects
 
   // ── STATE ──────────────────────────────────────────────────
@@ -104,21 +108,24 @@
       closeDrawer();
     }
 
-    // Relocate the avatar/username chip to match the new mode (index only;
-    // see relocateAuthChip() — no-ops safely if the chip/slot aren't ready yet).
+    // Relocate the avatar/username chip to match the new mode (index +
+    // tracking pages; see relocateAuthChip() — no-ops safely if the
+    // chip/slot aren't ready yet, or the current page doesn't have one).
     relocateAuthChip(mode);
   }
 
-  // ── RELOCATE AUTH CHIP (index.html only) ───────────────────
+  // ── RELOCATE AUTH CHIP (index.html + tracking.html) ────────
   // auth-guard.js injects `#authChip` into `.nav-right` (desktop header
   // position — untouched). On mobile, the Mobile Header should show only
   // the logo/title + hamburger, so this moves the SAME chip node (not a
   // clone — preserves its logout button listener and lets auth-guard.js
-  // keep updating it normally) into the drawer's profile slot, directly
-  // below "Enable Alerts". Switching back to desktop moves it back to
-  // `.nav-right`, right where auth-guard.js originally placed it.
+  // keep updating it normally) into the drawer's profile slot — on
+  // index.html this sits at the top of the drawer; on tracking.html it
+  // sits just below "Driver Portal". Switching back to desktop moves it
+  // back to `.nav-right`, right where auth-guard.js originally placed it.
   function relocateAuthChip(mode) {
-    if (detectPage() !== 'index') return;
+    const page = detectPage();
+    if (page !== 'index' && page !== 'tracking') return;
 
     const chip = document.getElementById(AUTH_CHIP_ID);
     const slot = document.getElementById(PROFILE_SLOT_ID);
@@ -286,6 +293,13 @@
         <a class="drawer-nav-item driver-ext" href="driver.html">
           <i class="fas fa-location-arrow"></i> Driver Portal
         </a>
+        <div class="drawer-divider"></div>
+        <!-- The logged-in user's #authChip (avatar + username), injected into
+             .nav-right by auth-guard.js, is relocated here on mobile — see
+             relocateAuthChip(). Sits just below "Driver Portal". Empty on
+             desktop / before auth-guard.js runs (collapses to nothing via
+             .drawer-profile-slot:empty). -->
+        <div class="drawer-profile-slot" id="${PROFILE_SLOT_ID}"></div>
         <div class="drawer-divider"></div>
         <div class="drawer-sos-wrapper">
           <a class="drawer-sos-circle" href="sos.html" aria-label="Emergency SOS">
