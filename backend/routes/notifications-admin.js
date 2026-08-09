@@ -20,7 +20,7 @@ const { notifyCustomMessage } = require("../notifications");
 
 // ── GET /api/notify/buses ───────────────────────────────────────────────────
 // Populates the bus-select dropdown with buses that actually have students
-// signed up against them (checks both busNumber and legacy busNo field).
+// signed up against them (checks busNumber, legacy busNo, and route fields).
 router.get("/api/notify/buses", async (req, res) => {
   try {
     const [a, b, c] = await Promise.all([
