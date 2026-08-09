@@ -59,6 +59,15 @@
 
   --safe-t: env(safe-area-inset-top, 0px);
   --safe-b: env(safe-area-inset-bottom, 0px);
+
+  /* Depth / lighting */
+  --grid-line:  rgba(255,255,255,0.028);
+  --hair:       rgba(255,255,255,0.09);
+  --shadow-1:   0 2px 10px rgba(0,0,0,0.30);
+  --shadow-2:   0 10px 32px rgba(0,0,0,0.42);
+  --shadow-3:   0 20px 60px rgba(0,0,0,0.55);
+  --ease-out:   cubic-bezier(.16,1,.3,1);
+  --ease-spring: cubic-bezier(.34,1.3,.64,1);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -102,6 +111,26 @@ html, body {
   background-size: 200px;
 }
 
+/* Faint structural grid — reads as "engineered", not decorative */
+.bg-grid {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(ellipse 70% 55% at 50% 0%, #000 0%, transparent 75%);
+  mask-image: radial-gradient(ellipse 70% 55% at 50% 0%, #000 0%, transparent 75%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-orb, .live-dot, .fade-in { animation: none !important; }
+  * { scroll-behavior: auto !important; }
+}
+
+/* Staggered entrance for major sections */
+.fade-in { animation: fadeUp 0.5s var(--ease-out) both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
 /* ═══════════════════════════════════════════════
    HEADER
 ═══════════════════════════════════════════════ */
@@ -131,7 +160,12 @@ html, body {
   flex-shrink: 0;
 }
 .header-center { flex: 1; text-align: center; }
-.header-title { font-family: var(--font-h); font-size: 15px; font-weight: 800; letter-spacing: 0.04em; line-height: 1.1; }
+.header-title {
+  font-family: var(--font-h); font-size: 15px; font-weight: 800; letter-spacing: 0.04em; line-height: 1.1;
+  background: linear-gradient(135deg, #FFF 0%, #FFE49E 55%, var(--amber) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; border-radius: 6px; }
 .header-sub { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 2px; }
 .header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
@@ -176,6 +210,8 @@ html, body {
   padding: 16px 16px 14px; position: relative; overflow: hidden; cursor: default;
   transition: transform 0.2s ease, box-shadow 0.2s ease; -webkit-tap-highlight-color: transparent;
 }
+.stat-card { box-shadow: var(--shadow-1); }
+.stat-card:hover { box-shadow: var(--shadow-2); }
 .stat-card:active { transform: scale(0.97); }
 .stat-card::before {
   content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 1px;
@@ -219,6 +255,7 @@ html, body {
   background: var(--glass); border: 1px solid var(--border2); border-radius: var(--r-lg);
   backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
   overflow: hidden; position: relative; padding: 18px 16px 20px;
+  box-shadow: var(--shadow-2); transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .composer::before {
   content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 1px;
@@ -361,7 +398,9 @@ html, body {
   background: var(--glass); border: 1px solid var(--border2); border-radius: var(--r-lg);
   backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
   overflow: hidden; position: relative; padding: 16px;
+  box-shadow: var(--shadow-1); transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
+.notif-card:hover { transform: translateY(-1px); }
 .notif-card::before {
   content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 1px;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.10), transparent);
@@ -459,6 +498,48 @@ html, body {
 .toast.success i { color: var(--green); }
 .toast.error { border-color: var(--red-border); }
 .toast.error i { color: var(--red); }
+
+/* Custom scrollbar for the bus card grid */
+.bus-card-grid::-webkit-scrollbar { width: 6px; }
+.bus-card-grid::-webkit-scrollbar-track { background: transparent; }
+.bus-card-grid::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+.bus-card-grid::-webkit-scrollbar-thumb:hover { background: var(--amber-border); }
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE — tablet & desktop
+   Mobile-first base above; here the layout widens
+   intentionally rather than just stretching.
+═══════════════════════════════════════════════ */
+@media (min-width: 700px) {
+  .page { max-width: 680px; padding: 28px 24px calc(40px + var(--safe-b)); gap: 28px; }
+  .header { padding: 16px 24px; }
+  .header-title { font-size: 16px; }
+  .stats-grid { gap: 14px; }
+  .bus-card-grid { grid-template-columns: repeat(3, 1fr); max-height: 300px; }
+  .modal { max-width: 480px; border-radius: var(--r-lg); margin-bottom: 24px; }
+  .modal-backdrop { align-items: center; }
+}
+
+@media (min-width: 1080px) {
+  .page {
+    max-width: 1080px; padding: 36px 32px calc(48px + var(--safe-b));
+    display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr;
+    gap: 24px 28px; align-items: start;
+  }
+  section[aria-label="Notification statistics"] { grid-column: 1 / -1; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); max-width: 460px; }
+  section[aria-label="Send notification"] { grid-column: 1; }
+  section[aria-label="Recent notifications"] { grid-column: 2; grid-row: 2; }
+  .composer { padding: 24px 22px 26px; }
+  .bus-card-grid { grid-template-columns: repeat(2, 1fr); max-height: 320px; }
+  .notif-list { max-height: 640px; overflow-y: auto; padding-right: 4px; }
+  .notif-list::-webkit-scrollbar { width: 6px; }
+  .notif-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+}
+
+@media (hover: hover) {
+  .composer:hover, .notif-card:hover { border-color: var(--border2); box-shadow: var(--shadow-2); }
+}
 </style>
 </head>
 <body>
@@ -469,6 +550,7 @@ html, body {
   <div class="bg-orb orb-2"></div>
   <div class="bg-orb orb-3"></div>
 </div>
+<div class="bg-grid" aria-hidden="true"></div>
 <div class="bg-grain" aria-hidden="true"></div>
 
 <!-- ── HEADER ── -->
@@ -502,7 +584,7 @@ html, body {
 <main class="page" id="mainPage">
 
   <!-- Stats -->
-  <section aria-label="Notification statistics">
+  <section aria-label="Notification statistics" class="fade-in" style="animation-delay:0.02s">
     <div class="stats-grid">
       <div class="stat-card s-amber" aria-label="Sent today">
         <div class="stat-icon"><i class="fas fa-paper-plane"></i></div>
@@ -518,7 +600,7 @@ html, body {
   </section>
 
   <!-- Composer -->
-  <section aria-label="Send notification">
+  <section aria-label="Send notification" class="fade-in" style="animation-delay:0.08s">
     <div class="section-header">
       <div class="section-title">
         <i class="fas fa-bullhorn" style="color:var(--amber)"></i>
@@ -563,7 +645,7 @@ html, body {
   </section>
 
   <!-- Recent Notifications -->
-  <section aria-label="Recent notifications">
+  <section aria-label="Recent notifications" class="fade-in" style="animation-delay:0.14s">
     <div class="section-header">
       <div class="section-title">
         <i class="fas fa-clock-rotate-left" style="color:var(--text3)"></i>
