@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Notification Dashboard – Ritians Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous"/>
+
+<style>
+/* ═══════════════════════════════════════════════
+   DESIGN TOKENS — same system as sos-admin.html,
+   amber/gold as the primary accent (announcements,
+   not emergencies) instead of red.
+═══════════════════════════════════════════════ */
+:root {
+  --bg:    #050810;
+  --bg2:   #0A0F1E;
+  --bg3:   #0F1628;
+  --bg4:   #162035;
+  --glass: rgba(15,22,40,0.78);
+
+  --amber:        #FFB800;
+  --amber-dim:    rgba(255,184,0,0.12);
+  --amber-glow:   rgba(255,184,0,0.28);
+  --amber-border: rgba(255,184,0,0.30);
+
+  --green:        #00FF88;
+  --green-dim:    rgba(0,255,136,0.10);
+  --green-glow:   rgba(0,255,136,0.22);
+  --green-border: rgba(0,255,136,0.28);
+
+  --red:        #FF2D2D;
+  --red-dim:    rgba(255,45,45,0.10);
+  --red-glow:   rgba(255,45,45,0.20);
+  --red-border: rgba(255,45,45,0.28);
+
+  --cyan:        #00E5FF;
+  --cyan-dim:    rgba(0,229,255,0.10);
+  --cyan-glow:   rgba(0,229,255,0.20);
+  --cyan-border: rgba(0,229,255,0.28);
+
+  --text:  #EDF2FF;
+  --text2: #8899BB;
+  --text3: #445577;
+
+  --border:  rgba(255,255,255,0.06);
+  --border2: rgba(255,255,255,0.11);
+
+  --r-sm: 12px;
+  --r-md: 18px;
+  --r-lg: 24px;
+
+  --font-h: 'Syne', sans-serif;
+  --font-b: 'DM Sans', sans-serif;
+  --font-m: 'DM Mono', monospace;
+
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-b);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* ═══════════════════════════════════════════════
+   AMBIENT BACKGROUND
+═══════════════════════════════════════════════ */
+.bg-field { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.bg-orb { position: absolute; border-radius: 50%; filter: blur(100px); }
+.orb-1 {
+  width: 500px; height: 500px; top: -200px; left: 50%; transform: translateX(-50%);
+  background: radial-gradient(circle, rgba(255,184,0,0.16) 0%, transparent 70%);
+  animation: orbDrift 10s ease-in-out infinite;
+}
+.orb-2 {
+  width: 320px; height: 320px; bottom: 0; right: -100px;
+  background: radial-gradient(circle, rgba(0,80,200,0.14) 0%, transparent 70%);
+  animation: orbDrift2 14s ease-in-out infinite reverse;
+}
+.orb-3 {
+  width: 240px; height: 240px; top: 40%; left: -80px;
+  background: radial-gradient(circle, rgba(0,200,160,0.10) 0%, transparent 70%);
+  animation: orbDrift3 12s ease-in-out infinite 3s;
+}
+@keyframes orbDrift { 0%,100%{transform:translateY(0) translateX(-50%)} 50%{transform:translateY(-24px) translateX(-50%)} }
+@keyframes orbDrift2 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-18px)} }
+@keyframes orbDrift3 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(14px)} }
+
+.bg-grain {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0.022;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px;
+}
+
+/* ═══════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════ */
+.header {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(5,8,16,0.88);
+  backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);
+  border-bottom: 1px solid var(--border2);
+  padding: max(14px, var(--safe-t)) 16px 14px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.header-left { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.back-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid var(--border2); background: var(--bg3); color: var(--text2);
+  display: flex; align-items: center; justify-content: center; font-size: 12px;
+  cursor: pointer; text-decoration: none; transition: all 0.18s ease;
+  -webkit-tap-highlight-color: transparent; flex-shrink: 0;
+}
+.back-btn:hover, .back-btn:active { background: var(--bg4); border-color: rgba(255,255,255,0.2); color: var(--text); }
+.header-logo {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: linear-gradient(145deg, #FFC933 0%, #B87E00 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; color: #1a1000;
+  box-shadow: 0 0 20px var(--amber-glow), 0 4px 12px rgba(0,0,0,0.4);
+  flex-shrink: 0;
+}
+.header-center { flex: 1; text-align: center; }
+.header-title { font-family: var(--font-h); font-size: 15px; font-weight: 800; letter-spacing: 0.04em; line-height: 1.1; }
+.header-sub { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 2px; }
+.header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.live-pill {
+  display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 99px;
+  background: var(--green-dim); border: 1px solid var(--green-border);
+  font-size: 10px; font-weight: 700; color: var(--green);
+  font-family: var(--font-m); letter-spacing: 0.05em; text-transform: uppercase;
+}
+.live-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+  box-shadow: 0 0 6px var(--green); animation: livePulse 1.6s ease-in-out infinite; flex-shrink: 0;
+}
+@keyframes livePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.45;transform:scale(0.75)} }
+
+.icon-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid var(--border2); background: var(--bg3); color: var(--text2);
+  display: flex; align-items: center; justify-content: center; font-size: 13px;
+  cursor: pointer; transition: all 0.18s ease; -webkit-tap-highlight-color: transparent;
+}
+.icon-btn:hover, .icon-btn:active { background: var(--bg4); color: var(--amber); border-color: var(--amber-border); }
+.fa-spin { animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ═══════════════════════════════════════════════
+   PAGE WRAPPER
+═══════════════════════════════════════════════ */
+.page {
+  position: relative; z-index: 2; max-width: 520px; margin: 0 auto;
+  padding: 20px 16px calc(32px + var(--safe-b));
+  display: flex; flex-direction: column; gap: 24px;
+}
+
+/* ═══════════════════════════════════════════════
+   STATS GRID
+═══════════════════════════════════════════════ */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stat-card {
+  background: var(--glass); border-radius: var(--r-md); border: 1px solid var(--border2);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  padding: 16px 16px 14px; position: relative; overflow: hidden; cursor: default;
+  transition: transform 0.2s ease, box-shadow 0.2s ease; -webkit-tap-highlight-color: transparent;
+}
+.stat-card:active { transform: scale(0.97); }
+.stat-card::before {
+  content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent);
+}
+.stat-card::after {
+  content: ''; position: absolute; bottom: -30px; right: -30px; width: 80px; height: 80px;
+  border-radius: 50%; filter: blur(24px); pointer-events: none; opacity: 0.6;
+}
+.stat-card.s-amber { border-color: var(--amber-border); box-shadow: 0 0 0 1px var(--amber-dim), inset 0 0 40px rgba(255,184,0,0.03); }
+.stat-card.s-amber::after { background: var(--amber-glow); }
+.stat-card.s-cyan  { border-color: var(--cyan-border);  box-shadow: 0 0 0 1px var(--cyan-dim),  inset 0 0 40px rgba(0,229,255,0.03); }
+.stat-card.s-cyan::after  { background: var(--cyan-glow); }
+.stat-icon {
+  width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; margin-bottom: 12px;
+}
+.s-amber .stat-icon { background: var(--amber-dim); color: var(--amber); }
+.s-cyan  .stat-icon { background: var(--cyan-dim);  color: var(--cyan);  }
+.stat-value { font-family: var(--font-h); font-size: 30px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+.s-amber .stat-value { color: var(--amber); }
+.s-cyan  .stat-value { color: var(--cyan);  }
+.stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.09em; color: var(--text3); }
+
+/* ═══════════════════════════════════════════════
+   SECTION HEADER
+═══════════════════════════════════════════════ */
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.section-title {
+  font-family: var(--font-h); font-size: 13px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.09em; color: var(--text2); display: flex; align-items: center; gap: 8px;
+}
+.section-title i { font-size: 12px; }
+.count-badge { font-family: var(--font-m); font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 99px; letter-spacing: 0.04em; }
+.badge-amber { background: var(--amber-dim); border: 1px solid var(--amber-border); color: var(--amber); }
+
+/* ═══════════════════════════════════════════════
+   COMPOSER PANEL
+═══════════════════════════════════════════════ */
+.composer {
+  background: var(--glass); border: 1px solid var(--border2); border-radius: var(--r-lg);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  overflow: hidden; position: relative; padding: 18px 16px 20px;
+}
+.composer::before {
+  content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.10), transparent);
+  pointer-events: none;
+}
+.field-label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--text3);
+  font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+}
+.bus-select {
+  width: 100%; background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--r-sm);
+  padding: 12px 14px; color: var(--text); font-family: var(--font-b); font-size: 14px;
+  outline: none; min-height: 46px; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238899BB' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center; background-size: 16px;
+  transition: border-color 0.18s;
+}
+.bus-select:focus { border-color: var(--amber-border); box-shadow: 0 0 0 3px var(--amber-dim); }
+
+.reach-preview {
+  margin-top: 8px; font-size: 11px; color: var(--text3); font-family: var(--font-m);
+  display: flex; align-items: center; gap: 6px; min-height: 16px;
+}
+.reach-preview i { font-size: 10px; color: var(--cyan); }
+.reach-preview.warn i, .reach-preview.warn { color: var(--amber); }
+
+.field-group { margin-top: 18px; }
+
+.preset-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.preset-chip {
+  background: var(--bg2); border: 1px solid var(--border2); color: var(--text2);
+  border-radius: 99px; padding: 8px 13px; font-size: 12px; font-family: var(--font-b);
+  font-weight: 500; cursor: pointer; transition: all 0.16s ease; -webkit-tap-highlight-color: transparent;
+  display: inline-flex; align-items: center; gap: 6px; line-height: 1.2;
+}
+.preset-chip:hover { border-color: var(--border2); background: var(--bg3); color: var(--text); }
+.preset-chip.selected {
+  background: var(--amber-dim); border-color: var(--amber-border); color: var(--amber);
+  box-shadow: 0 0 14px rgba(255,184,0,0.12);
+}
+
+.msg-textarea {
+  width: 100%; background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--r-sm);
+  padding: 12px 14px; color: var(--text); font-family: var(--font-b); font-size: 14px;
+  outline: none; resize: vertical; min-height: 84px; line-height: 1.5; transition: border-color 0.18s;
+}
+.msg-textarea:focus { border-color: var(--amber-border); box-shadow: 0 0 0 3px var(--amber-dim); }
+.msg-textarea::placeholder { color: var(--text3); }
+.char-count { font-size: 10px; color: var(--text3); font-family: var(--font-m); margin-top: 6px; text-align: right; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 11px 16px; border-radius: var(--r-sm); font-family: var(--font-b); font-size: 12px;
+  font-weight: 600; cursor: pointer; border: none; transition: all 0.18s ease;
+  -webkit-tap-highlight-color: transparent; text-decoration: none; min-height: 46px;
+  white-space: nowrap; letter-spacing: 0.01em;
+}
+.btn i { font-size: 11px; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-send {
+  background: linear-gradient(135deg, rgba(255,184,0,0.22), rgba(255,184,0,0.10));
+  border: 1px solid var(--amber-border); color: var(--amber); width: 100%; margin-top: 18px; font-size: 13px;
+}
+.btn-send:hover:not(:disabled), .btn-send:active:not(:disabled) {
+  background: rgba(255,184,0,0.26); box-shadow: 0 0 20px var(--amber-glow); transform: scale(0.99);
+}
+
+/* ═══════════════════════════════════════════════
+   NOTIFICATION HISTORY LIST
+═══════════════════════════════════════════════ */
+.notif-list { display: flex; flex-direction: column; gap: 12px; }
+.notif-card {
+  background: var(--glass); border: 1px solid var(--border2); border-radius: var(--r-lg);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  overflow: hidden; position: relative; padding: 16px;
+}
+.notif-card::before {
+  content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.10), transparent);
+  pointer-events: none;
+}
+.notif-top { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+.notif-avatar {
+  width: 40px; height: 40px; border-radius: 12px;
+  background: linear-gradient(145deg, #FFC933, #B87E00);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; color: #1a1000; flex-shrink: 0;
+}
+.notif-info { flex: 1; min-width: 0; }
+.notif-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 3px; }
+.bus-badge {
+  font-family: var(--font-m); font-size: 10px; padding: 2px 8px; border-radius: 99px;
+  background: var(--cyan-dim); border: 1px solid var(--cyan-border); color: var(--cyan);
+  letter-spacing: 0.02em; white-space: nowrap;
+}
+.preset-badge {
+  font-size: 9px; padding: 2px 8px; border-radius: 99px; background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border2); color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em;
+}
+.notif-time { font-size: 10px; color: var(--text3); font-family: var(--font-m); }
+.notif-message { font-size: 13px; color: var(--text); line-height: 1.5; margin-bottom: 10px; word-break: break-word; }
+.notif-reach {
+  display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text3);
+  padding-top: 10px; border-top: 1px solid var(--border);
+}
+.notif-reach i { color: var(--green); font-size: 10px; }
+.notif-reach.zero i { color: var(--amber); }
+
+/* ═══════════════════════════════════════════════
+   EMPTY / LOADING
+═══════════════════════════════════════════════ */
+.empty-state {
+  text-align: center; padding: 36px 20px; background: var(--glass); border: 1px solid var(--border);
+  border-radius: var(--r-lg); backdrop-filter: blur(16px);
+}
+.empty-icon {
+  width: 52px; height: 52px; border-radius: 16px; background: var(--bg4);
+  display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--text3);
+  margin: 0 auto 12px;
+}
+.empty-text { font-size: 13px; color: var(--text3); line-height: 1.5; }
+.loading {
+  text-align: center; padding: 32px; color: var(--text3); font-size: 13px;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+.loading i { color: var(--amber); }
+
+/* ═══════════════════════════════════════════════
+   CONFIRM MODAL (bottom sheet)
+═══════════════════════════════════════════════ */
+.modal-backdrop {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 100;
+  align-items: flex-end; justify-content: center; padding: 0;
+}
+.modal-backdrop.visible { display: flex; }
+.modal {
+  background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--r-lg) var(--r-lg) 0 0;
+  padding: 8px 20px 32px; width: 100%; max-width: 520px; position: relative;
+  animation: slideUp 0.28s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+@keyframes slideUp { from{transform:translateY(100%);opacity:0} to{transform:translateY(0);opacity:1} }
+.modal-handle { width: 36px; height: 4px; border-radius: 99px; background: var(--border2); margin: 0 auto 20px; }
+.modal-title { font-family: var(--font-h); font-size: 18px; font-weight: 800; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+.modal-title i { color: var(--amber); font-size: 16px; }
+.modal-desc { font-size: 13px; color: var(--text2); margin-bottom: 16px; line-height: 1.55; }
+.modal-preview {
+  background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--r-sm);
+  padding: 12px 14px; font-size: 13px; color: var(--text); line-height: 1.5; margin-bottom: 18px;
+}
+.modal-actions { display: flex; gap: 10px; margin-top: 8px; }
+.btn-cancel-modal { background: var(--bg4); border: 1px solid var(--border2); color: var(--text2); flex: 0 0 auto; padding: 11px 20px; }
+.btn-cancel-modal:hover { background: var(--bg3); color: var(--text); }
+.btn-confirm-send {
+  background: var(--amber-dim); border: 1px solid var(--amber-border); color: var(--amber); flex: 1;
+}
+.btn-confirm-send:hover, .btn-confirm-send:active { background: rgba(255,184,0,0.22); box-shadow: 0 0 20px var(--amber-glow); }
+
+/* ═══════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════ */
+.toast {
+  position: fixed; bottom: calc(20px + var(--safe-b)); left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--r-sm);
+  padding: 12px 18px; font-size: 12px; color: var(--text); display: flex; align-items: center; gap: 8px;
+  z-index: 200; opacity: 0; pointer-events: none; transition: all 0.25s ease; box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+  max-width: 90vw; white-space: normal;
+}
+.toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.success { border-color: var(--green-border); }
+.toast.success i { color: var(--green); }
+.toast.error { border-color: var(--red-border); }
+.toast.error i { color: var(--red); }
+</style>
+</head>
+<body>
+
+<!-- Ambient background -->
+<div class="bg-field" aria-hidden="true">
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
+</div>
+<div class="bg-grain" aria-hidden="true"></div>
+
+<!-- ── HEADER ── -->
+<header class="header">
+  <div class="header-left">
+    <a class="back-btn" href="index.html" aria-label="Go back">
+      <i class="fas fa-arrow-left"></i>
+    </a>
+    <div class="header-logo" aria-hidden="true">
+      <i class="fas fa-bullhorn"></i>
+    </div>
+  </div>
+
+  <div class="header-center">
+    <div class="header-title">Notification Dashboard</div>
+    <div class="header-sub">Transport Admin</div>
+  </div>
+
+  <div class="header-right">
+    <div class="live-pill" aria-label="Live">
+      <span class="live-dot" aria-hidden="true"></span>
+      Live
+    </div>
+    <button class="icon-btn" onclick="loadAll()" aria-label="Refresh data">
+      <i class="fas fa-rotate-right" id="refreshIcon"></i>
+    </button>
+  </div>
+</header>
+
+<!-- ── PAGE ── -->
+<main class="page" id="mainPage">
+
+  <!-- Stats -->
+  <section aria-label="Notification statistics">
+    <div class="stats-grid">
+      <div class="stat-card s-amber" aria-label="Sent today">
+        <div class="stat-icon"><i class="fas fa-paper-plane"></i></div>
+        <div class="stat-value" id="statToday">—</div>
+        <div class="stat-label">Sent Today</div>
+      </div>
+      <div class="stat-card s-cyan" aria-label="Total sent">
+        <div class="stat-icon"><i class="fas fa-chart-bar"></i></div>
+        <div class="stat-value" id="statTotal">—</div>
+        <div class="stat-label">Total Sent</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Composer -->
+  <section aria-label="Send notification">
+    <div class="section-header">
+      <div class="section-title">
+        <i class="fas fa-bullhorn" style="color:var(--amber)"></i>
+        Send to a Bus
+      </div>
+    </div>
+
+    <div class="composer">
+      <div class="field-label"><i class="fas fa-bus"></i> Select Bus</div>
+      <select class="bus-select" id="busSelect" onchange="onBusChange()">
+        <option value="">Loading buses…</option>
+      </select>
+      <div class="reach-preview" id="reachPreview"></div>
+
+      <div class="field-group">
+        <div class="field-label"><i class="fas fa-list"></i> Quick Messages</div>
+        <div class="preset-grid" id="presetGrid"></div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label"><i class="fas fa-pen"></i> Message</div>
+        <textarea class="msg-textarea" id="msgText" maxlength="300"
+          placeholder="Pick a quick message above, or type your own…"
+          oninput="onMsgInput()"></textarea>
+        <div class="char-count"><span id="charCount">0</span>/300</div>
+      </div>
+
+      <button class="btn btn-send" id="sendBtn" onclick="openConfirmModal()" disabled>
+        <i class="fas fa-paper-plane"></i> Send Notification
+      </button>
+    </div>
+  </section>
+
+  <!-- Recent Notifications -->
+  <section aria-label="Recent notifications">
+    <div class="section-header">
+      <div class="section-title">
+        <i class="fas fa-clock-rotate-left" style="color:var(--text3)"></i>
+        Recent Notifications
+      </div>
+      <span class="count-badge badge-amber" id="historyCount">0</span>
+    </div>
+    <div class="notif-list" id="historyList">
+      <div class="loading"><i class="fas fa-circle-notch fa-spin"></i> Loading history…</div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ── CONFIRM SEND MODAL ── -->
+<div class="modal-backdrop" id="confirmModal" role="dialog" aria-modal="true" aria-label="Confirm send">
+  <div class="modal">
+    <div class="modal-handle" aria-hidden="true"></div>
+    <div class="modal-title">
+      <i class="fas fa-paper-plane"></i>
+      Confirm Send
+    </div>
+    <div class="modal-desc" id="confirmDesc">Send this message to students on the selected bus?</div>
+    <div class="modal-preview" id="confirmPreview"></div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel-modal" onclick="closeConfirmModal()">Cancel</button>
+      <button class="btn btn-confirm-send" onclick="confirmSend()"><i class="fas fa-paper-plane"></i> Send Now</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ── -->
+<div class="toast" id="toast"><i class="fas fa-check-circle"></i><span id="toastMsg"></span></div>
+
+<script>
+const API = window.location.origin;
+
+// ── 8 default preset messages ───────────────────────────────────────────────
+const PRESETS = [
+  { label: "Bus Cancelled",   icon: "fa-ban",              text: "🚫 Today's trip has been cancelled. Please arrange alternate transport." },
+  { label: "Running Late",    icon: "fa-clock",             text: "⏰ The bus is running late today. Please wait a little longer at your stop." },
+  { label: "Arriving Soon",   icon: "fa-location-dot",      text: "🚌 The bus is arriving shortly. Please be ready at your boarding point." },
+  { label: "Route Changed",   icon: "fa-route",             text: "🔄 Today's route has changed. Check the app for updated stops." },
+  { label: "Bus Breakdown",   icon: "fa-triangle-exclamation", text: "🛑 The bus has broken down. A replacement is being arranged — delay expected." },
+  { label: "Weather Delay",   icon: "fa-cloud-showers-heavy", text: "🌧️ Departure is delayed due to weather conditions. Please stay safe." },
+  { label: "Back to Normal",  icon: "fa-circle-check",      text: "✅ Services are back to the normal schedule." },
+  { label: "Point Changed",   icon: "fa-map-pin",           text: "📍 Your boarding point has changed for today. Check the app for details." },
+];
+
+let selectedPresetLabel = "Custom";
+
+// ── Init: render preset chips ───────────────────────────────────────────────
+function renderPresets() {
+  const grid = document.getElementById('presetGrid');
+  grid.innerHTML = PRESETS.map((p, i) => `
+    <button type="button" class="preset-chip" id="chip-${i}" onclick="selectPreset(${i})">
+      <i class="fas ${p.icon}"></i> ${p.label}
+    </button>`).join('');
+}
+
+function selectPreset(i) {
+  document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('selected'));
+  document.getElementById(`chip-${i}`).classList.add('selected');
+  selectedPresetLabel = PRESETS[i].label;
+  const textarea = document.getElementById('msgText');
+  textarea.value = PRESETS[i].text;
+  onMsgInput();
+}
+
+function onMsgInput() {
+  const textarea = document.getElementById('msgText');
+  document.getElementById('charCount').textContent = textarea.value.length;
+  updateSendState();
+}
+
+// If the admin hand-edits the text after picking a preset, treat it as custom.
+document.addEventListener('DOMContentLoaded', () => {
+  const textarea = document.getElementById('msgText');
+  textarea.addEventListener('input', () => {
+    const matched = PRESETS.find(p => p.text === textarea.value);
+    selectedPresetLabel = matched ? matched.label : "Custom";
+    if (!matched) document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('selected'));
+  });
+});
+
+function updateSendState() {
+  const bus = document.getElementById('busSelect').value;
+  const msg = document.getElementById('msgText').value.trim();
+  document.getElementById('sendBtn').disabled = !bus || !msg;
+}
+
+// ── Load bus list ────────────────────────────────────────────────────────────
+async function loadBuses() {
+  const select = document.getElementById('busSelect');
+  try {
+    const res = await fetch(`${API}/api/notify/buses`);
+    const data = await res.json();
+    const buses = data.buses || [];
+    if (buses.length === 0) {
+      select.innerHTML = `<option value="">No buses with students found</option>`;
+      return;
+    }
+    select.innerHTML = `<option value="">Select a bus…</option>` +
+      buses.map(b => `<option value="${b}">${b}</option>`).join('');
+  } catch (e) {
+    select.innerHTML = `<option value="">Could not load buses</option>`;
+  }
+}
+
+async function onBusChange() {
+  const bus = document.getElementById('busSelect').value;
+  const preview = document.getElementById('reachPreview');
+  updateSendState();
+  if (!bus) { preview.innerHTML = ''; preview.className = 'reach-preview'; return; }
+
+  preview.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Checking reachable students…`;
+  try {
+    const res = await fetch(`${API}/api/notify/bus-count/${encodeURIComponent(bus)}`);
+    const data = await res.json();
+    if (!data.success) throw new Error();
+    if (data.reachable === 0) {
+      preview.className = 'reach-preview warn';
+      preview.innerHTML = `<i class="fas fa-triangle-exclamation"></i> ${data.studentCount} student(s) on this bus, but none have notifications enabled yet.`;
+    } else {
+      preview.className = 'reach-preview';
+      preview.innerHTML = `<i class="fas fa-signal"></i> Will reach ${data.reachable} of ${data.studentCount} student(s).`;
+    }
+  } catch (e) {
+    preview.className = 'reach-preview warn';
+    preview.innerHTML = `<i class="fas fa-triangle-exclamation"></i> Could not check reachable students.`;
+  }
+}
+
+// ── Confirm modal ────────────────────────────────────────────────────────────
+function openConfirmModal() {
+  const bus = document.getElementById('busSelect').value;
+  const msg = document.getElementById('msgText').value.trim();
+  if (!bus || !msg) return;
+
+  document.getElementById('confirmDesc').textContent = `Send this message to all students on Bus ${bus}?`;
+  document.getElementById('confirmPreview').textContent = msg;
+  document.getElementById('confirmModal').classList.add('visible');
+}
+function closeConfirmModal() {
+  document.getElementById('confirmModal').classList.remove('visible');
+}
+document.getElementById('confirmModal').addEventListener('click', function(e) {
+  if (e.target === this) closeConfirmModal();
+});
+
+async function confirmSend() {
+  const bus = document.getElementById('busSelect').value;
+  const msg = document.getElementById('msgText').value.trim();
+  if (!bus || !msg) return;
+
+  const btn = document.querySelector('.btn-confirm-send');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Sending…';
+
+  try {
+    const res = await fetch(`${API}/api/notify/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ busId: bus, message: msg, presetLabel: selectedPresetLabel, sentBy: 'Admin' }),
+    });
+    const data = await res.json();
+    closeConfirmModal();
+
+    if (data.success) {
+      showToast(data.message || 'Notification sent.', data.successCount > 0 ? 'success' : 'error');
+      document.getElementById('msgText').value = '';
+      document.getElementById('charCount').textContent = '0';
+      document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('selected'));
+      updateSendState();
+      await loadHistory();
+    } else {
+      showToast(data.error || 'Could not send notification.', 'error');
+    }
+  } catch (e) {
+    showToast('Network error. Try again.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Now';
+  }
+}
+
+// ── Toast ────────────────────────────────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg, type) {
+  const toast = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  toast.className = `toast visible ${type || ''}`;
+  const icon = toast.querySelector('i');
+  icon.className = type === 'error' ? 'fas fa-circle-exclamation' : 'fas fa-check-circle';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.className = 'toast'; }, 4000);
+}
+
+// ── Time helpers ─────────────────────────────────────────────────────────────
+function timeAgo(dateStr) {
+  const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+  if (diff < 60)    return `${diff}s ago`;
+  if (diff < 3600)  return `${Math.floor(diff/60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+  return new Date(dateStr).toLocaleDateString('en-IN');
+}
+
+// ── Load history ─────────────────────────────────────────────────────────────
+async function loadHistory() {
+  const list = document.getElementById('historyList');
+  try {
+    const res = await fetch(`${API}/api/notify/history`);
+    const data = await res.json();
+    const logs = data.logs || [];
+
+    document.getElementById('historyCount').textContent = logs.length;
+
+    // Stats
+    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+    const sentToday = logs.filter(l => new Date(l.createdAt) >= todayStart).length;
+    document.getElementById('statToday').textContent = sentToday;
+    document.getElementById('statTotal').textContent = logs.length;
+
+    if (logs.length === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon"><i class="fas fa-bullhorn"></i></div>
+          <div class="empty-text">No notifications sent yet.<br>Pick a bus and message above to get started.</div>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = logs.map(renderNotifCard).join('');
+  } catch (e) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon"><i class="fas fa-wifi"></i></div>
+        <div class="empty-text">Could not load history.</div>
+      </div>`;
+  }
+}
+
+function renderNotifCard(log) {
+  const reachClass = (log.successCount || 0) > 0 ? '' : 'zero';
+  const reachIcon = (log.successCount || 0) > 0 ? 'fa-signal' : 'fa-triangle-exclamation';
+  const reachText = (log.tokenCount || 0) === 0
+    ? 'No reachable students'
+    : `Delivered to ${log.successCount || 0}/${log.tokenCount} device(s)`;
+
+  return `
+    <div class="notif-card">
+      <div class="notif-top">
+        <div class="notif-avatar" aria-hidden="true"><i class="fas fa-bullhorn"></i></div>
+        <div class="notif-info">
+          <div class="notif-meta">
+            <span class="bus-badge"><i class="fas fa-bus" style="font-size:8px"></i> ${log.busId}</span>
+            <span class="preset-badge">${log.presetLabel || 'Custom'}</span>
+          </div>
+          <div class="notif-time">${timeAgo(log.createdAt)} &middot; by ${log.sentBy || 'Admin'}</div>
+        </div>
+      </div>
+      <div class="notif-message">${log.message}</div>
+      <div class="notif-reach ${reachClass}">
+        <i class="fas ${reachIcon}"></i>
+        <span>${reachText}</span>
+      </div>
+    </div>`;
+}
+
+// ── Load all ─────────────────────────────────────────────────────────────────
+async function loadAll() {
+  const icon = document.getElementById('refreshIcon');
+  icon.classList.add('fa-spin');
+  await Promise.all([loadBuses(), loadHistory()]);
+  icon.classList.remove('fa-spin');
+}
+
+renderPresets();
+loadAll();
+</script>
+</body>
+</html>

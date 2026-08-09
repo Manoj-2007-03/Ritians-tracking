@@ -61,6 +61,7 @@ const mongoose   = require("mongoose");
 const authRoutes = require("./routes/auth");
 const attendanceRoutes = require("./routes/attendance.js");
 const sosRoutes = require("./routes/sos");
+const notifyAdminRoutes = require("./routes/notifications-admin");
 const { notifyBusStarted, notifyBusArriving, resetNotifyState } = require("./notifications");
 
 // ── MongoDB Connection ──────────────────────────────────────────────────────
@@ -152,6 +153,7 @@ app.use(express.static(__dirname));
 app.use("/", attendanceRoutes);
 app.use("/", authRoutes);
 app.use("/", sosRoutes);
+app.use("/", notifyAdminRoutes);
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "index.html")));
 
 // ── In-Memory Stores ────────────────────────────────────────────────────────

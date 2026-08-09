@@ -36,7 +36,7 @@ async function sendToRoute(vehicleId, title, body, boardingPoint = null, data = 
 
     if (tokens.length === 0) {
       console.log(`[NOTIFY] No tokens found for ${vehicleId}${boardingPoint ? " @ " + boardingPoint : ""}`);
-      return;
+      return { studentCount: students.length, tokenCount: 0, successCount: 0, failureCount: 0 };
     }
 
     // DATA-ONLY payload (no top-level "notification" key). This is required
@@ -63,8 +63,15 @@ async function sendToRoute(vehicleId, title, body, boardingPoint = null, data = 
 
     const res = await messaging.sendEachForMulticast(message);
     console.log(`[NOTIFY] ${vehicleId}: sent ${res.successCount}/${tokens.length} (${title})`);
+    return {
+      studentCount: students.length,
+      tokenCount: tokens.length,
+      successCount: res.successCount,
+      failureCount: res.failureCount,
+    };
   } catch (err) {
     console.error("[NOTIFY] Send failed:", err.message);
+    return { studentCount: 0, tokenCount: 0, successCount: 0, failureCount: 0, error: err.message };
   }
 }
 
@@ -96,4 +103,18 @@ async function notifyBusArriving(vehicleId, stopName) {
   await sendToRoute(vehicleId, "Bus Arriving 📍", `Bus ${vehicleId} is arriving at ${stopName}.`, stopName);
 }
 
-module.exports = { notifyBusStarted, notifyBusArriving, resetNotifyState };
+// ── notifyCustomMessage ─────────────────────────────────────────────────────
+// Used by the admin Notification Dashboard (routes/notifications-admin.js) to
+// send a free-form or preset message to every student on a given bus.
+// Returns { studentCount, tokenCount, successCount, failureCount } so the
+// admin route can report exactly how many devices were reached.
+async function notifyCustomMessage(vehicleId, message, opts = {}) {
+  const title = opts.title || "📢 Transport Announcement";
+  return sendToRoute(vehicleId, title, message, null, {
+    type: "custom_admin",
+    vehicleId,
+    sentBy: opts.sentBy || "Admin",
+  });
+}
+
+module.exports = { notifyBusStarted, notifyBusArriving, notifyCustomMessage, resetNotifyState };
