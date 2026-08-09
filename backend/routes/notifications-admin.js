@@ -111,4 +111,19 @@ router.get("/api/notify/history", async (req, res) => {
   }
 });
 
+// ── DELETE /api/notify/history ──────────────────────────────────────────────
+// Clears all notification history records. Used by the "Clear Notification
+// History" button on the dashboard. Irreversible — the frontend confirms
+// with the admin before calling this.
+router.delete("/api/notify/history", async (req, res) => {
+  try {
+    const result = await NotificationLog.deleteMany({});
+    console.log(`[NOTIFY-ADMIN] History cleared — ${result.deletedCount} record(s) removed`);
+    return res.json({ success: true, deletedCount: result.deletedCount || 0 });
+  } catch (err) {
+    console.error("[NOTIFY-ADMIN] history clear error:", err.message);
+    return res.status(500).json({ success: false, error: "Server error." });
+  }
+});
+
 module.exports = router;
