@@ -318,6 +318,9 @@ html, body {
   font-size: 11px; color: var(--text3); overflow: hidden; text-overflow: ellipsis;
   white-space: nowrap; line-height: 1.3;
 }
+.bus-card-nostudents {
+  font-size: 9.5px; color: var(--text3); opacity: 0.6; margin-top: 2px; font-style: italic;
+}
 .bus-card.selected {
   border-color: var(--amber-border); background: var(--amber-dim);
   box-shadow: 0 0 0 1px var(--amber-border) inset, 0 0 16px rgba(255,184,0,0.14);
@@ -761,20 +764,23 @@ function routeNameFor(busId) {
 }
 
 // ── Load bus list ────────────────────────────────────────────────────────────
-// Real bus roster comes from the API — it only returns buses that currently
-// have students assigned, which is exactly who an admin can message.
-let ALL_BUSES = [];
+// The picker shows every official route (all 52, from ROUTE_NAMES) so an
+// admin can always find and select any bus by number or stop name — even
+// one that doesn't have a student enrolled yet. The API call below only
+// tells us which of those routes currently have real students, so we can
+// show a "no students yet" hint and skip the send-count check for the rest.
+let ALL_BUSES = Object.keys(ROUTE_NAMES).sort();
+let BUSES_WITH_STUDENTS = new Set();
 let busesLoadFailed = false;
 
 async function loadBuses() {
-  const grid = document.getElementById('busCardGrid');
   try {
     const res = await fetch(`${API}/api/notify/buses`);
     const data = await res.json();
-    ALL_BUSES = data.buses || [];
+    BUSES_WITH_STUDENTS = new Set((data.buses || []).map(b => String(b).trim().toUpperCase()));
     busesLoadFailed = false;
   } catch (e) {
-    ALL_BUSES = [];
+    BUSES_WITH_STUDENTS = new Set();
     busesLoadFailed = true;
   }
   renderBusCards();
@@ -784,15 +790,6 @@ function renderBusCards() {
   const grid = document.getElementById('busCardGrid');
   const query = (document.getElementById('busSearchInput').value || '').trim().toLowerCase();
   const selected = document.getElementById('busSelect').value;
-
-  if (busesLoadFailed) {
-    grid.innerHTML = `<div class="bus-card-empty"><i class="fas fa-wifi"></i> Could not load buses</div>`;
-    return;
-  }
-  if (ALL_BUSES.length === 0) {
-    grid.innerHTML = `<div class="bus-card-empty"><i class="fas fa-bus-simple"></i> No buses with students found</div>`;
-    return;
-  }
 
   const filtered = ALL_BUSES.filter(b => {
     if (!query) return true;
@@ -808,6 +805,7 @@ function renderBusCards() {
   grid.innerHTML = filtered.map(b => {
     const route = routeNameFor(b);
     const isSelected = b === selected;
+    const hasStudents = BUSES_WITH_STUDENTS.has(String(b).toUpperCase());
     return `
       <button type="button" class="bus-card${isSelected ? ' selected' : ''}"
         role="option" aria-selected="${isSelected}" data-bus="${b}"
@@ -815,6 +813,7 @@ function renderBusCards() {
         <div class="bus-card-check" aria-hidden="true"><i class="fas fa-check"></i></div>
         <div class="bus-card-id"><i class="fas fa-bus"></i> ${b}</div>
         ${route ? `<div class="bus-card-route">${route}</div>` : ''}
+        ${!hasStudents && !busesLoadFailed ? `<div class="bus-card-nostudents">No students yet</div>` : ''}
       </button>`;
   }).join('');
 }
