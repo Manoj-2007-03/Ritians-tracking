@@ -486,6 +486,30 @@ html, body {
 }
 .btn-confirm-send:hover, .btn-confirm-send:active { background: rgba(255,184,0,0.22); box-shadow: 0 0 20px var(--amber-glow); }
 
+/* Clear history — subtle destructive action, bottom of the panel */
+.btn-clear-history {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; margin-top: 12px; padding: 10px 14px;
+  background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--r-sm);
+  color: var(--text3); font-family: var(--font-b); font-size: 12px; font-weight: 700;
+  letter-spacing: 0.03em; cursor: pointer; transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+.btn-clear-history i { font-size: 11px; }
+.btn-clear-history:hover {
+  color: var(--red); border-color: var(--red-border); background: var(--red-dim);
+  box-shadow: 0 0 16px var(--red-glow);
+}
+.btn-clear-history:active { transform: scale(0.98); }
+
+/* Danger variant of the confirm modal, reused for Clear History */
+.modal-title-danger i { color: var(--red); }
+.btn-confirm-danger {
+  background: var(--red-dim); border: 1px solid var(--red-border); color: var(--red); flex: 1;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-confirm-danger:hover, .btn-confirm-danger:active { background: rgba(255,45,45,0.22); box-shadow: 0 0 20px var(--red-glow); }
+.btn-confirm-danger:disabled { opacity: 0.6; cursor: not-allowed; }
+
 /* ═══════════════════════════════════════════════
    TOAST
 ═══════════════════════════════════════════════ */
@@ -659,6 +683,9 @@ html, body {
     <div class="notif-list" id="historyList">
       <div class="loading"><i class="fas fa-circle-notch fa-spin"></i> Loading history…</div>
     </div>
+    <button type="button" class="btn-clear-history" id="clearHistoryBtn" onclick="openClearHistoryModal()">
+      <i class="fas fa-trash-can"></i> Clear Notification History
+    </button>
   </section>
 
 </main>
@@ -676,6 +703,24 @@ html, body {
     <div class="modal-actions">
       <button class="btn btn-cancel-modal" onclick="closeConfirmModal()">Cancel</button>
       <button class="btn btn-confirm-send" onclick="confirmSend()"><i class="fas fa-paper-plane"></i> Send Now</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CLEAR HISTORY MODAL ── -->
+<div class="modal-backdrop" id="clearHistoryModal" role="dialog" aria-modal="true" aria-label="Clear notification history">
+  <div class="modal modal-danger">
+    <div class="modal-handle" aria-hidden="true"></div>
+    <div class="modal-title modal-title-danger">
+      <i class="fas fa-triangle-exclamation"></i>
+      Clear Notification History
+    </div>
+    <div class="modal-desc">Are you sure you want to clear all recent notification history? This action cannot be undone.</div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel-modal" onclick="closeClearHistoryModal()">Cancel</button>
+      <button class="btn btn-confirm-danger" id="clearHistoryConfirmBtn" onclick="confirmClearHistory()">
+        <i class="fas fa-trash-can"></i> Clear History
+      </button>
     </div>
   </div>
 </div>
@@ -872,6 +917,43 @@ function closeConfirmModal() {
 document.getElementById('confirmModal').addEventListener('click', function(e) {
   if (e.target === this) closeConfirmModal();
 });
+
+// ── Clear history modal ──────────────────────────────────────────────────────
+function openClearHistoryModal() {
+  document.getElementById('clearHistoryModal').classList.add('visible');
+}
+function closeClearHistoryModal() {
+  document.getElementById('clearHistoryModal').classList.remove('visible');
+}
+document.getElementById('clearHistoryModal').addEventListener('click', function(e) {
+  if (e.target === this) closeClearHistoryModal();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Escape') return;
+  closeConfirmModal();
+  closeClearHistoryModal();
+});
+
+async function confirmClearHistory() {
+  const btn = document.getElementById('clearHistoryConfirmBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Clearing…';
+
+  try {
+    const res = await fetch(`${API}/api/notify/history`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Failed to clear history');
+
+    closeClearHistoryModal();
+    showToast('Notification history cleared.', 'success');
+    await loadHistory();
+  } catch (e) {
+    showToast('Could not clear history. Try again.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-trash-can"></i> Clear History';
+  }
+}
 
 async function confirmSend() {
   const bus = document.getElementById('busSelect').value;
