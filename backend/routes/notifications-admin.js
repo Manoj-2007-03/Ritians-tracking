@@ -23,11 +23,12 @@ const { notifyCustomMessage } = require("../notifications");
 // signed up against them (checks both busNumber and legacy busNo field).
 router.get("/api/notify/buses", async (req, res) => {
   try {
-    const [a, b] = await Promise.all([
+    const [a, b, c] = await Promise.all([
       Student.distinct("busNumber", { busNumber: { $nin: ["", null] } }),
       Student.distinct("busNo", { busNo: { $nin: ["", null] } }),
+      Student.distinct("route", { route: { $nin: ["", null] } }),
     ]);
-    const buses = [...new Set([...a, ...b])].sort();
+    const buses = [...new Set([...a, ...b, ...c].map(x => String(x).trim()).filter(Boolean))].sort();
     return res.json({ success: true, buses });
   } catch (err) {
     console.error("[NOTIFY-ADMIN] buses fetch error:", err.message);
@@ -41,7 +42,7 @@ router.get("/api/notify/bus-count/:busId", async (req, res) => {
   try {
     const busId = req.params.busId;
     const students = await Student.find({
-      $or: [{ busNumber: busId }, { busNo: busId }],
+      $or: [{ busNumber: busId }, { busNo: busId }, { route: busId }],
     }).select("fcmToken fcmTokenNative");
 
     const reachable = students.filter(s => s.fcmToken || s.fcmTokenNative).length;
