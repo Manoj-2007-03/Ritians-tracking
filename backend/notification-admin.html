@@ -378,6 +378,49 @@ html, body {
 
 .field-group { margin-top: 18px; }
 
+/* ═══════════════════════════════════════════════
+   SCHEDULE FOR LATER — toggle + datetime field
+   Reuses .all-buses-toggle / .switch for visual
+   consistency with the "send to all buses" control.
+═══════════════════════════════════════════════ */
+.schedule-datetime-wrap {
+  display: none; margin-top: 10px; animation: fadeUp 0.22s var(--ease-out) both;
+}
+.schedule-datetime-wrap.visible { display: block; }
+.datetime-input {
+  width: 100%; background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--r-sm);
+  padding: 12px 14px; color: var(--text); font-family: var(--font-m); font-size: 13px;
+  outline: none; min-height: 46px; transition: border-color 0.18s, box-shadow 0.18s;
+  color-scheme: dark;
+}
+.datetime-input:focus { border-color: var(--cyan-border); box-shadow: 0 0 0 3px var(--cyan-dim); }
+.datetime-hint {
+  margin-top: 7px; font-size: 11px; color: var(--text3); display: flex; align-items: center; gap: 6px;
+  min-height: 14px;
+}
+.datetime-hint i { font-size: 10px; color: var(--cyan); }
+.datetime-hint.warn, .datetime-hint.warn i { color: var(--amber); }
+
+.badge-cyan { background: var(--cyan-dim); border: 1px solid var(--cyan-border); color: var(--cyan); }
+
+/* Send button swaps to a "scheduling" look while the toggle is on */
+.btn-send.is-scheduling {
+  background: linear-gradient(135deg, rgba(0,229,255,0.20), rgba(0,229,255,0.08));
+  border: 1px solid var(--cyan-border); color: var(--cyan);
+}
+.btn-send.is-scheduling:hover:not(:disabled), .btn-send.is-scheduling:active:not(:disabled) {
+  background: rgba(0,229,255,0.24); box-shadow: 0 0 20px var(--cyan-glow);
+}
+
+/* Scheduled-card specific row (time until send), sits where .notif-reach does */
+.sched-when {
+  display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--cyan);
+  padding-top: 10px; border-top: 1px solid var(--border); font-family: var(--font-m);
+}
+.sched-when i { font-size: 10px; }
+.sched-when.overdue { color: var(--amber); }
+.sched-when.overdue i { color: var(--amber); }
+
 .preset-grid { display: flex; flex-wrap: wrap; gap: 8px; }
 .preset-chip {
   background: var(--bg2); border: 1px solid var(--border2); color: var(--text2);
@@ -521,6 +564,12 @@ html, body {
   background: var(--amber-dim); border: 1px solid var(--amber-border); color: var(--amber); flex: 1;
 }
 .btn-confirm-send:hover, .btn-confirm-send:active { background: rgba(255,184,0,0.22); box-shadow: 0 0 20px var(--amber-glow); }
+.btn-confirm-schedule {
+  background: var(--cyan-dim); border: 1px solid var(--cyan-border); color: var(--cyan); flex: 1;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-confirm-schedule:hover, .btn-confirm-schedule:active { background: rgba(0,229,255,0.22); box-shadow: 0 0 20px var(--cyan-glow); }
+.btn-confirm-schedule:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* Clear history — subtle destructive action, bottom of the panel */
 .btn-clear-history {
@@ -586,13 +635,14 @@ html, body {
 @media (min-width: 1080px) {
   .page {
     max-width: 1080px; padding: 36px 32px calc(48px + var(--safe-b));
-    display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr;
+    display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto 1fr;
     gap: 24px 28px; align-items: start;
   }
   section[aria-label="Notification statistics"] { grid-column: 1 / -1; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); max-width: 460px; }
-  section[aria-label="Send notification"] { grid-column: 1; }
-  section[aria-label="Recent notifications"] { grid-column: 2; grid-row: 2; }
+  section[aria-label="Send notification"] { grid-column: 1; grid-row: 2; }
+  section[aria-label="Scheduled notifications"] { grid-column: 2; grid-row: 2; }
+  section[aria-label="Recent notifications"] { grid-column: 2; grid-row: 3; }
   .composer { padding: 24px 22px 26px; }
   .bus-card-grid { grid-template-columns: repeat(2, 1fr); max-height: 320px; }
   .notif-list { max-height: 640px; overflow-y: auto; padding-right: 4px; }
@@ -712,9 +762,40 @@ html, body {
         <div class="char-count"><span id="charCount">0</span>/300</div>
       </div>
 
+      <div class="field-group">
+        <label class="all-buses-toggle" for="scheduleToggle">
+          <span class="all-buses-toggle-text">
+            <i class="fas fa-clock"></i> Schedule for later
+          </span>
+          <span class="switch">
+            <input type="checkbox" id="scheduleToggle" onchange="onScheduleToggle()"/>
+            <span class="switch-track" aria-hidden="true"></span>
+          </span>
+        </label>
+        <div class="schedule-datetime-wrap" id="scheduleDatetimeWrap">
+          <input type="datetime-local" class="datetime-input" id="scheduleDatetime"
+            aria-label="Scheduled send time" oninput="onScheduleDatetimeInput()"/>
+          <div class="datetime-hint" id="scheduleHint"></div>
+        </div>
+      </div>
+
       <button class="btn btn-send" id="sendBtn" onclick="openConfirmModal()" disabled>
         <i class="fas fa-paper-plane"></i> Send Notification
       </button>
+    </div>
+  </section>
+
+  <!-- Scheduled Notifications -->
+  <section aria-label="Scheduled notifications" class="fade-in" style="animation-delay:0.11s">
+    <div class="section-header">
+      <div class="section-title">
+        <i class="fas fa-clock" style="color:var(--cyan)"></i>
+        Scheduled
+      </div>
+      <span class="count-badge badge-cyan" id="scheduledCount">0</span>
+    </div>
+    <div class="notif-list" id="scheduledList">
+      <div class="loading"><i class="fas fa-circle-notch fa-spin"></i> Loading scheduled…</div>
     </div>
   </section>
 
@@ -750,6 +831,44 @@ html, body {
     <div class="modal-actions">
       <button class="btn btn-cancel-modal" onclick="closeConfirmModal()">Cancel</button>
       <button class="btn btn-confirm-send" onclick="confirmSend()"><i class="fas fa-paper-plane"></i> Send Now</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CONFIRM SCHEDULE MODAL ── -->
+<div class="modal-backdrop" id="confirmScheduleModal" role="dialog" aria-modal="true" aria-label="Confirm schedule">
+  <div class="modal">
+    <div class="modal-handle" aria-hidden="true"></div>
+    <div class="modal-title">
+      <i class="fas fa-clock" style="color:var(--cyan)"></i>
+      Confirm Schedule
+    </div>
+    <div class="modal-desc" id="confirmScheduleDesc">Queue this message to send later?</div>
+    <div class="modal-preview" id="confirmSchedulePreview"></div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel-modal" onclick="closeConfirmScheduleModal()">Cancel</button>
+      <button class="btn btn-confirm-schedule" id="confirmScheduleBtn" onclick="confirmScheduleSend()">
+        <i class="fas fa-clock"></i> Schedule Send
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CANCEL SCHEDULED SEND MODAL ── -->
+<div class="modal-backdrop" id="cancelScheduledModal" role="dialog" aria-modal="true" aria-label="Cancel scheduled notification">
+  <div class="modal modal-danger">
+    <div class="modal-handle" aria-hidden="true"></div>
+    <div class="modal-title modal-title-danger">
+      <i class="fas fa-triangle-exclamation"></i>
+      Cancel Scheduled Send
+    </div>
+    <div class="modal-desc">Cancel this scheduled notification? It will not be sent.</div>
+    <div class="modal-preview" id="cancelScheduledPreview"></div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel-modal" onclick="closeCancelScheduledModal()">Keep it</button>
+      <button class="btn btn-confirm-danger" id="cancelScheduledConfirmBtn" onclick="confirmCancelScheduled()">
+        <i class="fas fa-ban"></i> Cancel Send
+      </button>
     </div>
   </div>
 </div>
@@ -848,7 +967,65 @@ document.addEventListener('DOMContentLoaded', () => {
 function updateSendState() {
   const bus = document.getElementById('busSelect').value;
   const msg = document.getElementById('msgText').value.trim();
-  document.getElementById('sendBtn').disabled = !msg || (!sendToAll && !bus);
+  const baseInvalid = !msg || (!sendToAll && !bus);
+  const btn = document.getElementById('sendBtn');
+  if (isScheduleMode) {
+    btn.disabled = baseInvalid || !getValidScheduleDate();
+  } else {
+    btn.disabled = baseInvalid;
+  }
+}
+
+// ── Schedule for later toggle ───────────────────────────────────────────────
+let isScheduleMode = false;
+
+function onScheduleToggle() {
+  isScheduleMode = document.getElementById('scheduleToggle').checked;
+  const wrap = document.getElementById('scheduleDatetimeWrap');
+  const btn = document.getElementById('sendBtn');
+  wrap.classList.toggle('visible', isScheduleMode);
+  btn.classList.toggle('is-scheduling', isScheduleMode);
+  btn.innerHTML = isScheduleMode
+    ? '<i class="fas fa-clock"></i> Schedule Notification'
+    : '<i class="fas fa-paper-plane"></i> Send Notification';
+
+  if (isScheduleMode) {
+    const input = document.getElementById('scheduleDatetime');
+    // Prevent picking a time already in the past — min = now, floored to the minute.
+    const now = new Date(Date.now() - Date.now() % 60000);
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    input.min = now.toISOString().slice(0, 16);
+    onScheduleDatetimeInput();
+  }
+  updateSendState();
+}
+
+// Returns a valid future Date from the picker, or null if empty/invalid/past.
+function getValidScheduleDate() {
+  const val = document.getElementById('scheduleDatetime').value;
+  if (!val) return null;
+  const d = new Date(val);
+  if (isNaN(d.getTime()) || d.getTime() <= Date.now()) return null;
+  return d;
+}
+
+function onScheduleDatetimeInput() {
+  const hint = document.getElementById('scheduleHint');
+  const val = document.getElementById('scheduleDatetime').value;
+  if (!val) {
+    hint.className = 'datetime-hint';
+    hint.innerHTML = '';
+  } else {
+    const d = new Date(val);
+    if (isNaN(d.getTime()) || d.getTime() <= Date.now()) {
+      hint.className = 'datetime-hint warn';
+      hint.innerHTML = `<i class="fas fa-triangle-exclamation"></i> Pick a time in the future.`;
+    } else {
+      hint.className = 'datetime-hint';
+      hint.innerHTML = `<i class="fas fa-circle-check"></i> Will send ${d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}.`;
+    }
+  }
+  updateSendState();
 }
 
 // ── Route name lookup — sourced from index.html's authoritative route table ───
@@ -1006,6 +1183,11 @@ function openConfirmModal() {
   const msg = document.getElementById('msgText').value.trim();
   if (!msg || (!sendToAll && !bus)) return;
 
+  if (isScheduleMode) {
+    openConfirmScheduleModal(bus, msg);
+    return;
+  }
+
   document.getElementById('confirmDesc').textContent = sendToAll
     ? `Send this message to every student, across all buses?`
     : `Send this message to all students on Bus ${bus}?`;
@@ -1018,6 +1200,71 @@ function closeConfirmModal() {
 document.getElementById('confirmModal').addEventListener('click', function(e) {
   if (e.target === this) closeConfirmModal();
 });
+
+// ── Confirm schedule modal ──────────────────────────────────────────────────
+function openConfirmScheduleModal(bus, msg) {
+  const d = getValidScheduleDate();
+  if (!d) {
+    document.getElementById('scheduleDatetime').focus();
+    onScheduleDatetimeInput();
+    return;
+  }
+  const when = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+  document.getElementById('confirmScheduleDesc').textContent = sendToAll
+    ? `Queue this message for every student, across all buses, on ${when}?`
+    : `Queue this message for all students on Bus ${bus}, on ${when}?`;
+  document.getElementById('confirmSchedulePreview').textContent = msg;
+  document.getElementById('confirmScheduleModal').classList.add('visible');
+}
+function closeConfirmScheduleModal() {
+  document.getElementById('confirmScheduleModal').classList.remove('visible');
+}
+document.getElementById('confirmScheduleModal').addEventListener('click', function(e) {
+  if (e.target === this) closeConfirmScheduleModal();
+});
+
+async function confirmScheduleSend() {
+  const bus = document.getElementById('busSelect').value;
+  const msg = document.getElementById('msgText').value.trim();
+  const d = getValidScheduleDate();
+  if (!msg || (!sendToAll && !bus) || !d) return;
+
+  const btn = document.getElementById('confirmScheduleBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Scheduling…';
+
+  try {
+    const res = await fetch(`${API}/api/notify/schedule`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        busId: bus, message: msg, presetLabel: selectedPresetLabel, sentBy: 'Admin',
+        sendToAll, scheduledFor: d.toISOString(),
+      }),
+    });
+    const data = await res.json();
+    closeConfirmScheduleModal();
+
+    if (data.success) {
+      showToast('Notification scheduled.', 'success');
+      document.getElementById('msgText').value = '';
+      document.getElementById('charCount').textContent = '0';
+      document.getElementById('scheduleDatetime').value = '';
+      document.getElementById('scheduleToggle').checked = false;
+      document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('selected'));
+      onScheduleToggle();
+      updateSendState();
+      await loadScheduled();
+    } else {
+      showToast(data.error || 'Could not schedule notification.', 'error');
+    }
+  } catch (e) {
+    showToast('Network error. Try again.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-clock"></i> Schedule Send';
+  }
+}
 
 // ── Clear history modal ──────────────────────────────────────────────────────
 function openClearHistoryModal() {
@@ -1050,7 +1297,46 @@ document.addEventListener('keydown', function(e) {
   closeConfirmModal();
   closeClearHistoryModal();
   closeDeleteEntryModal();
+  closeConfirmScheduleModal();
+  closeCancelScheduledModal();
 });
+
+// ── Cancel scheduled send modal ──────────────────────────────────────────────
+let pendingCancelId = null;
+function openCancelScheduledModal(id, preview) {
+  pendingCancelId = id;
+  document.getElementById('cancelScheduledPreview').textContent = preview || '';
+  document.getElementById('cancelScheduledModal').classList.add('visible');
+}
+function closeCancelScheduledModal() {
+  pendingCancelId = null;
+  document.getElementById('cancelScheduledModal').classList.remove('visible');
+}
+document.getElementById('cancelScheduledModal').addEventListener('click', function(e) {
+  if (e.target === this) closeCancelScheduledModal();
+});
+
+async function confirmCancelScheduled() {
+  if (!pendingCancelId) return;
+  const btn = document.getElementById('cancelScheduledConfirmBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Cancelling…';
+
+  try {
+    const res = await fetch(`${API}/api/notify/schedule/${encodeURIComponent(pendingCancelId)}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Failed to cancel');
+
+    closeCancelScheduledModal();
+    showToast('Scheduled notification cancelled.', 'success');
+    await loadScheduled();
+  } catch (e) {
+    showToast(e.message || 'Could not cancel. Try again.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-ban"></i> Cancel Send';
+  }
+}
 
 async function confirmDeleteEntry() {
   if (!pendingDeleteId) return;
@@ -1150,6 +1436,80 @@ function timeAgo(dateStr) {
   if (diff < 3600)  return `${Math.floor(diff/60)}m ago`;
   if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
   return new Date(dateStr).toLocaleDateString('en-IN');
+}
+
+// Forward-looking counterpart to timeAgo() — used for scheduled sends.
+function timeUntil(dateStr) {
+  const diff = Math.floor((new Date(dateStr) - Date.now()) / 1000);
+  if (diff <= 0) return 'due now';
+  if (diff < 60)    return `in ${diff}s`;
+  if (diff < 3600)  return `in ${Math.floor(diff/60)}m`;
+  if (diff < 86400) return `in ${Math.floor(diff/3600)}h`;
+  return `in ${Math.floor(diff/86400)}d`;
+}
+
+// ── Load scheduled sends ─────────────────────────────────────────────────────
+async function loadScheduled() {
+  const list = document.getElementById('scheduledList');
+  try {
+    const res = await fetch(`${API}/api/notify/scheduled`);
+    const data = await res.json();
+    const scheduled = data.scheduled || [];
+
+    document.getElementById('scheduledCount').textContent = scheduled.length;
+
+    if (scheduled.length === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon"><i class="fas fa-clock"></i></div>
+          <div class="empty-text">Nothing queued.<br>Toggle "Schedule for later" above to plan a send.</div>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = scheduled.map(renderSchedCard).join('');
+  } catch (e) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon"><i class="fas fa-wifi"></i></div>
+        <div class="empty-text">Could not load scheduled sends.</div>
+      </div>`;
+  }
+}
+
+function renderSchedCard(item) {
+  const isOverdue = new Date(item.scheduledFor).getTime() <= Date.now();
+  const whenAbs = new Date(item.scheduledFor).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+
+  return `
+    <div class="notif-card" data-sched-id="${item._id}" data-sched-message="${escapeAttr(item.message)}">
+      <button type="button" class="notif-delete-btn" aria-label="Cancel this scheduled notification" onclick="handleCancelScheduledClick(this)">
+        <i class="fas fa-ban"></i>
+      </button>
+      <div class="notif-top">
+        <div class="notif-avatar" aria-hidden="true"><i class="fas fa-clock"></i></div>
+        <div class="notif-info">
+          <div class="notif-meta">
+            ${item.busId === 'ALL'
+              ? `<span class="bus-badge"><i class="fas fa-globe" style="font-size:8px"></i> All Buses</span>`
+              : `<span class="bus-badge"><i class="fas fa-bus" style="font-size:8px"></i> ${item.busId}</span>`}
+            <span class="preset-badge">${item.presetLabel || 'Custom'}</span>
+          </div>
+          <div class="notif-time">${whenAbs} &middot; by ${item.sentBy || 'Admin'}</div>
+        </div>
+      </div>
+      <div class="notif-message">${item.message}</div>
+      <div class="sched-when ${isOverdue ? 'overdue' : ''}">
+        <i class="fas ${isOverdue ? 'fa-hourglass-half' : 'fa-clock'}"></i>
+        <span>${isOverdue ? 'Sending shortly…' : `Sends ${timeUntil(item.scheduledFor)}`}</span>
+      </div>
+    </div>`;
+}
+
+function handleCancelScheduledClick(btn) {
+  const card = btn.closest('.notif-card');
+  if (!card) return;
+  openCancelScheduledModal(card.dataset.schedId, card.dataset.schedMessage);
 }
 
 // ── Load history ─────────────────────────────────────────────────────────────
