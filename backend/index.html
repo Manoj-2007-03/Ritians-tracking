@@ -1574,6 +1574,26 @@ function showBusStartedToast(data) {
   return true;
 }
 
+// Renders a plain-but-informative toast for admin dashboard broadcasts
+// (routes/notifications-admin.js -> notifyCustomMessage -> type: 'custom_admin').
+// Unlike the generic toast(title) fallback, this shows the actual message
+// body the admin typed, not just the static "Transport Announcement" title.
+function showAdminAnnouncementToast(data) {
+  if (!data || data.type !== 'custom_admin') return false;
+
+  if (!window.RitiansToast || typeof window.RitiansToast.show !== 'function') {
+    console.error('[showAdminAnnouncementToast] window.RitiansToast is not available — toast.js failed to load or ran with an error. Falling back to plain toast.');
+    return false;
+  }
+
+  window.RitiansToast.show({
+    title: data.title || '📢 Transport Announcement',
+    subtitle: data.body || '',
+    type: 'info',
+  });
+  return true;
+}
+
 // Foreground message handler (when the tab is open and active)
 messaging.onMessage((payload) => {
   // Backend now sends DATA-ONLY FCM messages (see notifications.js) so the
@@ -1585,7 +1605,9 @@ messaging.onMessage((payload) => {
   const text = (title + ' ' + body).toLowerCase();
 
   if (!showBusStartedToast(payload.data)) {
-    toast(title || 'New notification');
+    if (!showAdminAnnouncementToast(payload.data)) {
+      toast(title || 'New notification');
+    }
   }
 
   // NOTE: these keyword checks assume your backend's push titles/bodies
@@ -1637,7 +1659,9 @@ function handleNativePushData(data) {
   const text = (title + ' ' + body).toLowerCase();
 
   if (!showBusStartedToast(data)) {
-    toast(title || 'New notification');
+    if (!showAdminAnnouncementToast(data)) {
+      toast(title || 'New notification');
+    }
   }
 
   if (window.RitiansSounds) {

@@ -506,8 +506,60 @@ footer{
 
 <div class="toast-container" id="toastContainer"></div>
 
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
 <script src="toast.js"></script>
 <script src="sounds.js"></script>
+<script>
+// ── Push Notifications (foreground) ─────────────────────────────────────────
+// Reuses the same Firebase project as index.html/tracking.html, so a driver
+// with this page open sees admin dashboard announcements as an in-app toast.
+//
+// IMPORTANT — this only DISPLAYS a message if one arrives; it does not by
+// itself make drivers a delivery target. Today notifyCustomMessage() /
+// sendToRoute() in notifications.js query the Student collection only, and
+// this page never calls an /api/save-fcm-token(-native) endpoint to register
+// a driver's token in the first place. For drivers to actually receive
+// admin broadcasts, the backend also needs a Driver token field + a
+// send-to-drivers path (or a "notify drivers too" flag on the admin send
+// route). Flagging this so the gap is explicit rather than silently unused.
+const firebaseConfig = {
+  apiKey: "AIzaSyDod0NDvWkdENXQtOn4NNl7AoBv95vPtPo",
+  authDomain: "ritians-transport07.firebaseapp.com",
+  projectId: "ritians-transport07",
+  storageBucket: "ritians-transport07.firebasestorage.app",
+  messagingSenderId: "193463468015",
+  appId: "1:193463468015:web:c3541cae00884351e9001a"
+};
+
+firebase.initializeApp(firebaseConfig);
+const messaging = firebase.messaging();
+
+// Same renderer as index.html/tracking.html — shows the real message body,
+// not just the static "Transport Announcement" title.
+function showAdminAnnouncementToast(data) {
+  if (!data || data.type !== 'custom_admin') return false;
+
+  if (!window.RitiansToast || typeof window.RitiansToast.show !== 'function') {
+    console.error('[showAdminAnnouncementToast] window.RitiansToast is not available — toast.js failed to load or ran with an error. Falling back to plain toast.');
+    return false;
+  }
+
+  window.RitiansToast.show({
+    title: data.title || '📢 Transport Announcement',
+    subtitle: data.body || '',
+    type: 'info',
+  });
+  return true;
+}
+
+messaging.onMessage((payload) => {
+  const data = payload.data || {};
+  if (!showAdminAnnouncementToast(data)) {
+    window.RitiansToast.show(data.title || 'New notification');
+  }
+});
+</script>
 <script>
 // ── CONFIG — Auto-detect backend URL ──────────────────────────────────────────
 const API_BASE = (() => {

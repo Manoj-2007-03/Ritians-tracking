@@ -1518,13 +1518,40 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
+// Renders a plain-but-informative toast for admin dashboard broadcasts
+// (routes/notifications-admin.js -> notifyCustomMessage -> type: 'custom_admin').
+// Mirrors the same function added to index.html so the message body (not
+// just a generic title) is visible no matter which page the student is on.
+function showAdminAnnouncementToast(data) {
+  if (!data || data.type !== 'custom_admin') return false;
+
+  if (!window.RitiansToast || typeof window.RitiansToast.show !== 'function') {
+    console.error('[showAdminAnnouncementToast] window.RitiansToast is not available — toast.js failed to load or ran with an error. Falling back to plain toast.');
+    return false;
+  }
+
+  window.RitiansToast.show({
+    title: data.title || '📢 Transport Announcement',
+    subtitle: data.body || '',
+    type: 'info',
+  });
+  return true;
+}
+
 // Foreground message handler (when this tab is open and active)
 messaging.onMessage((payload) => {
-  const title = payload.notification?.title || '';
-  const body  = payload.notification?.body || '';
+  // FIX: backend now sends DATA-ONLY FCM messages (see notifications.js), so
+  // payload.notification no longer exists — it was always undefined here,
+  // meaning title/body silently resolved to '' and NO toast text ever showed
+  // on this page for any push type. title/body live in payload.data instead
+  // (same shape index.html already reads).
+  const title = payload.data?.title || '';
+  const body  = payload.data?.body || '';
   const text  = (title + ' ' + body).toLowerCase();
 
-  showToast(title || 'New notification');
+  if (!showAdminAnnouncementToast(payload.data)) {
+    showToast(title || 'New notification');
+  }
 
   // NOTE: same keyword assumption as index.html — adjust if your backend's
   // actual push wording differs from "started" / "arriving"/"near"/"boarding".
