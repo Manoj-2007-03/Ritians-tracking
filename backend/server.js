@@ -142,6 +142,9 @@ mongoose.connect(MONGODB_URI)
   .then(async () => {
     console.log("✅ MongoDB connected — student auth + segment speed storage ready");
     await loadSegmentSpeeds();
+    // Catch any scheduled notification that was already due at boot time
+    // (e.g. the server was restarted right around its fire time).
+    await notifyAdminRoutes.processDueScheduledSends();
   })
   .catch(err => console.error("❌ MongoDB connection failed:", err.message));
 
@@ -192,6 +195,13 @@ setInterval(() => {
     }
   }
 }, 10_000);
+
+// Notification Dashboard "Schedule for later" worker — checks every 30s for
+// admin-scheduled notifications whose time has arrived and sends them. See
+// routes/notifications-admin.js → processDueScheduledSends() for the logic.
+setInterval(() => {
+  notifyAdminRoutes.processDueScheduledSends();
+}, 30_000);
 
 // ── RIT Campus ──────────────────────────────────────────────────────────────
 const RIT_CAMPUS = { lat: 12.8231, lng: 80.0444 };

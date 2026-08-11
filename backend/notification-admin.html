@@ -344,6 +344,31 @@ html, body {
   .bus-card, .bus-card-check { transition: none; }
 }
 
+.all-buses-toggle {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--r-sm);
+  padding: 11px 14px; margin-bottom: 10px; cursor: pointer; transition: border-color 0.18s ease, background 0.18s ease;
+}
+.all-buses-toggle:hover { border-color: rgba(255,255,255,0.2); }
+.all-buses-toggle-text {
+  font-size: 13px; font-weight: 600; color: var(--text2); display: flex; align-items: center; gap: 8px;
+}
+.all-buses-toggle-text i { font-size: 12px; color: var(--text3); }
+.switch { position: relative; display: inline-block; width: 40px; height: 24px; flex-shrink: 0; }
+.switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; z-index: 1; }
+.switch-track {
+  position: absolute; inset: 0; border-radius: 99px; background: var(--bg4); border: 1px solid var(--border2);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.switch-track::before {
+  content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--text2); transition: transform 0.2s var(--ease-spring), background 0.2s ease;
+}
+.switch input:checked + .switch-track { background: var(--amber-dim); border-color: var(--amber-border); }
+.switch input:checked + .switch-track::before { transform: translateX(16px); background: var(--amber); }
+
+.bus-picker.disabled { opacity: 0.4; pointer-events: none; }
+
 .reach-preview {
   margin-top: 8px; font-size: 11px; color: var(--text3); font-family: var(--font-m);
   display: flex; align-items: center; gap: 6px; min-height: 16px;
@@ -409,7 +434,7 @@ html, body {
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.10), transparent);
   pointer-events: none;
 }
-.notif-top { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+.notif-top { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; padding-right: 34px; }
 .notif-avatar {
   width: 40px; height: 40px; border-radius: 12px;
   background: linear-gradient(145deg, #FFC933, #B87E00);
@@ -435,6 +460,17 @@ html, body {
 }
 .notif-reach i { color: var(--green); font-size: 10px; }
 .notif-reach.zero i { color: var(--amber); }
+
+/* Per-card delete — quiet by default, red on hover, sits top-right */
+.notif-delete-btn {
+  position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; border-radius: 50%;
+  background: var(--bg2); border: 1px solid var(--border2); color: var(--text3);
+  display: flex; align-items: center; justify-content: center; font-size: 11px;
+  cursor: pointer; transition: all 0.18s ease; -webkit-tap-highlight-color: transparent; flex-shrink: 0;
+}
+.notif-delete-btn:hover, .notif-delete-btn:active {
+  color: var(--red); border-color: var(--red-border); background: var(--red-dim);
+}
 
 /* ═══════════════════════════════════════════════
    EMPTY / LOADING
@@ -637,7 +673,18 @@ html, body {
 
     <div class="composer">
       <div class="field-label"><i class="fas fa-bus"></i> Select Bus</div>
-      <div class="bus-picker">
+
+      <label class="all-buses-toggle" for="sendToAllToggle">
+        <span class="all-buses-toggle-text">
+          <i class="fas fa-globe"></i> Send to all buses
+        </span>
+        <span class="switch">
+          <input type="checkbox" id="sendToAllToggle" onchange="onSendToAllToggle()"/>
+          <span class="switch-track" aria-hidden="true"></span>
+        </span>
+      </label>
+
+      <div class="bus-picker" id="busPickerWrap">
         <div class="bus-search-wrap">
           <i class="fas fa-search"></i>
           <input type="text" class="bus-search-input" id="busSearchInput"
@@ -725,6 +772,25 @@ html, body {
   </div>
 </div>
 
+<!-- ── DELETE SINGLE ENTRY MODAL ── -->
+<div class="modal-backdrop" id="deleteEntryModal" role="dialog" aria-modal="true" aria-label="Delete notification entry">
+  <div class="modal modal-danger">
+    <div class="modal-handle" aria-hidden="true"></div>
+    <div class="modal-title modal-title-danger">
+      <i class="fas fa-trash-can"></i>
+      Delete Notification
+    </div>
+    <div class="modal-desc">Delete this entry from your history? This action cannot be undone.</div>
+    <div class="modal-preview" id="deleteEntryPreview"></div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel-modal" onclick="closeDeleteEntryModal()">Cancel</button>
+      <button class="btn btn-confirm-danger" id="deleteEntryConfirmBtn" onclick="confirmDeleteEntry()">
+        <i class="fas fa-trash-can"></i> Delete
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ── TOAST ── -->
 <div class="toast" id="toast"><i class="fas fa-check-circle"></i><span id="toastMsg"></span></div>
 
@@ -782,7 +848,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function updateSendState() {
   const bus = document.getElementById('busSelect').value;
   const msg = document.getElementById('msgText').value.trim();
-  document.getElementById('sendBtn').disabled = !bus || !msg;
+  document.getElementById('sendBtn').disabled = !msg || (!sendToAll && !bus);
 }
 
 // ── Route name lookup — sourced from index.html's authoritative route table ───
@@ -869,6 +935,39 @@ function selectBus(busId) {
   onBusChange();
 }
 
+// ── Send to all buses toggle ────────────────────────────────────────────────
+let sendToAll = false;
+function onSendToAllToggle() {
+  sendToAll = document.getElementById('sendToAllToggle').checked;
+  document.getElementById('busPickerWrap').classList.toggle('disabled', sendToAll);
+  updateSendState();
+  if (sendToAll) {
+    loadAllReachPreview();
+  } else {
+    onBusChange();
+  }
+}
+
+async function loadAllReachPreview() {
+  const preview = document.getElementById('reachPreview');
+  preview.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Checking reachable students…`;
+  try {
+    const res = await fetch(`${API}/api/notify/all-count`);
+    const data = await res.json();
+    if (!data.success) throw new Error();
+    if (data.reachable === 0) {
+      preview.className = 'reach-preview warn';
+      preview.innerHTML = `<i class="fas fa-triangle-exclamation"></i> ${data.studentCount} student(s) total, but none have notifications enabled yet.`;
+    } else {
+      preview.className = 'reach-preview';
+      preview.innerHTML = `<i class="fas fa-signal"></i> Will reach ${data.reachable} of ${data.studentCount} student(s) across all buses.`;
+    }
+  } catch (e) {
+    preview.className = 'reach-preview warn';
+    preview.innerHTML = `<i class="fas fa-triangle-exclamation"></i> Could not check reachable students.`;
+  }
+}
+
 // Keyboard support: Enter/Space activates a focused bus card
 document.getElementById('busCardGrid').addEventListener('keydown', (e) => {
   if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('bus-card')) {
@@ -905,9 +1004,11 @@ async function onBusChange() {
 function openConfirmModal() {
   const bus = document.getElementById('busSelect').value;
   const msg = document.getElementById('msgText').value.trim();
-  if (!bus || !msg) return;
+  if (!msg || (!sendToAll && !bus)) return;
 
-  document.getElementById('confirmDesc').textContent = `Send this message to all students on Bus ${bus}?`;
+  document.getElementById('confirmDesc').textContent = sendToAll
+    ? `Send this message to every student, across all buses?`
+    : `Send this message to all students on Bus ${bus}?`;
   document.getElementById('confirmPreview').textContent = msg;
   document.getElementById('confirmModal').classList.add('visible');
 }
@@ -928,11 +1029,50 @@ function closeClearHistoryModal() {
 document.getElementById('clearHistoryModal').addEventListener('click', function(e) {
   if (e.target === this) closeClearHistoryModal();
 });
+
+// ── Delete single entry modal ────────────────────────────────────────────────
+let pendingDeleteId = null;
+function openDeleteEntryModal(id, preview) {
+  pendingDeleteId = id;
+  document.getElementById('deleteEntryPreview').textContent = preview || '';
+  document.getElementById('deleteEntryModal').classList.add('visible');
+}
+function closeDeleteEntryModal() {
+  pendingDeleteId = null;
+  document.getElementById('deleteEntryModal').classList.remove('visible');
+}
+document.getElementById('deleteEntryModal').addEventListener('click', function(e) {
+  if (e.target === this) closeDeleteEntryModal();
+});
+
 document.addEventListener('keydown', function(e) {
   if (e.key !== 'Escape') return;
   closeConfirmModal();
   closeClearHistoryModal();
+  closeDeleteEntryModal();
 });
+
+async function confirmDeleteEntry() {
+  if (!pendingDeleteId) return;
+  const btn = document.getElementById('deleteEntryConfirmBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Deleting…';
+
+  try {
+    const res = await fetch(`${API}/api/notify/history/${encodeURIComponent(pendingDeleteId)}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Failed to delete entry');
+
+    closeDeleteEntryModal();
+    showToast('Notification entry deleted.', 'success');
+    await loadHistory();
+  } catch (e) {
+    showToast('Could not delete entry. Try again.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-trash-can"></i> Delete';
+  }
+}
 
 async function confirmClearHistory() {
   const btn = document.getElementById('clearHistoryConfirmBtn');
@@ -958,7 +1098,7 @@ async function confirmClearHistory() {
 async function confirmSend() {
   const bus = document.getElementById('busSelect').value;
   const msg = document.getElementById('msgText').value.trim();
-  if (!bus || !msg) return;
+  if (!msg || (!sendToAll && !bus)) return;
 
   const btn = document.querySelector('.btn-confirm-send');
   btn.disabled = true;
@@ -968,7 +1108,7 @@ async function confirmSend() {
     const res = await fetch(`${API}/api/notify/send`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ busId: bus, message: msg, presetLabel: selectedPresetLabel, sentBy: 'Admin' }),
+      body: JSON.stringify({ busId: bus, message: msg, presetLabel: selectedPresetLabel, sentBy: 'Admin', sendToAll }),
     });
     const data = await res.json();
     closeConfirmModal();
@@ -1055,12 +1195,17 @@ function renderNotifCard(log) {
     : `Delivered to ${log.successCount || 0}/${log.tokenCount} device(s)`;
 
   return `
-    <div class="notif-card">
+    <div class="notif-card" data-log-id="${log._id}" data-log-message="${escapeAttr(log.message)}">
+      <button type="button" class="notif-delete-btn" aria-label="Delete this notification" onclick="handleDeleteClick(this)">
+        <i class="fas fa-trash-can"></i>
+      </button>
       <div class="notif-top">
         <div class="notif-avatar" aria-hidden="true"><i class="fas fa-bullhorn"></i></div>
         <div class="notif-info">
           <div class="notif-meta">
-            <span class="bus-badge"><i class="fas fa-bus" style="font-size:8px"></i> ${log.busId}</span>
+            ${log.busId === 'ALL'
+              ? `<span class="bus-badge"><i class="fas fa-globe" style="font-size:8px"></i> All Buses</span>`
+              : `<span class="bus-badge"><i class="fas fa-bus" style="font-size:8px"></i> ${log.busId}</span>`}
             <span class="preset-badge">${log.presetLabel || 'Custom'}</span>
           </div>
           <div class="notif-time">${timeAgo(log.createdAt)} &middot; by ${log.sentBy || 'Admin'}</div>
@@ -1072,6 +1217,24 @@ function renderNotifCard(log) {
         <span>${reachText}</span>
       </div>
     </div>`;
+}
+
+// Escapes text for safe placement inside an HTML attribute (data-log-message).
+function escapeAttr(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+// Reads the id/message off the parent card's data attributes (avoids
+// escaping a message string directly into an onclick handler).
+function handleDeleteClick(btn) {
+  const card = btn.closest('.notif-card');
+  if (!card) return;
+  openDeleteEntryModal(card.dataset.logId, card.dataset.logMessage);
 }
 
 // ── Load all ─────────────────────────────────────────────────────────────────

@@ -75,6 +75,57 @@ async function sendToRoute(vehicleId, title, body, boardingPoint = null, data = 
   }
 }
 
+// ── sendToAllStudents ────────────────────────────────────────────────────────
+// Same delivery path as sendToRoute, but with no busNumber/boardingPoint
+// filter — every student with a registered token gets the message. Used by
+// the "Send to all buses" toggle on the admin dashboard for college-wide
+// announcements (e.g. "College closed tomorrow due to rain").
+async function sendToAllStudents(title, body, data = null) {
+  try {
+    const query = {
+      $or: [
+        { fcmToken: { $exists: true, $ne: "" } },
+        { fcmTokenNative: { $exists: true, $ne: "" } },
+      ],
+    };
+
+    const students = await Student.find(query).select("fcmToken fcmTokenNative");
+
+    const tokens = [];
+    for (const s of students) {
+      if (s.fcmToken) tokens.push(s.fcmToken);
+      if (s.fcmTokenNative) tokens.push(s.fcmTokenNative);
+    }
+
+    if (tokens.length === 0) {
+      console.log("[NOTIFY] No tokens found across any bus");
+      return { studentCount: students.length, tokenCount: 0, successCount: 0, failureCount: 0 };
+    }
+
+    const payload = { title, body, ...(data || {}) };
+    const message = {
+      tokens,
+      data: Object.fromEntries(
+        Object.entries(payload)
+          .filter(([, v]) => v !== undefined && v !== null)
+          .map(([k, v]) => [k, String(v)])
+      ),
+    };
+
+    const res = await messaging.sendEachForMulticast(message);
+    console.log(`[NOTIFY] ALL BUSES: sent ${res.successCount}/${tokens.length} (${title})`);
+    return {
+      studentCount: students.length,
+      tokenCount: tokens.length,
+      successCount: res.successCount,
+      failureCount: res.failureCount,
+    };
+  } catch (err) {
+    console.error("[NOTIFY] Send-to-all failed:", err.message);
+    return { studentCount: 0, tokenCount: 0, successCount: 0, failureCount: 0, error: err.message };
+  }
+}
+
 async function notifyBusStarted(vehicleId, opts = {}) {
   resetNotifyState(vehicleId);
 
@@ -110,6 +161,15 @@ async function notifyBusArriving(vehicleId, stopName) {
 // admin route can report exactly how many devices were reached.
 async function notifyCustomMessage(vehicleId, message, opts = {}) {
   const title = opts.title || "📢 Transport Announcement";
+
+  if (opts.sendToAll) {
+    return sendToAllStudents(title, message, {
+      type: "custom_admin",
+      vehicleId: "ALL",
+      sentBy: opts.sentBy || "Admin",
+    });
+  }
+
   return sendToRoute(vehicleId, title, message, null, {
     type: "custom_admin",
     vehicleId,
