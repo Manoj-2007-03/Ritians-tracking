@@ -394,6 +394,27 @@ html, body {
   color-scheme: dark;
 }
 .datetime-input:focus { border-color: var(--cyan-border); box-shadow: 0 0 0 3px var(--cyan-dim); }
+
+/* Custom trigger field that opens the scheduler modal (replaces the native
+   datetime-local input, which renders as an unthemeable system dialog). */
+.datetime-trigger {
+  width: 100%; display: flex; align-items: center; gap: 11px;
+  background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--r-sm);
+  padding: 11px 12px 11px 14px; min-height: 46px; cursor: pointer; text-align: left;
+  font-family: var(--font-b); color: var(--text2); -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+.datetime-trigger:hover { border-color: rgba(255,255,255,0.2); }
+.datetime-trigger:focus-visible { border-color: var(--cyan-border); box-shadow: 0 0 0 3px var(--cyan-dim); }
+.datetime-trigger.has-value { color: var(--text); border-color: var(--cyan-border); background: var(--cyan-dim); }
+.datetime-trigger-icon {
+  width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
+  background: var(--cyan-dim); color: var(--cyan); display: flex; align-items: center; justify-content: center;
+  font-size: 11px; transition: background 0.18s ease;
+}
+.datetime-trigger.has-value .datetime-trigger-icon { background: rgba(0,229,255,0.22); }
+.datetime-trigger-text { flex: 1; font-size: 13px; font-family: var(--font-m); letter-spacing: 0.01em; }
+.datetime-trigger-chevron { color: var(--text3); font-size: 11px; flex-shrink: 0; }
 .datetime-hint {
   margin-top: 7px; font-size: 11px; color: var(--text3); display: flex; align-items: center; gap: 6px;
   min-height: 14px;
@@ -596,6 +617,149 @@ html, body {
 .btn-confirm-danger:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ═══════════════════════════════════════════════
+   SCHEDULER MODAL — custom calendar + time wheels
+   Reuses .modal-backdrop / .modal chrome; cyan is
+   the accent throughout (matches this dashboard's
+   existing "scheduling" color, e.g. .sched-when,
+   .btn-confirm-schedule, is-scheduling state).
+═══════════════════════════════════════════════ */
+.scheduler-modal { padding: 8px 16px calc(20px + var(--safe-b)); max-width: 560px; }
+.sched-head { display: flex; align-items: flex-start; gap: 12px; padding: 4px 4px 16px; }
+.sched-head-icon {
+  width: 42px; height: 42px; border-radius: 13px; flex-shrink: 0;
+  background: linear-gradient(145deg, rgba(0,229,255,0.24), rgba(0,229,255,0.06));
+  border: 1px solid var(--cyan-border);
+  display: flex; align-items: center; justify-content: center; font-size: 17px; color: var(--cyan);
+  box-shadow: 0 0 18px var(--cyan-glow);
+}
+.sched-head-text { flex: 1; min-width: 0; padding-top: 1px; }
+.sched-head-title { font-family: var(--font-h); font-size: 17px; font-weight: 800; letter-spacing: 0.01em; margin-bottom: 3px; }
+.sched-head-sub { font-size: 11.5px; color: var(--text3); line-height: 1.4; }
+.sched-close-btn {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; margin-top: 1px;
+  background: var(--bg3); border: 1px solid var(--border2); color: var(--text2);
+  display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer;
+  transition: all 0.16s ease; -webkit-tap-highlight-color: transparent;
+}
+.sched-close-btn:hover, .sched-close-btn:active { background: var(--bg4); color: var(--text); border-color: rgba(255,255,255,0.22); transform: rotate(90deg); }
+
+.sched-body { display: flex; flex-direction: column; gap: 18px; }
+
+/* — Calendar — */
+.sched-calendar {
+  background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--r-md);
+  padding: 14px 14px 16px;
+}
+.sched-cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.sched-cal-month { font-family: var(--font-h); font-size: 14px; font-weight: 700; letter-spacing: 0.02em; }
+.sched-nav-btn {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--bg3); border: 1px solid var(--border2); color: var(--text2);
+  display: flex; align-items: center; justify-content: center; font-size: 11px; cursor: pointer;
+  transition: all 0.16s ease; -webkit-tap-highlight-color: transparent;
+}
+.sched-nav-btn:hover, .sched-nav-btn:active { background: var(--bg4); color: var(--cyan); border-color: var(--cyan-border); }
+.sched-cal-weekdays {
+  display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-bottom: 4px;
+}
+.sched-cal-weekdays span { font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; color: var(--text3); text-transform: uppercase; }
+.sched-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.sched-cal-cell {
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-m); font-size: 12.5px; color: var(--text); border-radius: 10px;
+  cursor: pointer; position: relative; background: transparent; border: 1px solid transparent;
+  transition: transform 0.14s var(--ease-spring), background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.sched-cal-cell:hover:not(.disabled):not(.selected) { background: var(--bg3); border-color: var(--border2); }
+.sched-cal-cell.outside { color: var(--text3); opacity: 0.35; }
+.sched-cal-cell.disabled { color: var(--text3); opacity: 0.28; cursor: not-allowed; }
+.sched-cal-cell.today:not(.selected) { color: var(--amber); font-weight: 700; box-shadow: inset 0 0 0 1px var(--amber-border); }
+.sched-cal-cell.selected {
+  background: linear-gradient(145deg, var(--cyan), #0090b0); color: #001b22; font-weight: 800;
+  box-shadow: 0 0 0 1px rgba(0,229,255,0.5), 0 0 16px var(--cyan-glow); transform: scale(1.06);
+}
+.sched-date-chip {
+  display: flex; align-items: center; gap: 9px; margin-top: 12px;
+  background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--r-sm);
+  padding: 10px 12px; font-size: 12px; color: var(--text2); font-family: var(--font-m);
+}
+.sched-date-chip i { color: var(--cyan); font-size: 11px; flex-shrink: 0; }
+.sched-date-chip.set { color: var(--text); border-color: var(--cyan-border); background: var(--cyan-dim); }
+
+/* — Time wheels — */
+.sched-time {
+  background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--r-md);
+  padding: 14px 14px 16px;
+}
+.sched-time-label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--text3);
+  font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+}
+.sched-time-label i { color: var(--cyan); }
+.sched-time-wheels {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: var(--r-sm);
+  padding: 0 4px; position: relative;
+}
+.sched-time-wheels::before {
+  content: ''; position: absolute; left: 4px; right: 4px; top: 50%; height: 36px; transform: translateY(-50%);
+  background: var(--cyan-dim); border-top: 1px solid var(--cyan-border); border-bottom: 1px solid var(--cyan-border);
+  pointer-events: none; z-index: 0;
+}
+.sched-wheel {
+  flex: 1; height: 132px; overflow-y: scroll; scroll-snap-type: y mandatory;
+  scrollbar-width: none; -ms-overflow-style: none; position: relative; z-index: 1;
+  padding: 48px 0; scroll-behavior: smooth;
+}
+.sched-wheel::-webkit-scrollbar { display: none; }
+.sched-wheel-item {
+  height: 36px; display: flex; align-items: center; justify-content: center;
+  scroll-snap-align: center; font-family: var(--font-m); font-size: 15px; color: var(--text3);
+  cursor: pointer; transition: color 0.15s ease, font-size 0.15s ease, font-weight 0.15s ease; -webkit-tap-highlight-color: transparent;
+}
+.sched-wheel-item.picked { color: var(--cyan); font-size: 19px; font-weight: 700; }
+.sched-wheel-meridiem { flex: 0 0 54px; }
+.sched-wheel-colon { font-family: var(--font-h); font-size: 18px; font-weight: 800; color: var(--text3); position: relative; z-index: 1; }
+
+.sched-summary {
+  display: flex; align-items: center; gap: 11px; margin-top: 14px;
+  background: linear-gradient(135deg, rgba(0,229,255,0.10), rgba(0,229,255,0.02));
+  border: 1px solid var(--cyan-border); border-radius: var(--r-sm); padding: 11px 13px;
+}
+.sched-summary i { color: var(--cyan); font-size: 14px; flex-shrink: 0; }
+.sched-summary-label { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); font-weight: 700; margin-bottom: 2px; }
+.sched-summary-value { font-family: var(--font-h); font-size: 14px; font-weight: 700; color: var(--text); transition: opacity 0.15s ease; }
+
+.sched-warn {
+  display: none; align-items: center; gap: 7px; margin-top: 10px; font-size: 11.5px;
+  color: var(--amber); background: var(--amber-dim); border: 1px solid var(--amber-border);
+  border-radius: var(--r-sm); padding: 9px 12px;
+}
+.sched-warn.visible { display: flex; animation: fadeUp 0.2s var(--ease-out) both; }
+
+.sched-actions { display: flex; gap: 8px; margin-top: 18px; }
+.sched-btn-clear, .sched-btn-cancel, .sched-btn-set { flex: 1; padding: 12px 10px; font-size: 12px; }
+.sched-btn-clear { background: var(--red-dim); border: 1px solid var(--red-border); color: var(--red); }
+.sched-btn-clear:hover, .sched-btn-clear:active { background: rgba(255,45,45,0.22); box-shadow: 0 0 16px var(--red-glow); }
+.sched-btn-cancel { background: var(--bg4); border: 1px solid var(--border2); color: var(--text2); }
+.sched-btn-cancel:hover, .sched-btn-cancel:active { background: var(--bg3); color: var(--text); }
+.sched-btn-set { background: linear-gradient(135deg, rgba(0,229,255,0.26), rgba(0,229,255,0.12)); border: 1px solid var(--cyan-border); color: var(--cyan); font-weight: 700; }
+.sched-btn-set:hover:not(:disabled), .sched-btn-set:active:not(:disabled) { background: rgba(0,229,255,0.30); box-shadow: 0 0 20px var(--cyan-glow); }
+
+@media (prefers-reduced-motion: reduce) {
+  .sched-cal-cell, .sched-close-btn, .sched-wheel { transition: none !important; scroll-behavior: auto !important; }
+}
+
+@media (min-width: 560px) {
+  .scheduler-modal { max-width: 560px; }
+  .sched-body { flex-direction: row; align-items: stretch; }
+  .sched-calendar { flex: 1.15; }
+  .sched-time { flex: 1; display: flex; flex-direction: column; }
+  .sched-summary { margin-top: auto; }
+}
+
+/* ═══════════════════════════════════════════════
    TOAST
 ═══════════════════════════════════════════════ */
 .toast {
@@ -773,8 +937,12 @@ html, body {
           </span>
         </label>
         <div class="schedule-datetime-wrap" id="scheduleDatetimeWrap">
-          <input type="datetime-local" class="datetime-input" id="scheduleDatetime"
-            aria-label="Scheduled send time" oninput="onScheduleDatetimeInput()"/>
+          <button type="button" class="datetime-trigger" id="scheduleTrigger" onclick="openSchedulerModal()">
+            <span class="datetime-trigger-icon"><i class="fas fa-calendar-days"></i></span>
+            <span class="datetime-trigger-text" id="scheduleTriggerText">Set date &amp; time</span>
+            <span class="datetime-trigger-chevron"><i class="fas fa-chevron-right"></i></span>
+          </button>
+          <input type="hidden" id="scheduleDatetime" aria-hidden="true"/>
           <div class="datetime-hint" id="scheduleHint"></div>
         </div>
       </div>
@@ -817,6 +985,79 @@ html, body {
   </section>
 
 </main>
+
+<!-- ── SCHEDULER MODAL (custom date & time picker) ── -->
+<div class="modal-backdrop" id="schedulerModal" role="dialog" aria-modal="true" aria-label="Schedule date and time">
+  <div class="modal scheduler-modal">
+    <div class="modal-handle"></div>
+    <div class="sched-head">
+      <div class="sched-head-icon"><i class="fas fa-calendar-days"></i></div>
+      <div class="sched-head-text">
+        <div class="sched-head-title">Schedule Date &amp; Time</div>
+        <div class="sched-head-sub">Choose when this notification should be delivered</div>
+      </div>
+      <button type="button" class="sched-close-btn" onclick="closeSchedulerModal()" aria-label="Close">
+        <i class="fas fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="sched-body">
+      <div class="sched-calendar">
+        <div class="sched-cal-nav">
+          <button type="button" class="sched-nav-btn" id="calPrevBtn" onclick="calShiftMonth(-1)" aria-label="Previous month">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <div class="sched-cal-month" id="calMonthLabel">—</div>
+          <button type="button" class="sched-nav-btn" id="calNextBtn" onclick="calShiftMonth(1)" aria-label="Next month">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+        <div class="sched-cal-weekdays">
+          <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+        </div>
+        <div class="sched-cal-grid" id="calGrid" role="listbox" aria-label="Select date"></div>
+        <div class="sched-date-chip" id="calDateChip">
+          <i class="fas fa-calendar"></i>
+          <span id="calDateChipText">No date selected</span>
+        </div>
+      </div>
+
+      <div class="sched-time">
+        <div class="sched-time-label"><i class="fas fa-clock"></i> Time</div>
+        <div class="sched-time-wheels">
+          <div class="sched-wheel" id="wheelHour" role="listbox" aria-label="Hour"></div>
+          <div class="sched-wheel-colon">:</div>
+          <div class="sched-wheel" id="wheelMinute" role="listbox" aria-label="Minute"></div>
+          <div class="sched-wheel sched-wheel-meridiem" id="wheelMeridiem" role="listbox" aria-label="AM or PM"></div>
+        </div>
+
+        <div class="sched-summary">
+          <i class="fas fa-paper-plane"></i>
+          <div>
+            <div class="sched-summary-label">Scheduled for</div>
+            <div class="sched-summary-value" id="schedSummaryValue">Pick a date &amp; time</div>
+          </div>
+        </div>
+        <div class="sched-warn" id="schedWarn">
+          <i class="fas fa-triangle-exclamation"></i>
+          <span>Pick a time in the future.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sched-actions">
+      <button type="button" class="btn sched-btn-clear" onclick="schedulerClear()">
+        <i class="fas fa-trash-can"></i> Clear
+      </button>
+      <button type="button" class="btn sched-btn-cancel" onclick="closeSchedulerModal()">
+        <i class="fas fa-xmark"></i> Cancel
+      </button>
+      <button type="button" class="btn sched-btn-set" id="schedSetBtn" onclick="schedulerSet()">
+        <i class="fas fa-check"></i> Set
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- ── CONFIRM SEND MODAL ── -->
 <div class="modal-backdrop" id="confirmModal" role="dialog" aria-modal="true" aria-label="Confirm send">
@@ -1011,21 +1252,234 @@ function getValidScheduleDate() {
 
 function onScheduleDatetimeInput() {
   const hint = document.getElementById('scheduleHint');
+  const trigger = document.getElementById('scheduleTrigger');
+  const triggerText = document.getElementById('scheduleTriggerText');
   const val = document.getElementById('scheduleDatetime').value;
   if (!val) {
     hint.className = 'datetime-hint';
     hint.innerHTML = '';
+    trigger.classList.remove('has-value');
+    triggerText.textContent = 'Set date & time';
   } else {
     const d = new Date(val);
     if (isNaN(d.getTime()) || d.getTime() <= Date.now()) {
       hint.className = 'datetime-hint warn';
       hint.innerHTML = `<i class="fas fa-triangle-exclamation"></i> Pick a time in the future.`;
+      trigger.classList.remove('has-value');
+      triggerText.textContent = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
     } else {
       hint.className = 'datetime-hint';
       hint.innerHTML = `<i class="fas fa-circle-check"></i> Will send ${d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}.`;
+      trigger.classList.add('has-value');
+      triggerText.textContent = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
     }
   }
   updateSendState();
+}
+
+// ── Scheduler modal — custom calendar + time wheels ─────────────────────────
+// Writes into the same hidden #scheduleDatetime field (format "YYYY-MM-DDTHH:mm",
+// local time) that getValidScheduleDate()/onScheduleDatetimeInput() already
+// read — so none of the existing scheduling/validation/send logic changes.
+const pad2 = n => String(n).padStart(2, '0');
+const WHEEL_ITEM_H = 36;
+
+const schedState = {
+  viewYear: 0, viewMonth: 0,      // calendar month currently shown
+  selDate: null,                   // {y,m,d} currently selected, or null
+  hour12: 7, minute: 0, meridiem: 'AM'
+};
+
+function openSchedulerModal() {
+  const now = new Date();
+  const existing = document.getElementById('scheduleDatetime').value;
+  let base = existing ? new Date(existing) : null;
+  if (base && isNaN(base.getTime())) base = null;
+
+  if (base) {
+    schedState.selDate = { y: base.getFullYear(), m: base.getMonth(), d: base.getDate() };
+    schedState.viewYear = base.getFullYear();
+    schedState.viewMonth = base.getMonth();
+    let h = base.getHours();
+    schedState.meridiem = h >= 12 ? 'PM' : 'AM';
+    h = h % 12; if (h === 0) h = 12;
+    schedState.hour12 = h;
+    schedState.minute = base.getMinutes();
+  } else {
+    schedState.selDate = null;
+    schedState.viewYear = now.getFullYear();
+    schedState.viewMonth = now.getMonth();
+    let suggested = new Date(now.getTime() + 15 * 60000);
+    let h = suggested.getHours();
+    schedState.meridiem = h >= 12 ? 'PM' : 'AM';
+    h = h % 12; if (h === 0) h = 12;
+    schedState.hour12 = h;
+    schedState.minute = suggested.getMinutes();
+  }
+
+  renderCalendar();
+  buildWheel('wheelHour', Array.from({length:12}, (_,i) => pad2(i+1)), pad2(schedState.hour12), v => { schedState.hour12 = parseInt(v,10); updateSchedSummary(); });
+  buildWheel('wheelMinute', Array.from({length:60}, (_,i) => pad2(i)), pad2(schedState.minute), v => { schedState.minute = parseInt(v,10); updateSchedSummary(); });
+  buildWheel('wheelMeridiem', ['AM','PM'], schedState.meridiem, v => { schedState.meridiem = v; updateSchedSummary(); });
+  updateSchedSummary();
+
+  document.getElementById('schedulerModal').classList.add('visible');
+}
+
+function closeSchedulerModal() {
+  document.getElementById('schedulerModal').classList.remove('visible');
+  document.getElementById('schedWarn').classList.remove('visible');
+}
+document.getElementById('schedulerModal').addEventListener('click', function(e) {
+  if (e.target === this) closeSchedulerModal();
+});
+
+function calShiftMonth(delta) {
+  schedState.viewMonth += delta;
+  if (schedState.viewMonth < 0) { schedState.viewMonth = 11; schedState.viewYear--; }
+  if (schedState.viewMonth > 11) { schedState.viewMonth = 0; schedState.viewYear++; }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const { viewYear: y, viewMonth: m } = schedState;
+  document.getElementById('calMonthLabel').textContent = `${MONTH_NAMES[m]} ${y}`;
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const firstDow = new Date(y, m, 1).getDay();
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const daysInPrevMonth = new Date(y, m, 0).getDate();
+
+  const cells = [];
+  for (let i = firstDow - 1; i >= 0; i--) cells.push({ d: daysInPrevMonth - i, outside: true, y, m: m - 1 });
+  for (let d = 1; d <= daysInMonth; d++) cells.push({ d, outside: false, y, m });
+  while (cells.length < 42) {
+    const d = cells.length - (firstDow + daysInMonth) + 1;
+    cells.push({ d, outside: true, y, m: m + 1 });
+  }
+
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = cells.map(c => {
+    const cellDate = new Date(c.y, c.m, c.d); cellDate.setHours(0,0,0,0);
+    const isPast = cellDate.getTime() < today.getTime();
+    const isToday = cellDate.getTime() === today.getTime();
+    const isSelected = schedState.selDate &&
+      cellDate.getFullYear() === schedState.selDate.y &&
+      cellDate.getMonth() === schedState.selDate.m &&
+      cellDate.getDate() === schedState.selDate.d;
+    const cls = ['sched-cal-cell'];
+    if (c.outside) cls.push('outside');
+    if (isPast) cls.push('disabled');
+    if (isToday) cls.push('today');
+    if (isSelected) cls.push('selected');
+    const disabledAttr = isPast ? 'aria-disabled="true"' : '';
+    const clickAttr = isPast ? '' : `onclick="calSelectDate(${cellDate.getFullYear()},${cellDate.getMonth()},${cellDate.getDate()})"`;
+    return `<div class="${cls.join(' ')}" role="option" aria-selected="${isSelected}" ${disabledAttr} ${clickAttr}>${c.d}</div>`;
+  }).join('');
+}
+
+function calSelectDate(y, m, d) {
+  schedState.selDate = { y, m, d };
+  renderCalendar();
+  updateSchedSummary();
+}
+
+// Builds one scroll-snap wheel column. `items` are display strings; `initial`
+// is the item to start centered on; `onChange` fires with the picked string
+// whenever the centered item changes (on scroll-end, debounced).
+function buildWheel(containerId, items, initial, onChange) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = items.map(v => `<div class="sched-wheel-item" data-v="${v}">${v}</div>`).join('');
+  el._items = items;
+  el._onChange = onChange;
+
+  let idx = items.indexOf(initial);
+  if (idx < 0) idx = 0;
+  markPicked(el, idx);
+  el.scrollTop = idx * WHEEL_ITEM_H;
+
+  let scrollTimer = null;
+  el.onscroll = () => {
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(() => {
+      let i = Math.round(el.scrollTop / WHEEL_ITEM_H);
+      i = Math.max(0, Math.min(items.length - 1, i));
+      markPicked(el, i);
+      onChange(items[i]);
+    }, 90);
+  };
+
+  el.querySelectorAll('.sched-wheel-item').forEach((item, i) => {
+    item.onclick = () => el.scrollTo({ top: i * WHEEL_ITEM_H, behavior: 'smooth' });
+  });
+}
+
+function markPicked(el, idx) {
+  el.querySelectorAll('.sched-wheel-item').forEach((item, i) => item.classList.toggle('picked', i === idx));
+}
+
+function updateSchedSummary() {
+  document.getElementById('schedWarn').classList.remove('visible');
+  const chip = document.getElementById('calDateChip');
+  const chipText = document.getElementById('calDateChipText');
+  const summary = document.getElementById('schedSummaryValue');
+  const setBtn = document.getElementById('schedSetBtn');
+
+  if (!schedState.selDate) {
+    chip.classList.remove('set');
+    chipText.textContent = 'No date selected';
+    summary.textContent = 'Pick a date & time';
+    setBtn.disabled = true;
+    return;
+  }
+
+  const { y, m, d } = schedState.selDate;
+  const dateObj = new Date(y, m, d);
+  const dateLabel = dateObj.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  chip.classList.add('set');
+  chipText.textContent = dateLabel;
+
+  const shortLabel = dateObj.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+  summary.textContent = `${shortLabel} · ${pad2(schedState.hour12)}:${pad2(schedState.minute)} ${schedState.meridiem}`;
+  setBtn.disabled = false;
+}
+
+function schedulerClear() {
+  schedState.selDate = null;
+  const now = new Date(Date.now() + 15 * 60000);
+  let h = now.getHours();
+  schedState.meridiem = h >= 12 ? 'PM' : 'AM';
+  h = h % 12; if (h === 0) h = 12;
+  schedState.hour12 = h;
+  schedState.minute = now.getMinutes();
+  renderCalendar();
+  buildWheel('wheelHour', Array.from({length:12}, (_,i) => pad2(i+1)), pad2(schedState.hour12), v => { schedState.hour12 = parseInt(v,10); updateSchedSummary(); });
+  buildWheel('wheelMinute', Array.from({length:60}, (_,i) => pad2(i)), pad2(schedState.minute), v => { schedState.minute = parseInt(v,10); updateSchedSummary(); });
+  buildWheel('wheelMeridiem', ['AM','PM'], schedState.meridiem, v => { schedState.meridiem = v; updateSchedSummary(); });
+  updateSchedSummary();
+
+  // Also clears whatever was previously committed to the hidden field.
+  document.getElementById('scheduleDatetime').value = '';
+  onScheduleDatetimeInput();
+}
+
+function schedulerSet() {
+  if (!schedState.selDate) return;
+  let h24 = schedState.hour12 % 12;
+  if (schedState.meridiem === 'PM') h24 += 12;
+  const { y, m, d } = schedState.selDate;
+  const result = new Date(y, m, d, h24, schedState.minute, 0, 0);
+
+  if (result.getTime() <= Date.now()) {
+    document.getElementById('schedWarn').classList.add('visible');
+    return;
+  }
+
+  const val = `${result.getFullYear()}-${pad2(result.getMonth()+1)}-${pad2(result.getDate())}T${pad2(h24)}:${pad2(schedState.minute)}`;
+  document.getElementById('scheduleDatetime').value = val;
+  onScheduleDatetimeInput();
+  closeSchedulerModal();
 }
 
 // ── Route name lookup — sourced from index.html's authoritative route table ───
