@@ -84,9 +84,10 @@ const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/ritian
  *         -> logged clearly so operator knows test is starting cold
  */
 const segmentSpeedSchema = new mongoose.Schema({
-  key:       { type: String, required: true, unique: true }, // "R01B:3"
+  key:       { type: String, required: true, unique: true }, // "R01B:3:peak"  (★ v7: bucket suffix)
   route:     { type: String, index: true },                  // "R01B"
   segIdx:    { type: Number },                               // 3
+  bucket:    { type: String, index: true },                  // ★ v7: "peak" | "offpeak"
   speeds:    { type: [Number], default: [] },                // [28, 31, 27, ...]
   updatedAt: { type: Date,   default: Date.now, index: true },
 });
@@ -94,6 +95,61 @@ const segmentSpeedSchema = new mongoose.Schema({
 // Prevents stale yesterday-speeds from being used without expiry check.
 segmentSpeedSchema.index({ updatedAt: 1 }, { expireAfterSeconds: 86400 });
 const SegmentSpeed = mongoose.model("SegmentSpeed", segmentSpeedSchema);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ██  ★ v7 — STOP DWELL MONGOOSE MODEL (learned dwell time)
+// ═══════════════════════════════════════════════════════════════════════════
+/**
+ * Same pattern as SegmentSpeed, but for "how long does the bus actually sit
+ * at this stop" instead of "how fast does the bus move on this segment".
+ *
+ * key = "R01B:4" (vehicleId:stopIdx)
+ * dwellSecs[] = rolling window of real measured dwell durations (seconds)
+ *
+ * TTL is longer than segment speed (7 days vs 24h) because dwell duration
+ * doesn't swing with daily traffic the way road speed does — it's mostly a
+ * function of how many students board there — so it's fine, and better, to
+ * average over more days for a stabler number.
+ */
+const stopDwellSchema = new mongoose.Schema({
+  key:       { type: String, required: true, unique: true }, // "R01B:4"
+  route:     { type: String, index: true },                  // "R01B"
+  stopIdx:   { type: Number },                                // 4
+  dwellSecs: { type: [Number], default: [] },                 // [42, 55, 38, ...]
+  updatedAt: { type: Date,   default: Date.now, index: true },
+});
+stopDwellSchema.index({ updatedAt: 1 }, { expireAfterSeconds: 604800 }); // 7 days
+const StopDwell = mongoose.model("StopDwell", stopDwellSchema);
+
+async function loadStopDwells() {
+  try {
+    const docs = await StopDwell.find({}).lean();
+    let loaded = 0;
+    for (const doc of docs) {
+      if (doc.dwellSecs && doc.dwellSecs.length > 0) {
+        stopDwellDB[doc.key] = doc.dwellSecs;
+        loaded++;
+      }
+    }
+    console.log(loaded > 0
+      ? `[WARM-START] Loaded ${loaded} stop dwell histories from MongoDB`
+      : "[COLD-START] No stop dwell history found — fixed dwell tiers active until trip data is collected.");
+  } catch (err) {
+    console.error("[DWELL-LOAD] Failed to load stop dwell history from MongoDB:", err.message);
+  }
+}
+
+async function saveStopDwell(key, route, stopIdx, dwellSecs) {
+  try {
+    await StopDwell.findOneAndUpdate(
+      { key },
+      { $set: { route, stopIdx, dwellSecs, updatedAt: new Date() } },
+      { upsert: true }
+    );
+  } catch (err) {
+    console.error(`[DWELL-SAVE] Failed to persist ${key}:`, err.message);
+  }
+}
 
 /**
  * FIX 2 — WARM-LOAD: Called once at startup.
@@ -126,11 +182,11 @@ async function loadSegmentSpeeds() {
  * Called async (fire-and-forget) from recordSegmentSpeed() so it never
  * blocks the GPS update path.
  */
-async function saveSegmentSpeed(key, route, segIdx, speeds) {
+async function saveSegmentSpeed(key, route, segIdx, speeds, bucket) {
   try {
     await SegmentSpeed.findOneAndUpdate(
       { key },
-      { $set: { route, segIdx, speeds, updatedAt: new Date() } },
+      { $set: { route, segIdx, bucket, speeds, updatedAt: new Date() } },
       { upsert: true }
     );
   } catch (err) {
@@ -142,6 +198,7 @@ mongoose.connect(MONGODB_URI)
   .then(async () => {
     console.log("✅ MongoDB connected — student auth + segment speed storage ready");
     await loadSegmentSpeeds();
+    await loadStopDwells();
     // Catch any scheduled notification that was already due at boot time
     // (e.g. the server was restarted right around its fire time).
     await notifyAdminRoutes.processDueScheduledSends();
@@ -163,6 +220,7 @@ app.get("/", (req, res) => res.sendFile(path.join(__dirname, "index.html")));
 const locationStore  = {};
 const etaCache       = {};
 const segmentSpeedDB = {};  // Warm-loaded from MongoDB on startup (see loadSegmentSpeeds)
+const stopDwellDB    = {};  // ★ v7: Warm-loaded from MongoDB on startup (see loadStopDwells)
 
 // ── Tracking Session Store (persistent background GPS feature) ─────────────
 // Keyed by vehicleId. One authoritative session per vehicle — starting a
@@ -270,6 +328,12 @@ const T = {
 
   // Segment history
   SEG_HISTORY_LEN:    20,
+
+  // ═══ v7 — Time-bucketed speeds + learned dwell ═══
+  DWELL_HISTORY_LEN:      15,     // rolling window of learned per-stop dwell readings
+  DWELL_MIN_SAMPLES:      3,      // need at least this many readings before trusting learned dwell
+  DWELL_MIN_PLAUSIBLE_S:  3,      // ignore dwell readings shorter than this (GPS jitter, not a real stop)
+  DWELL_MAX_PLAUSIBLE_S:  300,    // ignore dwell readings longer than this (driver break, not boarding time)
 
   // ═══ ★ v6.1 GPS ENGINE HARDENING — new tunables ═══
   MAX_PLAUSIBLE_KMH:      130,            // buses never exceed this — used for impossible-jump detection
@@ -1274,15 +1338,43 @@ function updateHeadingSmoothed(vehicle, rawHeadingDeg, speedKmh) {
   return deg;
 }
 
+/**
+ * ★ v7: Time-bucketed segment speed lookup.
+ *
+ * v6 kept one blended speed history per segment, so an 8 AM traffic crawl
+ * and a 2 PM open-road run got averaged together — hiding exactly the
+ * pattern that matters most for ETA accuracy.
+ *
+ * v7 keeps two histories per segment: "peak" and "offpeak" (reusing the
+ * same T.PEAK_START/END windows as dwell time, via isPeakNow()).
+ *
+ * Fallback chain (unchanged order of priority, just bucket-aware):
+ *   1. vehicle.ewmaSpeed          (current live reading — always wins if moving)
+ *   2. segmentSpeedDB[currentBucketKey] average   (same time-of-day history)
+ *   3. segmentSpeedDB[otherBucketKey] average     (★ v7 new: better than a flat guess)
+ *   4. T.FALLBACK_SPEED_KMH = 25 km/h             (absolute last resort)
+ */
 function bestSpeed(vehicle, vehicleId, segIdx) {
   const ewma = vehicle.ewmaSpeed;
   if (ewma && ewma > T.STOPPED_KMH) return ewma;
-  const key  = `${vehicleId}:${segIdx}`;
-  const hist = segmentSpeedDB[key];
+
+  const bucket      = isPeakNow() ? "peak" : "offpeak";
+  const otherBucket = bucket === "peak" ? "offpeak" : "peak";
+
+  const hist = segmentSpeedDB[`${vehicleId}:${segIdx}:${bucket}`];
   if (hist && hist.length >= 3) {
     const avg = hist.reduce((s, v) => s + v, 0) / hist.length;
     if (avg > T.STOPPED_KMH) return avg;
   }
+
+  // ★ v7: fall back to the OTHER time bucket before giving up entirely —
+  // "this road at a different time of day" beats a flat 25 km/h guess.
+  const otherHist = segmentSpeedDB[`${vehicleId}:${segIdx}:${otherBucket}`];
+  if (otherHist && otherHist.length >= 3) {
+    const avg = otherHist.reduce((s, v) => s + v, 0) / otherHist.length;
+    if (avg > T.STOPPED_KMH) return avg;
+  }
+
   return T.FALLBACK_SPEED_KMH;
 }
 
@@ -1556,14 +1648,39 @@ function isMovingTowardStop(busLat, busLng, headingDeg, stopLat, stopLng) {
  * @param {object} stop  - stop object from routeStopsDB
  * @returns {number} dwell time in seconds
  */
-function getDwellTime(stop) {
+/**
+ * Shared peak-hour check — used by dwell tiers AND (★ v7) time-bucketed
+ * segment speeds, so both features agree on what "peak" means.
+ */
+function isPeakNow() {
+  const nowMin = nowMinutes();
+  return (nowMin >= T.PEAK_START_AM && nowMin <= T.PEAK_END_AM) ||
+         (nowMin >= T.PEAK_START_PM && nowMin <= T.PEAK_END_PM);
+}
+
+/**
+ * ★ v7 NEW: Learned dwell time, with the old fixed tiers as fallback.
+ *
+ * Fallback chain:
+ *   1. Explicit stop.dwellSec override (unchanged — always wins if set)
+ *   2. Learned average from stopDwellDB, IF we have >= DWELL_MIN_SAMPLES
+ *      real readings for this exact stop (measured from actual GPS
+ *      stopped-time at that stop — see recordStopDwell()).
+ *   3. Fixed major/standard × peak/off-peak tiers (v5 behavior, unchanged).
+ *
+ * vehicleId + stopIdx are optional so any old call site without them still
+ * works and just falls through to the fixed tiers.
+ */
+function getDwellTime(stop, vehicleId, stopIdx) {
   // Honor explicit override in stop definition
   if (stop.dwellSec !== undefined) return stop.dwellSec;
 
-  const nowMin = nowMinutes();
-  const isPeak = (nowMin >= T.PEAK_START_AM && nowMin <= T.PEAK_END_AM) ||
-                 (nowMin >= T.PEAK_START_PM && nowMin <= T.PEAK_END_PM);
+  if (vehicleId !== undefined && stopIdx !== undefined) {
+    const learned = learnedDwellSeconds(vehicleId, stopIdx);
+    if (learned !== null) return learned;
+  }
 
+  const isPeak  = isPeakNow();
   const isMajor = MAJOR_STOPS.has(stop.stopName);
 
   if (isMajor) return isPeak ? T.DWELL_MAJOR_PEAK : T.DWELL_MAJOR_OFFPK;
@@ -1718,7 +1835,7 @@ function hybridEtaMinutes(busLat, busLng, stops, fromIdx, targetIdx, vehicle, ve
   // Step 5: Adaptive per-stop dwell time
   let totalDwellMin = 0;
   for (let i = fromIdx + 1; i < targetIdx; i++) {
-    totalDwellMin += getDwellTime(stops[i]) / 60;
+    totalDwellMin += getDwellTime(stops[i], vehicleId, i) / 60;
   }
   hybridETA += totalDwellMin;
 
@@ -1751,12 +1868,48 @@ function hybridEtaMinutes(busLat, busLng, stops, fromIdx, targetIdx, vehicle, ve
  */
 function recordSegmentSpeed(vehicleId, segIdx, speedKmh) {
   if (speedKmh < T.STOPPED_KMH) return;
-  const key    = `${vehicleId}:${segIdx}`;
+  // ★ v7: bucket by current peak/off-peak window so morning-crawl readings
+  // never get blended into an afternoon open-road average, or vice versa.
+  const bucket = isPeakNow() ? "peak" : "offpeak";
+  const key    = `${vehicleId}:${segIdx}:${bucket}`;
   const hist   = segmentSpeedDB[key] || [];
   const updated = [...hist.slice(-(T.SEG_HISTORY_LEN - 1)), speedKmh];
   segmentSpeedDB[key] = updated;
   // FIX 2: Persist to MongoDB asynchronously — does not block GPS path
-  saveSegmentSpeed(key, vehicleId, segIdx, updated).catch(() => {});
+  saveSegmentSpeed(key, vehicleId, segIdx, updated, bucket).catch(() => {});
+}
+
+/**
+ * ★ v7 NEW: Learned dwell time lookup.
+ * Returns the average of real measured dwell durations for this exact
+ * stop, or null if we don't have enough samples yet (caller falls back
+ * to the fixed major/standard × peak/off-peak tiers — see getDwellTime()).
+ */
+function learnedDwellSeconds(vehicleId, stopIdx) {
+  const key  = `${vehicleId}:${stopIdx}`;
+  const hist = stopDwellDB[key];
+  if (!hist || hist.length < T.DWELL_MIN_SAMPLES) return null;
+  const avg = hist.reduce((s, v) => s + v, 0) / hist.length;
+  return Math.round(avg);
+}
+
+/**
+ * ★ v7 NEW: Records one real measured dwell duration for a stop.
+ * Called from /update-location when the bus transitions out of a
+ * "stopped, within ARRIVED_RADIUS_KM of this stop" state (see STEP 6.5
+ * in the update-location handler).
+ *
+ * Implausible readings are dropped rather than recorded, so a driver who
+ * parks for lunch next to a stop, or a GPS glitch that fires a 1-second
+ * dwell, can't drag the learned average off in either direction.
+ */
+function recordStopDwell(vehicleId, stopIdx, dwellSec) {
+  if (dwellSec < T.DWELL_MIN_PLAUSIBLE_S || dwellSec > T.DWELL_MAX_PLAUSIBLE_S) return;
+  const key    = `${vehicleId}:${stopIdx}`;
+  const hist   = stopDwellDB[key] || [];
+  const updated = [...hist.slice(-(T.DWELL_HISTORY_LEN - 1)), dwellSec];
+  stopDwellDB[key] = updated;
+  saveStopDwell(key, vehicleId, stopIdx, updated).catch(() => {});
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2050,11 +2203,40 @@ app.post("/update-location", (req, res) => {
   // STEP 7: Stop index (forward-only ratchet)
   const stops = routeStopsDB[vehicleId];
   let lastStopIdx = prev ? (prev.lastStopIdx || 0) : 0;
+  let nearestIdx  = lastStopIdx;
   if (stops) {
-    const { nearestIdx } = findCurrentStopIndex(vehicle, newLat, newLng, stops, lastStopIdx);
+    const found = findCurrentStopIndex(vehicle, newLat, newLng, stops, lastStopIdx);
+    nearestIdx = found.nearestIdx;
     if (nearestIdx > lastStopIdx) {
       recordSegmentSpeed(vehicleId, lastStopIdx, vehicle.ewmaSpeed || finalKmh);
       lastStopIdx = nearestIdx;
+    }
+  }
+
+  // STEP 6.5: ★ v7 — Learned dwell time.
+  // Reuses the same STOPPED state (isStopped, from STEP 6) that map.html
+  // already shows as "Stopped" on the driver map — we just also ask "is
+  // the bus stopped AT a stop" (within ARRIVED_RADIUS_KM of it), and time
+  // how long that lasts. Deliberately independent of the traffic-tier
+  // STALL logic above — a traffic jam and a boarding stop both look like
+  // "isStopped", but only the latter should feed the dwell model.
+  if (stops && stops[nearestIdx]) {
+    const distToStop  = haversine(newLat, newLng, stops[nearestIdx].lat, stops[nearestIdx].lng);
+    const atThisStop  = isStopped && distToStop <= T.ARRIVED_RADIUS_KM;
+
+    if (atThisStop) {
+      if (vehicle.dwellStopIdx !== nearestIdx) {
+        // Just arrived (or switched target stop) — (re)start the timer.
+        vehicle.dwellStopIdx  = nearestIdx;
+        vehicle.dwellStartMs  = now;
+      }
+      // else: still sitting at the same stop — timer keeps running, nothing to do.
+    } else if (vehicle.dwellStartMs) {
+      // Was dwelling, now moving or too far from that stop — close out the reading.
+      const dwellSec = (now - vehicle.dwellStartMs) / 1000;
+      recordStopDwell(vehicleId, vehicle.dwellStopIdx, dwellSec);
+      vehicle.dwellStartMs = null;
+      vehicle.dwellStopIdx = null;
     }
   }
 
@@ -2195,8 +2377,8 @@ app.get("/eta/:vehicleId", (req, res) => {
     // ★ v5: Per-stop confidence (distance-decayed)
     const confidence = idx <= effectiveIdx ? 1.0 : stopConfidence(vConf, etaMin);
 
-    // ★ v5: Dwell time info for this stop
-    const dwellSec   = getDwellTime(stop);
+    // ★ v5: Dwell time info for this stop (★ v7: now learned when we have data)
+    const dwellSec   = getDwellTime(stop, vehicleId, idx);
     const isMajor    = MAJOR_STOPS.has(stop.stopName);
 
     return {
@@ -2475,34 +2657,25 @@ app.get("/calibration-report/:vehicleId", (req, res) => {
 });
 
 /**
- * POST /calibration-apply/:vehicleId
+ * ★ v8: Core calibration-apply logic, extracted so both the HTTP route
+ * AND the nightly auto-calibration job (see runNightlyCalibration below)
+ * can call the exact same logic — no duplicated code, no drift between
+ * "what the button does" and "what the cron job does".
  *
- * PURPOSE: Apply suggested road factors from the calibration report to the
- * live roadFactors map. Only updates segments marked reliable=true.
- * Does NOT auto-save to code — log output tells you what to hardcode.
- *
- * REQUEST BODY: { onlyActionRequired: true }  (optional, default false)
- *               If true, only applies factors for segments with errorPct > 10%.
- *
- * RESPONSE: { applied: [{ segKey, oldFactor, newFactor, errorPct }], skipped: [...] }
- *
- * SAFETY: This only updates the in-memory roadFactors object.
- *         The server still starts from hardcoded values after restart.
- *         To make permanent: copy the logged "CALIBRATION APPLY" lines
- *         and update the roadFactors constant in this file.
+ * Same behavior as before: only updates in-memory roadFactors, never
+ * mutates locationStore/path, and never throws — returns an error field
+ * instead so the nightly job can log-and-continue across many vehicles.
  */
-app.post("/calibration-apply/:vehicleId", (req, res) => {
-  const { vehicleId } = req.params;
-  const { onlyActionRequired = false } = req.body || {};
+function runCalibrationApply(vehicleId, { onlyActionRequired = false } = {}) {
   const busData = locationStore[vehicleId];
   const stops   = routeStopsDB[vehicleId];
 
-  if (!busData) return res.status(404).json({ success: false, error: "Vehicle not tracked." });
-  if (!stops)   return res.status(404).json({ success: false, error: `No route data for ${vehicleId}.` });
+  if (!busData) return { success: false, error: "Vehicle not tracked." };
+  if (!stops)   return { success: false, error: `No route data for ${vehicleId}.` };
 
   const path = busData.path || [];
   if (path.length < 5) {
-    return res.status(400).json({ success: false, error: "Insufficient GPS data for calibration." });
+    return { success: false, error: "Insufficient GPS data for calibration." };
   }
 
   const applied = [];
@@ -2549,6 +2722,38 @@ app.post("/calibration-apply/:vehicleId", (req, res) => {
       oldFactor: currentFactor, newFactor: suggestedFactor, errorPct });
   }
 
+  return { success: true, applied, skipped };
+}
+
+/**
+ * POST /calibration-apply/:vehicleId
+ *
+ * PURPOSE: Apply suggested road factors from the calibration report to the
+ * live roadFactors map. Only updates segments marked reliable=true.
+ * Does NOT auto-save to code — log output tells you what to hardcode.
+ *
+ * REQUEST BODY: { onlyActionRequired: true }  (optional, default false)
+ *               If true, only applies factors for segments with errorPct > 10%.
+ *
+ * RESPONSE: { applied: [{ segKey, oldFactor, newFactor, errorPct }], skipped: [...] }
+ *
+ * SAFETY: This only updates the in-memory roadFactors object.
+ *         The server still starts from hardcoded values after restart.
+ *         To make permanent: copy the logged "CALIBRATION APPLY" lines
+ *         and update the roadFactors constant in this file.
+ */
+app.post("/calibration-apply/:vehicleId", (req, res) => {
+  const { vehicleId } = req.params;
+  const { onlyActionRequired = false } = req.body || {};
+
+  const result = runCalibrationApply(vehicleId, { onlyActionRequired });
+  if (!result.success) {
+    const status = result.error === "Vehicle not tracked." || result.error.startsWith("No route data")
+      ? 404 : 400;
+    return res.status(status).json({ success: false, error: result.error });
+  }
+
+  const { applied, skipped } = result;
   res.json({
     success: true,
     vehicleId,
@@ -2557,6 +2762,102 @@ app.post("/calibration-apply/:vehicleId", (req, res) => {
     applied,
     skipped,
     hardcodeHint: applied.map(a => `  "${a.segKey}": ${a.newFactor},  // was ${a.oldFactor} (${a.errorPct}% error)`).join("\n"),
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ██  ★ v8 — NIGHTLY AUTO-CALIBRATION
+// ═══════════════════════════════════════════════════════════════════════════
+/**
+ * PURPOSE: Turns the manual "call /calibration-apply when you remember to"
+ * step into something that runs itself every night, so roadFactors quietly
+ * get more accurate day over day without anyone touching the dashboard.
+ *
+ * SCOPE (per your instruction): only vehicles that actually had GPS trip
+ * data that day — i.e. present in locationStore with a real path — not
+ * every route in routeStopsDB. A route nobody drove today has nothing new
+ * to learn from, so it's skipped rather than wasting a calibration pass.
+ *
+ * SAFETY (per your instruction): runs with onlyActionRequired: true, same
+ * as the safer manual default — only segments with >10% error get updated;
+ * anything within tolerance is left alone.
+ *
+ * This still only updates the in-memory `roadFactors` object, exactly like
+ * the manual endpoint — it does NOT rewrite this file. If you want a
+ * correction to survive a server restart, copy it from the log/summary
+ * into the hardcoded `roadFactors` constant yourself. That manual step is
+ * intentional: auto-editing your own source file at runtime is not safe.
+ */
+async function runNightlyCalibration() {
+  const eligibleVehicleIds = Object.keys(locationStore).filter(id => {
+    const busData = locationStore[id];
+    return routeStopsDB[id] && (busData.path || []).length >= 5;
+  });
+
+  console.log(`\n[NIGHTLY-CALIBRATION] Starting run for ${eligibleVehicleIds.length} vehicle(s) with trip data today...`);
+
+  const summary = { ranAt: new Date().toISOString(), vehicles: [] };
+
+  for (const vehicleId of eligibleVehicleIds) {
+    const result = runCalibrationApply(vehicleId, { onlyActionRequired: true });
+    if (!result.success) {
+      console.log(`[NIGHTLY-CALIBRATION] ${vehicleId}: skipped (${result.error})`);
+      summary.vehicles.push({ vehicleId, applied: 0, skipped: 0, error: result.error });
+      continue;
+    }
+    console.log(`[NIGHTLY-CALIBRATION] ${vehicleId}: ${result.applied.length} segment(s) updated, ${result.skipped.length} within tolerance.`);
+    summary.vehicles.push({ vehicleId, applied: result.applied.length, skipped: result.skipped.length });
+  }
+
+  const totalApplied = summary.vehicles.reduce((s, v) => s + (v.applied || 0), 0);
+  console.log(`[NIGHTLY-CALIBRATION] Done. ${totalApplied} segment(s) corrected across ${eligibleVehicleIds.length} vehicle(s).\n`);
+
+  lastNightlyCalibrationSummary = summary;
+  return summary;
+}
+
+// In-memory record of the most recent run, exposed via GET /calibration-nightly-status
+let lastNightlyCalibrationSummary = null;
+
+/**
+ * Schedules runNightlyCalibration() for a fixed local time every day
+ * (default 2:30 AM — well after routes stop running, before morning peak).
+ * Uses plain setTimeout/setInterval so no new npm dependency is needed.
+ * Override the hour/minute via env vars if 2:30 AM doesn't fit your schedule.
+ */
+function scheduleNightlyCalibration() {
+  const targetHour   = parseInt(process.env.CALIBRATION_HOUR   ?? "2", 10);
+  const targetMinute = parseInt(process.env.CALIBRATION_MINUTE ?? "30", 10);
+
+  const msUntilNextRun = () => {
+    const next = new Date();
+    next.setHours(targetHour, targetMinute, 0, 0);
+    if (next.getTime() <= Date.now()) next.setDate(next.getDate() + 1);
+    return next.getTime() - Date.now();
+  };
+
+  const runThenReschedule = () => {
+    runNightlyCalibration().catch(err =>
+      console.error("[NIGHTLY-CALIBRATION] Unexpected error:", err.message)
+    );
+    setTimeout(runThenReschedule, 24 * 60 * 60 * 1000); // every 24h after the first run
+  };
+
+  const delay = msUntilNextRun();
+  console.log(`[NIGHTLY-CALIBRATION] Scheduled for ${String(targetHour).padStart(2,"0")}:${String(targetMinute).padStart(2,"0")} daily (next run in ${(delay / 60000).toFixed(0)} min).`);
+  setTimeout(runThenReschedule, delay);
+}
+
+/**
+ * GET /calibration-nightly-status
+ * Quick way to check whether the auto-job has run yet and what it did,
+ * without waiting for or reading server logs.
+ */
+app.get("/calibration-nightly-status", (_req, res) => {
+  res.json({
+    success: true,
+    hasRunYet: lastNightlyCalibrationSummary !== null,
+    lastRun: lastNightlyCalibrationSummary,
   });
 });
 
@@ -2576,12 +2877,14 @@ app.get("/routes", (_req, res) => {
 // ── GET /health ────────────────────────────────────────────────────────────
 app.get("/health", (_req, res) =>
   res.json({
-    ok: true, version: "6.0",
+    ok: true, version: "8.0",
     uptime:              process.uptime(),
     tracked:             Object.keys(locationStore).length,
     routes:              Object.keys(routeStopsDB).length,
-    segHistory:          Object.keys(segmentSpeedDB).length,   // FIX 2: warm-loaded from MongoDB
+    segHistory:          Object.keys(segmentSpeedDB).length,   // FIX 2: warm-loaded from MongoDB (★ v7: now bucketed by peak/offpeak)
+    dwellHistory:        Object.keys(stopDwellDB).length,      // ★ v7: learned per-stop dwell samples
     roadFactors:         Object.keys(roadFactors).length,
+    currentBucket:       isPeakNow() ? "peak" : "offpeak",     // ★ v7
     // FIX 2: warmStart=true means segment speeds survived a restart
     warmStart:           Object.keys(segmentSpeedDB).length > 0,
     mongodbConnected:    mongoose.connection.readyState === 1,
@@ -2603,7 +2906,13 @@ app.get("/me/:studentId", async (req, res) => {
 // ── Start ──────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 4008;
 app.listen(PORT, () => {
-  console.log(`\n🚌 Ritians Transport – GPS Backend v6.0 (Pre-Test Hardened) → port ${PORT}`);
+  console.log(`\n🚌 Ritians Transport – GPS Backend v8.0 (Nightly Auto-Calibration) → port ${PORT}`);
+  console.log(`\n   🆕 v8 additions:`);
+  console.log(`      • Nightly auto-calibration — self-applies road factor corrections daily, no manual trigger needed`);
+  console.log(`      • GET /calibration-nightly-status — check the last auto-run without reading logs`);
+  console.log(`\n   🆕 v7 additions:`);
+  console.log(`      • Time-bucketed segment speeds — peak/off-peak split, current bucket: ${isPeakNow() ? "PEAK" : "OFF-PEAK"}`);
+  console.log(`      • Learned per-stop dwell time — real measured stop durations, min ${T.DWELL_MIN_SAMPLES} samples before trusted`);
   console.log(`\n   🔴 v6 Pre-Test Fixes (mandatory before R01B test run):`);
   console.log(`      • FIX 1: Schedule blend clamp — floor at liveETA×0.50, anomaly guard at 0.70`);
   console.log(`      • FIX 2: Segment speed persistence — MongoDB TTL 24h, warm-load on startup`);
@@ -2620,4 +2929,6 @@ app.listen(PORT, () => {
   console.log(`      [ ] Late bus simulation → etaAnomalyDetected must NOT appear in ETA response`);
   console.log(`      [ ] Run test trip → GET /calibration-report/R01B → segments with reliable:true`);
   console.log(`\n   Target ETA error: <10% (was 20-38% in v4)\n`);
+
+  scheduleNightlyCalibration();
 });
