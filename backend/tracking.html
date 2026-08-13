@@ -537,7 +537,82 @@ body::before{
   color:var(--text2);cursor:pointer;font-size:12px;transition:all 0.2s var(--ease);
 }
 .map-modal-close:hover{background:var(--bg3);color:var(--text);transform:rotate(90deg)}
-#routeMap{flex:1;width:100%}
+#routeMap{flex:1;width:100%;position:relative;background:#0C1220}
+
+/* ── R01 header badge ── */
+.r01-title-row{display:flex;align-items:center;gap:8px}
+.r01-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:3px 9px;border-radius:7px;font-family:var(--font-mono);
+  font-size:11px;font-weight:700;letter-spacing:0.03em;color:#03050B;
+  background:linear-gradient(135deg,#4ECDC4,#22C55E);
+  box-shadow:0 0 12px rgba(78,205,196,0.45);
+}
+
+/* ── R01 map loading veil ── */
+.r01-map-loading{
+  position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:10px;
+  background:rgba(9,14,27,0.82);backdrop-filter:blur(6px);
+  font-family:var(--font-mono);font-size:11px;color:var(--text2);
+  letter-spacing:0.04em;pointer-events:none;
+  transition:opacity 0.3s;
+}
+.r01-map-loading .r01-spin{
+  width:26px;height:26px;border-radius:50%;
+  border:2.5px solid rgba(78,205,196,0.2);border-top-color:var(--accent2);
+  animation:r01spin 0.8s linear infinite;
+}
+@keyframes r01spin{to{transform:rotate(360deg)}}
+
+/* ── R01 floating checkpoint label ── */
+.r01-checkpoint-label{
+  position:absolute;transform:translate(-50%,-100%);
+  padding:4px 9px;border-radius:8px;white-space:nowrap;
+  background:rgba(9,14,27,0.72);border:1px solid rgba(255,255,255,0.14);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  font-family:var(--font-body);font-size:10.5px;font-weight:600;
+  letter-spacing:0.03em;color:var(--text);
+  box-shadow:0 4px 14px rgba(0,0,0,0.35);
+  pointer-events:none;
+}
+
+/* ── R01 live bus marker ── */
+.r01-live-bus{position:absolute;width:44px;height:44px;pointer-events:none;
+  transition:left 0.9s linear,top 0.9s linear}
+.r01-live-bus .lb-pulse{
+  position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(circle,rgba(78,205,196,0.55),transparent 70%);
+  animation:lbpulse 1.8s ease-out infinite;
+}
+@keyframes lbpulse{
+  0%{transform:scale(0.55);opacity:0.9}
+  100%{transform:scale(1.5);opacity:0}
+}
+.r01-live-bus .lb-core{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:26px;height:26px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent2),#0EA5E9);
+  border:2.5px solid #fff;display:flex;align-items:center;justify-content:center;
+  color:#03050B;font-size:11px;box-shadow:0 0 14px rgba(78,205,196,0.75),0 3px 10px rgba(0,0,0,0.4);
+}
+.r01-live-bus .lb-tag{
+  position:absolute;top:-19px;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:4px;padding:2px 7px 2px 6px;border-radius:99px;
+  background:rgba(9,14,27,0.88);border:1px solid rgba(255,255,255,0.16);
+  font-family:var(--font-mono);font-size:8.5px;font-weight:700;letter-spacing:0.06em;
+  color:var(--text);white-space:nowrap;
+}
+.r01-live-bus .lb-tag .lb-dot{
+  width:5px;height:5px;border-radius:50%;background:#22C55E;
+  box-shadow:0 0 6px #22C55E;animation:lbdot 1s ease-in-out infinite;
+}
+@keyframes lbdot{50%{opacity:0.25}}
+@media(prefers-reduced-motion:reduce){
+  .r01-live-bus .lb-pulse{animation:none}
+  .r01-live-bus .lb-tag .lb-dot{animation:none}
+  .r01-live-bus{transition:none}
+}
 
 /* ─────────────────────────── RESPONSIVE ─────────────────────────── */
 @media(max-width:600px){
@@ -547,6 +622,15 @@ body::before{
   .eta-panel{border-radius:20px 20px 0 0}
   .nav-right .clock{display:none}
   .eta-metrics .eta-metric{padding:7px 11px}
+  .map-modal-box{
+    width:100vw;height:100dvh;max-width:none;margin:0;border-radius:0;border:none;
+  }
+  .map-modal-head{padding:12px 14px}
+  .map-modal-head h3{font-size:14px}
+  .map-modal-head #mapModalGoogleLink span{display:none}
+  .r01-checkpoint-label{font-size:9.5px;padding:3px 7px}
+  .r01-live-bus{width:38px;height:38px}
+  .r01-live-bus .lb-core{width:22px;height:22px;font-size:9.5px}
 }
 @media(max-width:360px){
   .btn-track,.btn-map,.btn-eta{font-size:12px;padding:10px 10px}
@@ -918,11 +1002,11 @@ html.mode-mobile  .view-toggle-btn{display:flex}
     <div class="map-modal-head">
       <div>
         <h3 id="mapModalTitle">Route Map – Bus —</h3>
-        <div style="font-size:11px;color:var(--text3);margin-top:2px">Stop markers and live route polyline</div>
+        <div id="mapModalSubtitle" style="font-size:11px;color:var(--text3);margin-top:2px">Stop markers and live route polyline</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <a id="mapModalGoogleLink" href="#" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:99px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);font-size:11px;text-decoration:none">
-          <i class="fas fa-arrow-up-right-from-square"></i> Google Maps
+          <i class="fas fa-arrow-up-right-from-square"></i> <span>Google Maps</span>
         </a>
         <button class="map-modal-close" onclick="closeMapModal()"><i class="fas fa-xmark"></i></button>
       </div>
@@ -953,6 +1037,37 @@ let routeMap        = null;
 let routePolyline   = null;
 let stopMarkers     = [];
 let busMarker       = null;
+
+// ── R01 enhanced route-map state ────────────────────────────────────────────
+// Kept separate from the legacy vars above so every other route (R02, R03…)
+// keeps behaving exactly as it did before this change.
+// Structure is generic on purpose: adding a future route's checkpoints only
+// means adding another key here — no other code needs to change.
+const ROUTE_EXTENSIONS = {
+  R01: [
+    { name: 'Royapuram',       lat: 13.1147, lng: 80.2947 },
+    { name: 'High Court',      lat: 13.0940, lng: 80.2900 },
+    { name: 'Chennai Central', lat: 13.0827, lng: 80.2757 },
+    { name: 'Kilpauk',         lat: 13.0836, lng: 80.2412 },
+    { name: 'Koyambedu Metro', lat: 13.0702, lng: 80.1962 },
+    { name: 'Maduravoyal',     lat: 13.0642, lng: 80.1631 },
+    { name: 'Vanagaram',       lat: 13.0562, lng: 80.1398 },
+    { name: 'Poonamallee',     lat: 13.0475, lng: 80.1017 },
+    { name: 'RIT Campus',      lat: 13.0390, lng: 80.0449 },
+  ],
+};
+let directionsService  = null;
+let r01RoadPathCache    = {};     // vehicleId → resolved road-following [{lat,lng}]
+let r01RoutePolylineBg  = null;   // dark outer stroke (full route)
+let r01RoutePolylineFg  = null;   // bright inner stroke (remaining/active section)
+let r01RoutePolylineDone= null;   // dimmed stroke (completed section)
+let r01ArrowLine        = null;   // invisible line carrying direction chevrons
+let r01StopMarkers      = [];
+let r01CheckpointLabels = [];     // {el, position}
+let r01BusOverlay       = null;   // custom pulsing live-bus overlay
+let r01ActiveInfoWindow = null;
+let r01LiveVehicleId    = null;   // which vehicle the open R01 map is tracking
+let r01LoadingEl        = null;
 
 // ── Clock ──────────────────────────────────────────────────────────────────────
 setInterval(() => {
@@ -1315,6 +1430,12 @@ function renderEtaPanel(vehicleId, data) {
   etaCache[vehicleId]._stops  = stops;
   etaCache[vehicleId]._busLat = data.currentLocation.lat;
   etaCache[vehicleId]._busLng = data.currentLocation.lng;
+
+  // If the R01 enhanced map is currently open for this vehicle, smoothly move
+  // the live-bus overlay and refresh the route progress split — no rebuild.
+  if (ROUTE_EXTENSIONS[vehicleId]) {
+    updateR01LiveMap(vehicleId, data.currentLocation.lat, data.currentLocation.lng);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1350,7 +1471,16 @@ function openRouteMap(e) {
   }
 
   document.getElementById('mapModal').classList.add('open');
-  document.getElementById('mapModalTitle').textContent = `Route Map – Bus ${vehicleId}`;
+  const titleEl    = document.getElementById('mapModalTitle');
+  const subtitleEl = document.getElementById('mapModalSubtitle');
+  if (ROUTE_EXTENSIONS[vehicleId]) {
+    // R01 (or any future route with checkpoints configured) gets the richer header
+    titleEl.innerHTML = `<span class="r01-title-row"><span class="r01-badge">${vehicleId}</span> ${vehicleId} BUS ROUTE</span>`;
+    subtitleEl.textContent = 'Live route • Stops • Navigation';
+  } else {
+    titleEl.textContent = `Route Map – Bus ${vehicleId}`;
+    subtitleEl.textContent = 'Stop markers and live route polyline';
+  }
   const busLat = cache._busLat, busLng = cache._busLng;
   document.getElementById('mapModalGoogleLink').href =
     `https://www.google.com/maps?q=${busLat},${busLng}`;
@@ -1361,6 +1491,8 @@ function openRouteMap(e) {
 
 function closeMapModal() {
   document.getElementById('mapModal').classList.remove('open');
+  // Stop the R01 live-bus overlay from tracking further ETA polls until reopened
+  r01LiveVehicleId = null;
 }
 
 function handleMapModalClick(e) {
@@ -1378,8 +1510,28 @@ const darkMapStyle = [
   {featureType:'transit',stylers:[{visibility:'off'}]},
 ];
 
+// Dispatcher — R01 gets the enhanced road-following visualization; every
+// other route keeps using the original straight-line implementation
+// untouched, exactly as it behaved before.
 function buildRouteMap() {
   const vehicleId = currentEtaVehicle;
+  if (ROUTE_EXTENSIONS[vehicleId]) {
+    clearLegacyMapOverlays();
+    buildR01RouteMap(vehicleId);
+  } else {
+    clearR01MapOverlays();
+    buildLegacyRouteMap(vehicleId);
+  }
+}
+
+function clearLegacyMapOverlays() {
+  stopMarkers.forEach(m => m.setMap(null));
+  stopMarkers = [];
+  if (routePolyline) { routePolyline.setMap(null); routePolyline = null; }
+  if (busMarker)     { busMarker.setMap(null); busMarker = null; }
+}
+
+function buildLegacyRouteMap(vehicleId) {
   const cache     = etaCache[vehicleId];
   if (!cache || !cache._stops) return;
 
@@ -1494,6 +1646,400 @@ function buildRouteMap() {
   });
   // Stop bounce after 2s
   setTimeout(() => { if (busMarker) busMarker.setAnimation(null); }, 2000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  R01 — ENHANCED ROAD-FOLLOWING ROUTE MAP
+//  (scoped entirely to R01; every other route uses buildLegacyRouteMap above)
+// ═══════════════════════════════════════════════════════════════
+
+function clearR01MapOverlays() {
+  if (r01ActiveInfoWindow) { r01ActiveInfoWindow.close(); r01ActiveInfoWindow = null; }
+  r01StopMarkers.forEach(m => m.setMap(null));
+  r01StopMarkers = [];
+  r01CheckpointLabels.forEach(l => l.el?.remove());
+  r01CheckpointLabels = [];
+  if (r01RoutePolylineBg)   { r01RoutePolylineBg.setMap(null);   r01RoutePolylineBg   = null; }
+  if (r01RoutePolylineFg)   { r01RoutePolylineFg.setMap(null);   r01RoutePolylineFg   = null; }
+  if (r01RoutePolylineDone) { r01RoutePolylineDone.setMap(null); r01RoutePolylineDone = null; }
+  if (r01ArrowLine)         { r01ArrowLine.setMap(null);         r01ArrowLine         = null; }
+  if (r01BusOverlay)        { r01BusOverlay.setMap(null);        r01BusOverlay        = null; }
+}
+
+// Combine the backend's real R01 stops with the fixed checkpoint list, in order.
+function getR01ExtendedStops(vehicleId, stops) {
+  const checkpoints = ROUTE_EXTENSIONS[vehicleId] || [];
+  const base = stops.map(s => ({
+    kind: 'stop', stopId: s.stopId, stopName: s.stopName, lat: s.lat, lng: s.lng,
+    sequence: s.sequence, scheduledTime: s.scheduledTime, status: s.status,
+    etaLabel: s.etaLabel, distanceKm: s.distanceKm,
+  }));
+  const ext = checkpoints.map((c, i) => ({
+    kind: 'checkpoint', stopId: `r01-ext-${i}`, stopName: c.name, lat: c.lat, lng: c.lng,
+  }));
+  return base.concat(ext);
+}
+
+function svgToDataUrl(svg) {
+  return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+}
+
+// Small circular transit marker — used for the app's regular, backend-tracked stops
+function r01NormalStopIcon(color) {
+  return svgToDataUrl(`
+    <svg width="20" height="20" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="10" cy="10" r="8.5" fill="#0F192C" stroke="${color}" stroke-width="1.6" opacity="0.55"/>
+      <circle cx="10" cy="10" r="4.5" fill="#F5F8FF"/>
+      <circle cx="10" cy="10" r="4.5" fill="none" stroke="#0C1220" stroke-width="1"/>
+    </svg>`);
+}
+
+// Larger checkpoint marker — used for the named route checkpoints (Royapuram, RIT Campus, etc.)
+function r01CheckpointIcon(passed) {
+  const ring = passed ? '#5A6A8A' : '#4ECDC4';
+  return svgToDataUrl(`
+    <svg width="30" height="30" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="1.6" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <circle cx="15" cy="15" r="11.5" fill="#0F192C" stroke="${ring}" stroke-width="2" filter="url(#glow)" opacity="${passed ? 0.55 : 0.95}"/>
+      <circle cx="15" cy="15" r="5" fill="#F5F8FF"/>
+      <path d="M12.2 15.6h5.6M13 13.2h4l1 2.4h-6z" stroke="#0C1220" stroke-width="0.9" fill="none" stroke-linejoin="round"/>
+    </svg>`);
+}
+
+async function buildR01RouteMap(vehicleId) {
+  const cache = etaCache[vehicleId];
+  if (!cache || !cache._stops) return;
+
+  const rawStops = cache._stops;
+  const busLat   = cache._busLat;
+  const busLng   = cache._busLng;
+  const stops    = getR01ExtendedStops(vehicleId, rawStops);
+
+  clearR01MapOverlays();
+  r01LiveVehicleId = vehicleId;
+
+  const container = document.getElementById('routeMap');
+  if (!routeMap) {
+    routeMap = new google.maps.Map(container, {
+      zoom: 11,
+      center: { lat: busLat, lng: busLng },
+      styles: darkMapStyle,
+      disableDefaultUI: true,
+      gestureHandling: 'greedy',
+    });
+  }
+
+  // Fit bounds immediately to the checkpoint route + bus so the map isn't
+  // empty while the road-following path is being resolved.
+  const bounds = new google.maps.LatLngBounds();
+  stops.forEach(s => bounds.extend({ lat: s.lat, lng: s.lng }));
+  bounds.extend({ lat: busLat, lng: busLng });
+  routeMap.fitBounds(bounds, { padding: 56 });
+
+  drawR01StopMarkers(stops, busLat, busLng);
+  drawR01LiveBus(vehicleId, busLat, busLng);
+
+  // Road-following path only needs to be resolved once per vehicle (the stop
+  // list doesn't change between GPS polls) — reuse it on subsequent opens.
+  let roadPath = r01RoadPathCache[vehicleId];
+  if (!roadPath) {
+    showR01MapLoading(true);
+    const points = stops.map(s => ({ lat: s.lat, lng: s.lng }));
+    try {
+      roadPath = await resolveRoadPath(points);
+    } catch (err) {
+      roadPath = points; // graceful straight-line fallback, never blocks the map
+    }
+    r01RoadPathCache[vehicleId] = roadPath;
+    showR01MapLoading(false);
+  }
+
+  // If the modal was closed / switched to another bus while resolving, bail out
+  if (r01LiveVehicleId !== vehicleId) return;
+
+  drawR01RoutePolyline(roadPath, busLat, busLng);
+}
+
+function showR01MapLoading(on) {
+  const container = document.getElementById('routeMap');
+  if (on) {
+    if (r01LoadingEl) return;
+    r01LoadingEl = document.createElement('div');
+    r01LoadingEl.className = 'r01-map-loading';
+    r01LoadingEl.innerHTML = `<div class="r01-spin"></div><div>PLOTTING ROAD ROUTE…</div>`;
+    container.appendChild(r01LoadingEl);
+  } else if (r01LoadingEl) {
+    r01LoadingEl.style.opacity = '0';
+    setTimeout(() => { r01LoadingEl?.remove(); r01LoadingEl = null; }, 300);
+  }
+}
+
+// ── Road-following path resolution (Directions API, chained for long routes) ──
+function loadDirectionsServiceIfNeeded() {
+  if (!directionsService) directionsService = new google.maps.DirectionsService();
+}
+
+function directionsRequest(chunk) {
+  return new Promise((resolve, reject) => {
+    const origin      = chunk[0];
+    const destination = chunk[chunk.length - 1];
+    const waypoints    = chunk.slice(1, -1).map(p => ({ location: { lat: p.lat, lng: p.lng }, stopover: false }));
+    directionsService.route({
+      origin:            { lat: origin.lat, lng: origin.lng },
+      destination:       { lat: destination.lat, lng: destination.lng },
+      waypoints,
+      optimizeWaypoints: false,
+      travelMode:        google.maps.TravelMode.DRIVING,
+    }, (result, status) => {
+      if (status === 'OK' && result.routes[0]) {
+        resolve(result.routes[0].overview_path.map(p => ({ lat: p.lat(), lng: p.lng() })));
+      } else {
+        reject(new Error('Directions failed: ' + status));
+      }
+    });
+  });
+}
+
+// Resolves an ordered list of {lat,lng} checkpoints into a real, road-following
+// path. Chains requests in chunks of 25 (origin + 23 waypoints + destination —
+// the Maps JS API's per-request limit) so this scales to longer routes later.
+async function resolveRoadPath(points) {
+  loadDirectionsServiceIfNeeded();
+  const CHUNK = 25;
+  const chunks = [];
+  let i = 0;
+  while (i < points.length - 1) {
+    const end = Math.min(i + CHUNK - 1, points.length - 1);
+    chunks.push(points.slice(i, end + 1));
+    i = end;
+  }
+
+  let fullPath = [];
+  for (const chunk of chunks) {
+    let segment;
+    try {
+      segment = await directionsRequest(chunk);
+    } catch (err) {
+      segment = chunk.map(p => ({ lat: p.lat, lng: p.lng })); // fall back for this segment only
+    }
+    if (fullPath.length && segment.length) segment.shift(); // avoid duplicate joint point
+    fullPath = fullPath.concat(segment);
+  }
+  return fullPath;
+}
+
+// ── Route polyline (layered stroke + direction chevrons + progress split) ──
+function drawR01RoutePolyline(roadPath, busLat, busLng) {
+  if (r01RoutePolylineBg)   { r01RoutePolylineBg.setMap(null);   r01RoutePolylineBg   = null; }
+  if (r01RoutePolylineFg)   { r01RoutePolylineFg.setMap(null);   r01RoutePolylineFg   = null; }
+  if (r01RoutePolylineDone) { r01RoutePolylineDone.setMap(null); r01RoutePolylineDone = null; }
+  if (r01ArrowLine)         { r01ArrowLine.setMap(null);         r01ArrowLine         = null; }
+
+  // Outer dark stroke for a layered, premium navigation-line look
+  r01RoutePolylineBg = new google.maps.Polyline({
+    path: roadPath, geodesic: false,
+    strokeColor: '#03050B', strokeOpacity: 0.55, strokeWeight: 9,
+    strokeLineCap: 'round', map: routeMap, zIndex: 1,
+  });
+
+  const splitIdx = nearestPathIndex(roadPath, busLat, busLng);
+
+  // Completed section — dimmed
+  r01RoutePolylineDone = new google.maps.Polyline({
+    path: roadPath.slice(0, splitIdx + 1), geodesic: false,
+    strokeColor: '#5A6A8A', strokeOpacity: 0.55, strokeWeight: 5,
+    map: routeMap, zIndex: 2,
+  });
+
+  // Remaining section — bright active cyan
+  r01RoutePolylineFg = new google.maps.Polyline({
+    path: roadPath.slice(splitIdx), geodesic: false,
+    strokeColor: '#4ECDC4', strokeOpacity: 0.92, strokeWeight: 5,
+    map: routeMap, zIndex: 3,
+  });
+
+  // Thin invisible line carrying small directional chevrons along the whole route
+  r01ArrowLine = new google.maps.Polyline({
+    path: roadPath, geodesic: false, strokeOpacity: 0, map: routeMap, zIndex: 4,
+    icons: [{
+      icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 2.4, strokeColor: '#0C1220', strokeWeight: 1, fillColor: '#EAFBF9', fillOpacity: 0.9 },
+      offset: '0%', repeat: '9%',
+    }],
+  });
+}
+
+// Index of the roadPath point closest to the bus — used to split completed vs remaining
+function nearestPathIndex(path, lat, lng) {
+  let best = 0, bestD = Infinity;
+  for (let i = 0; i < path.length; i++) {
+    const dLat = path[i].lat - lat, dLng = path[i].lng - lng;
+    const d = dLat * dLat + dLng * dLng;
+    if (d < bestD) { bestD = d; best = i; }
+  }
+  return best;
+}
+
+// ── Stop markers (normal + checkpoint) ──
+function drawR01StopMarkers(stops, busLat, busLng) {
+  r01StopMarkers.forEach(m => m.setMap(null));
+  r01StopMarkers = [];
+  r01CheckpointLabels.forEach(l => l.el?.remove());
+  r01CheckpointLabels = [];
+
+  const statusColors = { departed: '#5A6A8A', current: '#22C55E', arriving: '#FBBF24', upcoming: '#4ECDC4', next: '#3B82F6' };
+  const mapContainer = document.getElementById('routeMap');
+  // Checkpoints have no live backend status — infer passed/upcoming from how
+  // far along the combined stop sequence the bus's nearest point currently is.
+  const busIdx = nearestCombinedIndex(stops, busLat, busLng);
+
+  stops.forEach((s, idx) => {
+    let icon, zIndex;
+    if (s.kind === 'checkpoint') {
+      const passed = idx < busIdx;
+      icon = { url: r01CheckpointIcon(passed), scaledSize: new google.maps.Size(30, 30), anchor: new google.maps.Point(15, 15) };
+      zIndex = 20 + idx;
+    } else {
+      const color = statusColors[s.status] || '#4ECDC4';
+      icon = { url: r01NormalStopIcon(color), scaledSize: new google.maps.Size(20, 20), anchor: new google.maps.Point(10, 10) };
+      zIndex = s.status === 'current' ? 30 : idx;
+    }
+
+    const marker = new google.maps.Marker({
+      position: { lat: s.lat, lng: s.lng }, map: routeMap, title: s.stopName, icon, zIndex,
+    });
+
+    marker.addListener('click', () => showR01StopInfo(marker, s, busLat, busLng, idx, stops));
+    r01StopMarkers.push(marker);
+
+    // Floating glass label for checkpoints only — keeps the map from getting crowded
+    if (s.kind === 'checkpoint') {
+      const labelEl = document.createElement('div');
+      labelEl.className = 'r01-checkpoint-label';
+      labelEl.textContent = s.stopName.toUpperCase();
+      mapContainer.appendChild(labelEl);
+      const overlay = positionOverlayEl(labelEl, s.lat, s.lng, -20);
+      r01CheckpointLabels.push({ el: labelEl, overlay });
+    }
+  });
+}
+
+// Small helper overlay that keeps a plain HTML element pinned to a lat/lng
+// as the map pans/zooms (used for checkpoint labels).
+function positionOverlayEl(el, lat, lng, yOffset) {
+  class PinOverlay extends google.maps.OverlayView {
+    constructor() { super(); this.setMap(routeMap); }
+    onAdd() {}
+    draw() {
+      const proj = this.getProjection();
+      if (!proj) return;
+      const pos = proj.fromLatLngToDivPixel(new google.maps.LatLng(lat, lng));
+      el.style.left = pos.x + 'px';
+      el.style.top  = (pos.y + yOffset) + 'px';
+    }
+    onRemove() {}
+  }
+  return new PinOverlay();
+}
+
+// ── Live bus overlay (pulsing, clearly distinct from stop markers) ──
+function drawR01LiveBus(vehicleId, lat, lng) {
+  if (r01BusOverlay) { r01BusOverlay.setMap(null); r01BusOverlay = null; }
+
+  class LiveBusOverlay extends google.maps.OverlayView {
+    constructor(position, label) {
+      super();
+      this.position = position;
+      this.label    = label;
+      this.div      = null;
+      this.setMap(routeMap);
+    }
+    onAdd() {
+      const div = document.createElement('div');
+      div.className = 'r01-live-bus';
+      div.innerHTML = `
+        <div class="lb-pulse"></div>
+        <div class="lb-tag">${this.label}<span class="lb-dot"></span>LIVE</div>
+        <div class="lb-core"><i class="fas fa-bus"></i></div>`;
+      this.div = div;
+      this.getPanes().overlayMouseTarget.appendChild(div);
+      this.draw();
+    }
+    draw() {
+      const proj = this.getProjection();
+      if (!proj || !this.div) return;
+      const pos = proj.fromLatLngToDivPixel(new google.maps.LatLng(this.position.lat, this.position.lng));
+      this.div.style.left = (pos.x - 22) + 'px';
+      this.div.style.top  = (pos.y - 22) + 'px';
+    }
+    onRemove() { if (this.div) { this.div.remove(); this.div = null; } }
+    setPosition(pos) { this.position = pos; this.draw(); }
+  }
+
+  r01BusOverlay = new LiveBusOverlay({ lat, lng }, vehicleId);
+}
+
+// ── Info card shown when a stop/checkpoint marker is tapped ──
+function showR01StopInfo(marker, s, busLat, busLng, idx, stops) {
+  if (r01ActiveInfoWindow) r01ActiveInfoWindow.close();
+
+  let bodyHTML;
+  if (s.kind === 'checkpoint') {
+    const passed = idx < nearestCombinedIndex(stops, busLat, busLng);
+    bodyHTML = `
+      <div style="font-weight:700;font-size:13px;margin-bottom:4px">${s.stopName}</div>
+      <div style="font-size:10.5px;color:#9BAAC8;letter-spacing:0.04em">R01 BUS STOP · ROUTE CHECKPOINT</div>
+      <div style="margin-top:6px;font-size:11px;font-weight:600;color:${passed ? '#5A6A8A' : '#4ECDC4'}">
+        ${passed ? '✓ Passed' : '○ Upcoming'}
+      </div>`;
+  } else {
+    const color = { departed: '#5A6A8A', current: '#22C55E', arriving: '#FBBF24', upcoming: '#4ECDC4', next: '#3B82F6' }[s.status] || '#4ECDC4';
+    bodyHTML = `
+      <div style="font-weight:700;font-size:13px;margin-bottom:4px">${s.stopName}</div>
+      <div style="font-size:10.5px;color:#9BAAC8;letter-spacing:0.04em">R01 BUS STOP</div>
+      <div style="margin-top:6px;font-size:11px;font-weight:600;color:${color}">
+        ${s.status === 'departed' ? '✓ Departed' :
+          s.status === 'current'  ? '📍 Bus is here' :
+          s.status === 'arriving' ? `⏱ Arriving in ${s.etaLabel}` :
+          `🕐 ETA: ${s.etaLabel}`}
+      </div>
+      <div style="font-size:10px;color:#5A6A8A;margin-top:2px">${s.distanceKm} km from bus</div>`;
+  }
+
+  r01ActiveInfoWindow = new google.maps.InfoWindow({
+    content: `<div style="background:#0C1220;color:#F0F4FF;padding:10px 14px;border-radius:10px;font-family:'DM Sans',sans-serif;min-width:170px">${bodyHTML}</div>`,
+  });
+  r01ActiveInfoWindow.open(routeMap, marker);
+}
+
+function nearestCombinedIndex(stops, busLat, busLng) {
+  let best = 0, bestD = Infinity;
+  stops.forEach((s, i) => {
+    const dLat = s.lat - busLat, dLng = s.lng - busLng;
+    const d = dLat * dLat + dLng * dLng;
+    if (d < bestD) { bestD = d; best = i; }
+  });
+  return best;
+}
+
+// Called on every ETA poll (while the R01 map is open) to move the live-bus
+// overlay and refresh the completed/remaining route split — without
+// re-requesting Directions or recreating any markers.
+function updateR01LiveMap(vehicleId, busLat, busLng) {
+  if (r01LiveVehicleId !== vehicleId) return;
+  if (!document.getElementById('mapModal').classList.contains('open')) return;
+  if (r01BusOverlay) r01BusOverlay.setPosition({ lat: busLat, lng: busLng });
+
+  const roadPath = r01RoadPathCache[vehicleId];
+  if (roadPath && roadPath.length) {
+    const splitIdx = nearestPathIndex(roadPath, busLat, busLng);
+    if (r01RoutePolylineDone) r01RoutePolylineDone.setPath(roadPath.slice(0, splitIdx + 1));
+    if (r01RoutePolylineFg)   r01RoutePolylineFg.setPath(roadPath.slice(splitIdx));
+  }
 }
 
 // ── Toast ──────────────────────────────────────────────────────────────────────
