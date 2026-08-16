@@ -131,8 +131,10 @@ router.post("/api/notify/send", async (req, res) => {
 // ── POST /api/notify/schedule ───────────────────────────────────────────────
 // Body: { busId, message, presetLabel, sentBy, sendToAll, scheduledFor }
 // Queues a notification instead of sending it immediately. scheduledFor must
-// be an ISO datetime string in the future. The actual send happens later,
-// off the request/response cycle, via processDueScheduledSends() below.
+// be an ISO datetime string in the future. The actual send is armed via an
+// exact setTimeout (see armScheduledTimer below) the instant this request
+// completes — it does NOT wait for the periodic poll, so there's no
+// up-to-30s slop between the requested time and the real send time.
 router.post("/api/notify/schedule", async (req, res) => {
   try {
     const { busId, message, presetLabel, sentBy, sendToAll, scheduledFor } = req.body;
@@ -156,6 +158,8 @@ router.post("/api/notify/schedule", async (req, res) => {
       sendToAll: !!sendToAll,
       scheduledFor: sendAt,
     });
+
+    armScheduledTimer(scheduled);
 
     console.log(`[NOTIFY-SCHEDULE] Queued ${scheduled._id} for ${sendAt.toISOString()} (${scheduled.busId})`);
 
@@ -196,6 +200,7 @@ router.delete("/api/notify/schedule/:id", async (req, res) => {
       return res.status(400).json({ success: false, error: "This notification has already been processed and can no longer be cancelled." });
     }
     await ScheduledNotification.findByIdAndDelete(id);
+    clearScheduledTimer(id);
     console.log(`[NOTIFY-SCHEDULE] ${id} cancelled`);
     return res.json({ success: true, deletedId: id });
   } catch (err) {
@@ -251,67 +256,145 @@ router.delete("/api/notify/history", async (req, res) => {
   }
 });
 
-// ── processDueScheduledSends ────────────────────────────────────────────────
-// Polled on an interval from server.js (see setInterval near the other
-// background jobs). Finds every "pending" ScheduledNotification whose
-// scheduledFor time has arrived, sends it through the same notifyCustomMessage
-// path an immediate send uses, and writes a NotificationLog entry so it shows
-// up in Recent Notifications indistinguishably from a manual send (aside from
-// wasScheduled/scheduledFor on the log). A simple in-flight flag stops two
-// overlapping runs if a previous pass is still awaiting Firebase.
-let isProcessingScheduled = false;
+// ── Exact-time scheduler engine ─────────────────────────────────────────────
+// Fires each ScheduledNotification with a dedicated setTimeout armed the
+// instant it's created (see armScheduledTimer(), called from POST
+// /api/notify/schedule above), instead of waiting for the next periodic poll.
+// This is what makes sends land on the second rather than up to ~30s late.
+//
+//   scheduledTimers   — id -> Timeout handle, so a cancel (DELETE) or a
+//                        re-arm can clear the pending timer.
+//   firingInProgress  — id set, guards against a timer and the safety-net
+//                        poll (processDueScheduledSends) both trying to fire
+//                        the same item at once.
+//
+// Node's setTimeout can't hold a delay longer than ~24.8 days (2^31-1 ms) —
+// for anything scheduled further out than that, armScheduledTimer() simply
+// skips arming and leaves it to be picked up by the safety-net poll once
+// it's back within range.
+const scheduledTimers = new Map();
+const firingInProgress = new Set();
+const MAX_SETTIMEOUT_DELAY_MS = 2147483647; // ~24.8 days — Node's setTimeout ceiling
 
-async function processDueScheduledSends() {
-  if (isProcessingScheduled) return;
-  isProcessingScheduled = true;
+function clearScheduledTimer(id) {
+  id = String(id);
+  const handle = scheduledTimers.get(id);
+  if (handle) {
+    clearTimeout(handle);
+    scheduledTimers.delete(id);
+  }
+}
 
+// Arms (or re-arms) the exact-fire timer for one ScheduledNotification doc.
+function armScheduledTimer(item) {
+  const id = String(item._id);
+  clearScheduledTimer(id);
+
+  const delay = new Date(item.scheduledFor).getTime() - Date.now();
+
+  if (delay <= 250) {
+    // Already due (or due within the next quarter-second) — fire right away
+    // rather than scheduling a near-zero timeout.
+    setImmediate(() => fireScheduledById(id));
+    return;
+  }
+  if (delay > MAX_SETTIMEOUT_DELAY_MS) {
+    // Too far out for a single timer; the safety-net poll will arm it once
+    // it comes within range.
+    return;
+  }
+
+  scheduledTimers.set(id, setTimeout(() => fireScheduledById(id), delay));
+}
+
+// Re-fetches the item fresh (in case it was cancelled/already sent) and,
+// if still pending, sends it.
+async function fireScheduledById(id) {
+  id = String(id);
+  scheduledTimers.delete(id);
+
+  if (firingInProgress.has(id)) return; // already being handled
+  firingInProgress.add(id);
   try {
-    const due = await ScheduledNotification.find({
-      status: "pending",
-      scheduledFor: { $lte: new Date() },
+    const item = await ScheduledNotification.findById(id);
+    if (!item || item.status !== "pending") return;
+    await fireScheduledItem(item);
+  } catch (err) {
+    console.error(`[NOTIFY-SCHEDULE] fireScheduledById(${id}) error:`, err.message);
+  } finally {
+    firingInProgress.delete(id);
+  }
+}
+
+// Actually sends one due ScheduledNotification through the same
+// notifyCustomMessage path an immediate send uses, and writes a
+// NotificationLog entry so it shows up in Recent Notifications
+// indistinguishably from a manual send.
+async function fireScheduledItem(item) {
+  try {
+    const result = await notifyCustomMessage(item.busId, item.message, {
+      sentBy: item.sentBy,
+      sendToAll: item.sendToAll,
     });
 
-    for (const item of due) {
-      try {
-        const result = await notifyCustomMessage(item.busId, item.message, {
-          sentBy: item.sentBy,
-          sendToAll: item.sendToAll,
-        });
+    const log = await NotificationLog.create({
+      busId: item.busId,
+      message: item.message,
+      presetLabel: item.presetLabel || "Custom",
+      sentBy: item.sentBy || "Admin",
+      studentCount: result.studentCount || 0,
+      tokenCount: result.tokenCount || 0,
+      successCount: result.successCount || 0,
+      failureCount: result.failureCount || 0,
+    });
 
-        const log = await NotificationLog.create({
-          busId: item.busId,
-          message: item.message,
-          presetLabel: item.presetLabel || "Custom",
-          sentBy: item.sentBy || "Admin",
-          studentCount: result.studentCount || 0,
-          tokenCount: result.tokenCount || 0,
-          successCount: result.successCount || 0,
-          failureCount: result.failureCount || 0,
-          wasScheduled: true,
-          scheduledFor: item.scheduledFor,
-        });
+    item.status = "sent";
+    item.sentAt = new Date();
+    item.resultLogId = log._id;
+    await item.save();
 
-        item.status = "sent";
-        item.sentAt = new Date();
-        item.resultLogId = log._id;
-        await item.save();
+    console.log(
+      `[NOTIFY-SCHEDULE] ${item.busId}: fired ${item._id} → logged ${log._id} — sent ${result.successCount || 0}/${result.tokenCount || 0} tokens`
+    );
+  } catch (err) {
+    item.status = "failed";
+    item.error = err.message;
+    try { await item.save(); } catch (_) { /* best effort */ }
+    console.error(`[NOTIFY-SCHEDULE] Failed to fire ${item._id}:`, err.message);
+  }
+}
 
-        console.log(
-          `[NOTIFY-SCHEDULE] ${item.busId}: fired ${item._id} → logged ${log._id} — sent ${result.successCount || 0}/${result.tokenCount || 0} tokens`
-        );
-      } catch (err) {
-        item.status = "failed";
-        item.error = err.message;
-        try { await item.save(); } catch (_) { /* best effort */ }
-        console.error(`[NOTIFY-SCHEDULE] Failed to fire ${item._id}:`, err.message);
+// ── processDueScheduledSends (safety net) ───────────────────────────────────
+// Still polled on an interval from server.js and once at boot, but it is no
+// longer the primary firing mechanism — it now just:
+//   1. Catches anything already overdue (e.g. the server was restarted and
+//      lost its in-memory timers, or a schedule was created by another
+//      process instance).
+//   2. Re-arms an exact timer for any pending item that doesn't currently
+//      have one (e.g. right after a restart, before timers are rebuilt).
+// Because real firing happens via armScheduledTimer()'s setTimeout, this can
+// safely run on a relaxed interval without affecting on-time delivery.
+async function processDueScheduledSends() {
+  try {
+    const pending = await ScheduledNotification.find({ status: "pending" });
+    const now = Date.now();
+
+    for (const item of pending) {
+      const id = String(item._id);
+      const dueAt = new Date(item.scheduledFor).getTime();
+
+      if (dueAt <= now) {
+        if (!firingInProgress.has(id)) await fireScheduledById(id);
+      } else if (!scheduledTimers.has(id)) {
+        armScheduledTimer(item);
       }
     }
   } catch (err) {
     console.error("[NOTIFY-SCHEDULE] processDueScheduledSends error:", err.message);
-  } finally {
-    isProcessingScheduled = false;
   }
 }
 
 module.exports = router;
 module.exports.processDueScheduledSends = processDueScheduledSends;
+module.exports.armScheduledTimer = armScheduledTimer;
+module.exports.clearScheduledTimer = clearScheduledTimer;

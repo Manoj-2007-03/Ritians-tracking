@@ -254,12 +254,15 @@ setInterval(() => {
   }
 }, 10_000);
 
-// Notification Dashboard "Schedule for later" worker — checks every 30s for
-// admin-scheduled notifications whose time has arrived and sends them. See
-// routes/notifications-admin.js → processDueScheduledSends() for the logic.
+// Notification Dashboard "Schedule for later" — SAFETY NET ONLY.
+// Real on-time delivery happens via an exact setTimeout armed the instant a
+// notification is scheduled (see routes/notifications-admin.js →
+// armScheduledTimer()). This interval just re-arms timers lost to a server
+// restart and catches anything that's somehow still overdue. 2 minutes is
+// plenty since it's no longer what determines send timing.
 setInterval(() => {
   notifyAdminRoutes.processDueScheduledSends();
-}, 30_000);
+}, 120_000);
 
 // ── RIT Campus ──────────────────────────────────────────────────────────────
 const RIT_CAMPUS = { lat: 12.8231, lng: 80.0444 };
